@@ -1,7 +1,6 @@
 "use client"
 
 import type { GroupCode, CommonCode } from "@/types/groupcode"
-// import { createClient } from '@supabase/supabase-js'
 
 const apiUrl: string = 'https://dip-api.inopt.paasup.io/api/v1';
 //const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '')+':'+ (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
@@ -12,8 +11,6 @@ const headers: any = {
   'X-Hostname': hostname,
   "Content-Type": "application/json",
 };
-
-//const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL ?? '', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '')
 
 export async function getGroupCode(): Promise<GroupCode[]> {
   try {
@@ -124,41 +121,3 @@ export async function deleteCommonCode(commonCode: CommonCode) {
   }
 }
 
-// export async function getGroupCode(): Promise<GroupCode[]> {
-//   try {
-//     const { data: datas, error } = await supabase
-//         .from('common_code_group')
-//         .select()
-//     if (error) throw new Error(String(error))
-//     const responseData: GroupCode[] = datas || [];
-//     return responseData;
-//   } catch (error) {
-//     console.error(error)
-//     throw new Error(error instanceof Error ? error.message : String(error))
-//   }
-// }
-
-// export async function insertGroupCode(newData: GroupCode) {
-//   try {
-//     const { data: datas, error } = await supabase
-//         .from('common_code_group')
-//         .insert({ group_code: newData.groupCode, group_code_desc: newData.groupCodeDesc })
-//     if (error) throw new Error(error.message)
-//   } catch (error) {
-//     console.error(error)
-//     throw new Error(error instanceof Error ? error.message : String(error))
-//   }
-// }
-
-// export async function updateGroupCode(updateData: GroupCode) {
-//   try {
-//     const { data: datas, error } = await supabase
-//         .from('common_code_group')
-//         .update({ group_code: updateData.groupCode, group_code_desc: updateData.groupCodeDesc })
-//         .match({id: updateData.id})
-//     if (error) throw new Error(error.message)
-//   } catch (error) {
-//     console.error(error)
-//     throw new Error(error instanceof Error ? error.message : String(error))
-//   }
-// }

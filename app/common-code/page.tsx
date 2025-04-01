@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Code, MoreVertical } from 'lucide-react';
+import { Plus, Pencil, Code, MoreVertical, Check } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+import TablePagination from "@/components/ui/table-pagination";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -103,7 +105,6 @@ export default function CommonCodePage() {
       width: 'w-[80px]',
       align: 'center',
       cell: (row: any, index?: number) => {
-        // Find the index of this row in the original data array
         const rowIndex = paginatedData.findIndex(item => item === row);
         return (
           <div className="text-center">{(page - 1) * pageSize + rowIndex + 1}</div>
@@ -146,7 +147,6 @@ export default function CommonCodePage() {
       width: 'w-[80px]',
       align: 'center',
       cell: (row: any, index?: number) => {
-        // Find the index of this row in the paginated common code data array
         const rowIndex = paginatedCommonCode.findIndex(item => item === row);
         return (
           <div className="text-center">{(pageCommonCode - 1) * pageSize + rowIndex + 1}</div>
@@ -156,7 +156,17 @@ export default function CommonCodePage() {
     { key: 'groupCode', title: '그룹코드', align: 'left' },
     { key: 'code', title: '코드', align: 'left' },
     { key: 'codeDesc', title: '코드설명', align: 'left' },
-    { key: 'enable', title: '활성화', width: 'w-[100px]', align: 'left' },
+    { 
+      key: 'enable', 
+      title: '활성화', 
+      width: 'w-[100px]', 
+      align: 'left',
+      cell: (row: CommonCode) => (
+        <div className="flex justify-left">
+          {row.enable && <Check className="h-4 w-4 text-green-500" />}
+        </div>
+      )
+    },
     {
       key: 'actions',
       title: '',
@@ -471,111 +481,14 @@ export default function CommonCodePage() {
     setPageCommonCode(newPage);
   };
 
-  const renderPaginationComponent = ({
-    currentPage,
-    totalPages,
-    dataLength,
-    onPageChange,
-  }: {
-    currentPage: number;
-    totalPages: number;
-    dataLength: number;
-    onPageChange: (page: number) => void;
-  }) => {
-    const maxVisiblePages = 5;
-
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    const pageNumbers = Array.from(
-      { length: endPage - startPage + 1 },
-      (_, i) => startPage + i
-    );
-
-    const startItem = dataLength > 0 ? (currentPage - 1) * pageSize + 1 : 0;
-    const endItem = Math.min(currentPage * pageSize, dataLength);
-
-    if (dataLength === 0) {
-      return (
-        <div className="flex items-center justify-between px-2 py-4">
-          <div className="text-sm text-gray-500"> </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center justify-between px-2 py-4">
-        <div className="text-sm text-gray-500">
-          총 {dataLength}개 중 {startItem}-{endItem}
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            aria-label="이전 페이지"
-          >
-            이전
-          </Button>
-          <div className="flex items-center">
-            {pageNumbers.map((pageNum) => (
-              <Button
-                key={pageNum}
-                variant={pageNum === currentPage ? "default" : "ghost"}
-                size="sm"
-                className="w-8"
-                onClick={() => onPageChange(pageNum)}
-                aria-label={`${pageNum} 페이지`}
-                aria-current={pageNum === currentPage ? "page" : undefined}
-              >
-                {pageNum}
-              </Button>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || totalPages === 0}
-            aria-label="다음 페이지"
-          >
-            다음
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderPagination = () => {
-    return renderPaginationComponent({
-      currentPage: page,
-      totalPages,
-      dataLength: data.length,
-      onPageChange: handlePageChange,
-    });
-  };
-
-  const renderPaginationCommonCode = () => {
-    return renderPaginationComponent({
-      currentPage: pageCommonCode,
-      totalPages: totalPagesCommonCode,
-      dataLength: commonCodeData.length,
-      onPageChange: handlePageChangeCommonCode,
-    });
-  };
 
   return (
     <div className="flex-1 space-y-4 py-4">
       <div className="bg-white border-b shadow-sm -mx-4">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">그룹 코드</h2>
-            <p className="mt-1 text-sm text-gray-500">그룹 코드를 생성하고 관리할 수 있습니다.</p>
+            <h2 className="text-3xl font-bold tracking-tight">공통 코드</h2>
+            <p className="mt-1 text-sm text-gray-500">공통 코드를 생성하고 관리할 수 있습니다.</p>
           </div>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
@@ -687,7 +600,7 @@ export default function CommonCodePage() {
               <div className="flex flex-col h-full">
                 <SheetHeader>
                   <SheetTitle>
-                    {selectedGroupCode?.groupCode} 하위 공통 코드
+                    공통 코드
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex justify-end mb-4">
@@ -762,7 +675,13 @@ export default function CommonCodePage() {
                     data={paginatedCommonCode}
                     onRefresh={handleRefreshCommonCode}
                   />
-                  {renderPaginationCommonCode()}
+                  <TablePagination
+                    currentPage={pageCommonCode}
+                    totalPages={totalPagesCommonCode}
+                    dataLength={commonCodeData.length}
+                    onPageChange={handlePageChangeCommonCode}
+                    pageSize={pageSize}
+                  />
                 </div>
               </div>
             </SheetContent>
@@ -799,13 +718,17 @@ export default function CommonCodePage() {
                     {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-desc">활성화</Label>
-                    <Checkbox
-                      id="edit-enable"
-                      placeholder="활성화"
-                      checked={editCommonCode.enable}
-                      onChange={(e) => setEditCommonCode({ ...editCommonCode, enable: (e.target as HTMLInputElement).checked })}
-                    />
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="edit-desc">활성화</Label>
+                      <Checkbox
+                        id="edit-enable"
+                        placeholder="활성화"
+                        checked={editCommonCode.enable}
+                        onCheckedChange={(checked) => {
+                          setEditCommonCode({ ...editCommonCode, enable: checked as boolean });
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2 mt-6">
@@ -829,7 +752,13 @@ export default function CommonCodePage() {
             onRefresh={handleRefresh}
             isLoading={isLoading}
           />
-          {renderPagination()}
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            dataLength={data.length}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+          />
         </CardContent>
       </Card>
       <ConfirmDialog
