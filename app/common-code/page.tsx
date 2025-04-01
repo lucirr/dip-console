@@ -1,0 +1,864 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Pencil, Code, MoreVertical } from 'lucide-react';
+import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { ReactNode } from 'react';
+import type { GroupCode, CommonCode } from "@/types/groupcode"
+import { getGroupCode, insertGroupCode, updateGroupCode, getCommonCode, deleteCommonCode, insertCommonCode, updateCommonCode } from "@/lib/actions"
+import { useToast } from "@/hooks/use-toast"
+import { z } from 'zod';
+
+interface Column {
+  key: string;
+  title: string;
+  width?: string;
+  align?: string;
+  cell?: (row: any, index?: number) => ReactNode;
+}
+
+const formSchema = z.object({
+  groupCode: z.string().min(1, { message: "그룹코드는 필수 입력 항목입니다." }),
+  groupCodeDesc: z.string().min(1, { message: "그룹코드 설명은 필수 입력 항목입니다." }),
+});
+
+const formSchemaCommonCode = z.object({
+  code: z.string().min(1, { message: "공통코드는 필수 입력 항목입니다." }),
+  codeDesc: z.string().min(1, { message: "공통코드 설명은 필수 입력 항목입니다." }),
+});
+
+export default function CommonCodePage() {
+  const { toast } = useToast()
+  const [data, setData] = useState<GroupCode[]>([]);
+  const [commonCodeData, setCommonCodeData] = useState<CommonCode[]>([]);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [isCommonCodeSheetOpen, setIsCommonCodeSheetOpen] = useState(false);
+  const [isCommonCodeNewSheetOpen, setIsCommonCodeNewSheetOpen] = useState(false);
+  const [isCommonCodeEditSheetOpen, setIsCommonCodeEditSheetOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageCommonCode, setPageCommonCode] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedGroupCode, setSelectedGroupCode] = useState<GroupCode | null>(null);
+  const [selectedCommonCode, setSelectedCommonCode] = useState<CommonCode | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isConfirmOpenUpdate, setIsConfirmOpenUpdate] = useState(false);
+  const [isConfirmOpenCommonCode, setIsConfirmOpenCommonCode] = useState(false);
+  const [isConfirmOpenCommonCodeUpdate, setIsConfirmOpenCommonCodeUpdate] = useState(false);
+  const [isConfirmOpenCommonCodeDelete, setIsConfirmOpenCommonCodeDelete] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
+  const [formErrorsCommonCode, setFormErrorsCommonCode] = useState<{ code?: string; codeDesc?: string } | null>(null);
+
+  const [newCode, setNewCode] = useState<GroupCode>({
+    groupCode: '',
+    groupCodeDesc: '',
+  });
+
+  const [editGroupCode, setEditGroupCode] = useState<GroupCode>({
+    uid: '',
+    groupCode: '',
+    groupCodeDesc: '',
+  });
+
+  const [newCommonCode, setNewCommonCode] = useState<CommonCode>({
+    uid: '',
+    code: '',
+    codeDesc: '',
+    enable: true,
+    groupCodeId: '',
+  });
+
+  const [editCommonCode, setEditCommonCode] = useState<CommonCode>({
+    uid: '',
+    code: '',
+    codeDesc: '',
+    enable: false,
+    groupCodeId: '',
+  });
+
+  const paginatedData = data.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.ceil(data.length / pageSize);
+
+  const paginatedCommonCode = commonCodeData.slice((pageCommonCode - 1) * pageSize, pageCommonCode * pageSize);
+  const totalPagesCommonCode = Math.ceil(commonCodeData.length / pageSize);
+
+  const columns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        // Find the index of this row in the original data array
+        const rowIndex = paginatedData.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(page - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'groupCode', title: '그룹코드', align: 'left' },
+    { key: 'groupCodeDesc', title: '그룹코드 설명', align: 'left' },
+    { key: 'createdAt', title: '등록일자', width: 'w-[220px]', align: 'left' },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: GroupCode) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => groupCodeEditClick(row)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              편집
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => commonCodeClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              공통코드
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const commonCodeColumns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        // Find the index of this row in the paginated common code data array
+        const rowIndex = paginatedCommonCode.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(pageCommonCode - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'groupCode', title: '그룹코드', align: 'left' },
+    { key: 'code', title: '코드', align: 'left' },
+    { key: 'codeDesc', title: '코드설명', align: 'left' },
+    { key: 'enable', title: '활성화', width: 'w-[100px]', align: 'left' },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: CommonCode) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => commonCodeEditClick(row)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              편집
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => commonCodeDeleteClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const fetchGroupCodes = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getGroupCode()
+      setData(response);
+    } catch (error) {
+      setData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCommonCodes = async () => {
+    setIsLoading(true);
+    try {
+      if (selectedGroupCode?.uid) {
+        const response = await getCommonCode(selectedGroupCode.uid);
+
+        const enhancedResponse = response.map(item => ({
+          ...item,
+          groupCode: selectedGroupCode.groupCode
+        }));
+
+        setCommonCodeData(enhancedResponse);
+      } else {
+        setCommonCodeData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching common codes:', error);
+      setCommonCodeData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGroupCodes();
+  }, []);
+
+
+  useEffect(() => {
+    if (selectedGroupCode && isCommonCodeSheetOpen) {
+      fetchCommonCodes();
+    }
+  }, [selectedGroupCode, isCommonCodeSheetOpen]);
+
+  const handleRefresh = () => {
+    fetchGroupCodes();
+  };
+
+  const handleRefreshCommonCode = () => {
+    fetchCommonCodes();
+  };
+
+  const saveClick = () => {
+    setFormErrors(null);
+
+    const validationResult = formSchema.safeParse(newCode);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        if (field === 'groupCode' || field === 'groupCodeDesc') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+
+      setFormErrors(errors);
+      return;
+    }
+    setIsConfirmOpen(true);
+  };
+
+  const newGroupCodeSubmit = async () => {
+    try {
+      await insertGroupCode(newCode);
+      toast({
+        title: "Success",
+        description: "그룹 코드가 성공적으로 추가되었습니다.",
+      })
+      setNewCode({
+        groupCode: '',
+        groupCodeDesc: '',
+      });
+      setIsSheetOpen(false);
+      setIsConfirmOpen(false);
+      fetchGroupCodes();
+    } catch (error) {
+      setIsConfirmOpen(false);
+      toast({
+        title: "Error",
+        description: "그룹 코드 추가에 실패했습니다.",
+        variant: "destructive"
+      })
+    }
+  };
+
+  const saveCommonCodeClick = () => {
+    setFormErrorsCommonCode(null);
+
+    const validationResult = formSchemaCommonCode.safeParse(newCommonCode);
+
+    if (!validationResult.success) {
+      const errors: { [key: string]: string } = {};
+      validationResult.error.errors.forEach(error => {
+        if (error.path[0] === 'code') {
+          errors.code = error.message;
+        }
+        if (error.path[0] === 'codeDesc') {
+          errors.codeDesc = error.message;
+        }
+      });
+      setFormErrorsCommonCode(errors);
+      return;
+    }
+    setIsConfirmOpenCommonCode(true);
+  };
+
+  const newCommonCodeSubmit = async () => {
+    try {
+      if (selectedGroupCode?.uid) {
+        newCommonCode.groupCodeId = selectedGroupCode.uid;
+        await insertCommonCode(newCommonCode);
+        toast({
+          title: "Success",
+          description: "공통 코드가 성공적으로 추가되었습니다.",
+        })
+        setNewCommonCode({
+          uid: '',
+          code: '',
+          codeDesc: '',
+          enable: true,
+          groupCodeId: '',
+        });
+        setIsCommonCodeNewSheetOpen(false);
+        setIsConfirmOpenCommonCode(false);
+        fetchCommonCodes();
+      }
+    } catch (error) {
+      setIsConfirmOpenCommonCode(false);
+      toast({
+        title: "Error",
+        description: "공통 코드 추가에 실패했습니다.",
+        variant: "destructive"
+      })
+    }
+  };
+
+  const groupCodeEditClick = (row: GroupCode) => {
+    setSelectedGroupCode(row);
+    setEditGroupCode({
+      uid: row.uid,
+      groupCode: row.groupCode,
+      groupCodeDesc: row.groupCodeDesc,
+      createdAt: row.createdAt,
+    });
+    setFormErrors(null);
+    setIsEditSheetOpen(true);
+  };
+
+  const updateClick = () => {
+    setFormErrors(null);
+
+    const validationResult = formSchema.safeParse(editGroupCode);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        if (field === 'groupCodeDesc') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+      setFormErrors(errors);
+      return;
+    }
+    setIsConfirmOpenUpdate(true);
+  };
+
+  const groupCodeEditSubmit = async () => {
+    try {
+      await updateGroupCode(editGroupCode);
+      toast({
+        title: "Success",
+        description: "그룹 코드가 성공적으로 수정되었습니다.",
+      })
+      setIsEditSheetOpen(false);
+      fetchGroupCodes();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "그룹 코드 수정에 실패했습니다.",
+        variant: "destructive"
+      })
+    }
+  };
+
+  const updateCommonCodeClick = () => {
+    setFormErrorsCommonCode(null);
+
+    const validationResult = formSchemaCommonCode.safeParse(editCommonCode);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        if (field === 'codeDesc') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+      setFormErrorsCommonCode(errors);
+      return;
+    }
+    setIsConfirmOpenCommonCodeUpdate(true);
+  };
+
+  const commonCodeEditSubmit = async () => {
+    try {
+      await updateCommonCode(editCommonCode);
+      toast({
+        title: "Success",
+        description: "공통 코드가 성공적으로 수정되었습니다.",
+      })
+      setIsCommonCodeEditSheetOpen(false);
+      fetchCommonCodes();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "공통 코드 수정에 실패했습니다.",
+        variant: "destructive"
+      })
+    }
+  };
+
+  const commonCodeEditClick = (row: CommonCode) => {
+    setSelectedCommonCode(row);
+    setEditCommonCode({
+      uid: row.uid,
+      code: row.code,
+      codeDesc: row.codeDesc,
+      codeCategory: row.codeCategory,
+      codeValue: row.codeValue,
+      enable: row.enable,
+      groupCodeId: row.groupCodeId,
+      createdAt: row.createdAt,
+    });
+    setIsCommonCodeEditSheetOpen(true);
+    setFormErrorsCommonCode(null);
+  };
+
+  const commonCodeDeleteClick = (row: CommonCode) => {
+    setSelectedCommonCode(row);
+    setIsConfirmOpenCommonCodeDelete(true);
+  };
+
+  const commonCodeDeleteSubmit = async () => {
+    if (!selectedCommonCode) return;
+
+    try {
+      await deleteCommonCode(selectedCommonCode);
+      toast({
+        title: "Success",
+        description: "공통 코드가 성공적으로 삭제되었습니다.",
+      })
+      fetchCommonCodes();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "공통 코드 삭제에 실패했습니다.",
+        variant: "destructive"
+      })
+    }
+  };
+
+  const commonCodeClick = (row: GroupCode) => {
+    setSelectedGroupCode(row);
+    setIsCommonCodeSheetOpen(true);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handlePageChangeCommonCode = (newPage: number) => {
+    setPageCommonCode(newPage);
+  };
+
+  const renderPaginationComponent = ({
+    currentPage,
+    totalPages,
+    dataLength,
+    onPageChange,
+  }: {
+    currentPage: number;
+    totalPages: number;
+    dataLength: number;
+    onPageChange: (page: number) => void;
+  }) => {
+    const maxVisiblePages = 5;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    const pageNumbers = Array.from(
+      { length: endPage - startPage + 1 },
+      (_, i) => startPage + i
+    );
+
+    const startItem = dataLength > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+    const endItem = Math.min(currentPage * pageSize, dataLength);
+
+    if (dataLength === 0) {
+      return (
+        <div className="flex items-center justify-between px-2 py-4">
+          <div className="text-sm text-gray-500"> </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="text-sm text-gray-500">
+          총 {dataLength}개 중 {startItem}-{endItem}
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            aria-label="이전 페이지"
+          >
+            이전
+          </Button>
+          <div className="flex items-center">
+            {pageNumbers.map((pageNum) => (
+              <Button
+                key={pageNum}
+                variant={pageNum === currentPage ? "default" : "ghost"}
+                size="sm"
+                className="w-8"
+                onClick={() => onPageChange(pageNum)}
+                aria-label={`${pageNum} 페이지`}
+                aria-current={pageNum === currentPage ? "page" : undefined}
+              >
+                {pageNum}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages || totalPages === 0}
+            aria-label="다음 페이지"
+          >
+            다음
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPagination = () => {
+    return renderPaginationComponent({
+      currentPage: page,
+      totalPages,
+      dataLength: data.length,
+      onPageChange: handlePageChange,
+    });
+  };
+
+  const renderPaginationCommonCode = () => {
+    return renderPaginationComponent({
+      currentPage: pageCommonCode,
+      totalPages: totalPagesCommonCode,
+      dataLength: commonCodeData.length,
+      onPageChange: handlePageChangeCommonCode,
+    });
+  };
+
+  return (
+    <div className="flex-1 space-y-4 py-4">
+      <div className="bg-white border-b shadow-sm -mx-4">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">그룹 코드</h2>
+            <p className="mt-1 text-sm text-gray-500">그룹 코드를 생성하고 관리할 수 있습니다.</p>
+          </div>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                그룹코드 추가
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader>
+                  <SheetTitle>새 그룹코드 추가</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 overflow-y-auto">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-code">그룹코드</Label>
+                    <Input
+                      id="new-code"
+                      placeholder="그룹코드 입력"
+                      value={newCode.groupCode}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, groupCode: e.target.value });
+                        setFormErrors(prevErrors => ({
+                          ...prevErrors,
+                          groupCode: undefined,
+                        }));
+                      }}
+                      className="focus:ring-0"
+                      autoFocus={false}
+                    />
+                    {formErrors?.groupCode && <p className="text-red-500 text-sm">{formErrors.groupCode}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-desc">그룹코드 설명</Label>
+                    <Input
+                      id="new-desc"
+                      placeholder="그룹코드 설명 입력"
+                      value={newCode.groupCodeDesc}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, groupCodeDesc: e.target.value });
+                        setFormErrors(prevErrors => ({
+                          ...prevErrors,
+                          groupCodeDesc: undefined,
+                        }));
+                      }}
+                    />
+                    {formErrors?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrors.groupCodeDesc}</p>}
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsSheetOpen(false)}>
+                    취소
+                  </Button>
+                  <Button size="sm" onClick={saveClick}>
+                    저장
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
+            <SheetTrigger asChild>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader>
+                  <SheetTitle>그룹코드 수정</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 overflow-y-auto">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-code">그룹코드</Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{editGroupCode.groupCode}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-desc">그룹코드 설명</Label>
+                    <Input
+                      id="edit-desc"
+                      placeholder="그룹코드 설명 입력"
+                      value={editGroupCode.groupCodeDesc}
+                      onChange={(e) => {
+                        setEditGroupCode({ ...editGroupCode, groupCodeDesc: e.target.value }),
+                          setFormErrors(prevErrors => ({
+                            ...prevErrors,
+                            groupCodeDesc: undefined,
+                          }));
+                      }}
+                      autoFocus={true}
+                    />
+                    {formErrors?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrors.groupCodeDesc}</p>}
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditSheetOpen(false)}>
+                    취소
+                  </Button>
+                  <Button size="sm" onClick={updateClick}>
+                    저장
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isCommonCodeSheetOpen} onOpenChange={setIsCommonCodeSheetOpen}>
+            <SheetTrigger asChild>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader>
+                  <SheetTitle>
+                    {selectedGroupCode?.groupCode} 하위 공통 코드
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex justify-end mb-4">
+                  <Sheet open={isCommonCodeNewSheetOpen} onOpenChange={setIsCommonCodeNewSheetOpen}>
+                    <SheetTrigger asChild>
+                      <Button
+                        size="sm">
+                        <Plus className="mr-2 h-4 w-4" />
+                        <span>공통코드 추가</span>
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="min-w-[650px] overflow-y-auto">
+                      <div className="flex flex-col h-full">
+                        <SheetHeader>
+                          <SheetTitle>새 공통코드 추가</SheetTitle>
+                        </SheetHeader>
+                        <div className="grid gap-4 py-4 overflow-y-auto">
+                          <div className="space-y-2">
+                            <Label htmlFor="new-code">그룹코드</Label>
+                            <div className="p-2 bg-muted rounded-md">
+                              <span className="text-sm">{selectedGroupCode?.groupCode}</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-desc">코드</Label>
+                            <Input
+                              id="new-code"
+                              placeholder="코드"
+                              value={newCommonCode.code}
+                              onChange={(e) => {
+                                setNewCommonCode({ ...newCommonCode, code: e.target.value });
+                                setFormErrorsCommonCode(prevErrors => ({
+                                  ...prevErrors,
+                                  code: undefined,
+                                }));
+                              }}
+                            />
+                            {formErrorsCommonCode?.code && <p className="text-red-500 text-sm">{formErrorsCommonCode.code}</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-desc">코드설명</Label>
+                            <Input
+                              id="new-desc"
+                              placeholder="코드설명"
+                              value={newCommonCode.codeDesc}
+                              onChange={(e) => {
+                                setNewCommonCode({ ...newCommonCode, codeDesc: e.target.value });
+                                setFormErrorsCommonCode(prevErrors => ({
+                                  ...prevErrors,
+                                  codeDesc: undefined,
+                                }));
+                              }}
+                            />
+                            {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2 mt-6">
+                          <Button variant="outline" size="sm" onClick={() => setIsCommonCodeNewSheetOpen(false)}>
+                            취소
+                          </Button>
+                          <Button size="sm" onClick={saveCommonCodeClick}>
+                            저장
+                          </Button>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+                <div className="">
+                  <DataTable
+                    columns={commonCodeColumns}
+                    data={paginatedCommonCode}
+                    onRefresh={handleRefreshCommonCode}
+                  />
+                  {renderPaginationCommonCode()}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isCommonCodeEditSheetOpen} onOpenChange={setIsCommonCodeEditSheetOpen}>
+            <SheetTrigger asChild>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader>
+                  <SheetTitle>공통코드 수정</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 overflow-y-auto">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-code">코드</Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{editCommonCode.code}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-desc">코드설명</Label>
+                    <Input
+                      id="edit-desc"
+                      placeholder="코드설명"
+                      value={editCommonCode.codeDesc}
+                      onChange={(e) => {
+                        setEditCommonCode({ ...editCommonCode, codeDesc: e.target.value });
+                        setFormErrorsCommonCode(prevErrors => ({
+                          ...prevErrors,
+                          codeDesc: undefined,
+                        }));
+                      }}
+                    />
+                    {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-desc">활성화</Label>
+                    <Checkbox
+                      id="edit-enable"
+                      placeholder="활성화"
+                      checked={editCommonCode.enable}
+                      onChange={(e) => setEditCommonCode({ ...editCommonCode, enable: (e.target as HTMLInputElement).checked })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsCommonCodeEditSheetOpen(false)}>
+                    취소
+                  </Button>
+                  <Button size="sm" onClick={updateCommonCodeClick}>
+                    저장
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+      <Card>
+        <CardContent className="p-2">
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+          {renderPagination()}
+        </CardContent>
+      </Card>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        onConfirm={newGroupCodeSubmit}
+      />
+      <ConfirmDialog
+        isOpen={isConfirmOpenUpdate}
+        onOpenChange={setIsConfirmOpenUpdate}
+        onConfirm={groupCodeEditSubmit}
+      />
+      <ConfirmDialog
+        isOpen={isConfirmOpenCommonCode}
+        onOpenChange={setIsConfirmOpenCommonCode}
+        onConfirm={newCommonCodeSubmit}
+      />
+      <ConfirmDialog
+        isOpen={isConfirmOpenCommonCodeUpdate}
+        onOpenChange={setIsConfirmOpenCommonCodeUpdate}
+        onConfirm={commonCodeEditSubmit}
+      />
+      <ConfirmDialog
+        isOpen={isConfirmOpenCommonCodeDelete}
+        onOpenChange={setIsConfirmOpenCommonCodeDelete}
+        onConfirm={commonCodeDeleteSubmit}
+        description="삭제하시겠습니까?"
+      />
+
+    </div>
+  );
+}
