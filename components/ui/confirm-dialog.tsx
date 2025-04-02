@@ -50,7 +50,7 @@ const ConfirmDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            {description == "" ? "저장하시겠습니까?" : ""}
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -53,6 +53,7 @@ export default function CommonCodePage() {
   const [confirmDescription, setConfirmDescription] = useState<string>("");
   const [formErrorsGroupCode, setFormErrorsGroupCode] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
   const [formErrorsCommonCode, setFormErrorsCommonCode] = useState<{ code?: string; codeDesc?: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [newCode, setNewCode] = useState<GroupCode>({
     groupCode: '',
@@ -251,6 +252,8 @@ export default function CommonCodePage() {
   };
 
   const groupCodeNewClick = () => {
+    if (isSubmitting) return;
+
     setFormErrorsGroupCode(null);
 
     const validationResult = formSchemaGroupCode.safeParse(newCode);
@@ -268,10 +271,14 @@ export default function CommonCodePage() {
       return;
     }
     setConfirmAction(newGroupCodeSubmit);
+    setConfirmDescription("저장하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
   const newGroupCodeSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       await insertGroupCode(newCode);
       toast({
@@ -283,19 +290,22 @@ export default function CommonCodePage() {
         groupCodeDesc: '',
       });
       setIsGroupCodeNewSheetOpen(false);
-      setIsConfirmOpen(false);
       fetchGroupCodes();
     } catch (error) {
-      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "그룹 코드 추가에 실패했습니다.",
         variant: "destructive"
       })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
   };
 
   const commonCodeNewClick = () => {
+    if (isSubmitting) return;
+
     setFormErrorsCommonCode(null);
 
     const validationResult = formSchemaCommonCode.safeParse(newCommonCode);
@@ -314,10 +324,14 @@ export default function CommonCodePage() {
       return;
     }
     setConfirmAction(newCommonCodeSubmit);
+    setConfirmDescription("저장하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
   const newCommonCodeSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       if (selectedGroupCode?.uid) {
         newCommonCode.groupCodeId = selectedGroupCode.uid;
@@ -334,16 +348,17 @@ export default function CommonCodePage() {
           groupCodeId: '',
         });
         setIsCommonCodeNewSheetOpen(false);
-        setIsConfirmOpen(false);
         fetchCommonCodes();
       }
     } catch (error) {
-      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "공통 코드 추가에 실패했습니다.",
         variant: "destructive"
       })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -360,6 +375,8 @@ export default function CommonCodePage() {
   };
 
   const groupCodeEditClick = () => {
+    if (isSubmitting) return;
+
     setFormErrorsGroupCode(null);
 
     const validationResult = formSchemaGroupCode.safeParse(editGroupCode);
@@ -376,10 +393,14 @@ export default function CommonCodePage() {
       return;
     }
     setConfirmAction(groupCodeEditSubmit);
+    setConfirmDescription("수정하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
   const groupCodeEditSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       await updateGroupCode(editGroupCode);
       toast({
@@ -387,19 +408,22 @@ export default function CommonCodePage() {
         description: "그룹 코드가 성공적으로 수정되었습니다.",
       })
       setIsGroupCodeEditSheetOpen(false);
-      setIsConfirmOpen(false);
       fetchGroupCodes();
     } catch (error) {
-      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "그룹 코드 수정에 실패했습니다.",
         variant: "destructive"
       })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
   };
 
   const editCommonCodeClick = () => {
+    if (isSubmitting) return;
+
     setFormErrorsCommonCode(null);
 
     const validationResult = formSchemaCommonCode.safeParse(editCommonCode);
@@ -416,10 +440,14 @@ export default function CommonCodePage() {
       return;
     }
     setConfirmAction(commonCodeEditSubmit);
+    setConfirmDescription("수정하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
   const commonCodeEditSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       await updateCommonCode(editCommonCode);
       toast({
@@ -427,15 +455,16 @@ export default function CommonCodePage() {
         description: "공통 코드가 성공적으로 수정되었습니다.",
       })
       setIsCommonCodeEditSheetOpen(false);
-      setIsConfirmOpen(false);
       fetchCommonCodes();
     } catch (error) {
-      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "공통 코드 수정에 실패했습니다.",
         variant: "destructive"
       })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -456,15 +485,18 @@ export default function CommonCodePage() {
   };
 
   const commonCodeDeleteClick = (row: CommonCode) => {
+    if (isSubmitting) return;
+
     setSelectedCommonCode(row);
     setConfirmAction(commonCodeDeleteSubmit);
     setConfirmDescription("삭제하시겠습니까?");
-
     setIsConfirmOpen(true);
   };
 
   const commonCodeDeleteSubmit = async () => {
     if (!selectedCommonCode) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     try {
       await deleteCommonCode(selectedCommonCode);
@@ -472,15 +504,16 @@ export default function CommonCodePage() {
         title: "Success",
         description: "공통 코드가 성공적으로 삭제되었습니다.",
       })
-      setIsConfirmOpen(false);
       fetchCommonCodes();
     } catch (error) {
-      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "공통 코드 삭제에 실패했습니다.",
         variant: "destructive"
       })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -558,7 +591,7 @@ export default function CommonCodePage() {
                   <Button variant="outline" size="sm" onClick={() => setIsGroupCodeNewSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={groupCodeNewClick}>
+                  <Button size="sm" onClick={groupCodeNewClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
@@ -602,7 +635,7 @@ export default function CommonCodePage() {
                   <Button variant="outline" size="sm" onClick={() => setIsGroupCodeEditSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={groupCodeEditClick}>
+                  <Button size="sm" onClick={groupCodeEditClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
@@ -677,7 +710,7 @@ export default function CommonCodePage() {
                           <Button variant="outline" size="sm" onClick={() => setIsCommonCodeNewSheetOpen(false)}>
                             취소
                           </Button>
-                          <Button size="sm" onClick={commonCodeNewClick}>
+                          <Button size="sm" onClick={commonCodeNewClick} disabled={isSubmitting}>
                             저장
                           </Button>
                         </div>
@@ -751,7 +784,7 @@ export default function CommonCodePage() {
                   <Button variant="outline" size="sm" onClick={() => setIsCommonCodeEditSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={editCommonCodeClick}>
+                  <Button size="sm" onClick={editCommonCodeClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
