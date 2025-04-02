@@ -24,7 +24,7 @@ const ConfirmDialog = ({
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (data?: any) => Promise<void>;
   title?: string;
   description?: string;
   confirmText?: string;

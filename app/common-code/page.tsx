@@ -49,7 +49,7 @@ export default function CommonCodePage() {
   const [selectedGroupCode, setSelectedGroupCode] = useState<GroupCode | null>(null);
   const [selectedCommonCode, setSelectedCommonCode] = useState<CommonCode | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<() => Promise<void>>(async () => { });
+  const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
   const [formErrorsGroupCode, setFormErrorsGroupCode] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
   const [formErrorsCommonCode, setFormErrorsCommonCode] = useState<{ code?: string; codeDesc?: string } | null>(null);
@@ -487,16 +487,17 @@ export default function CommonCodePage() {
   const commonCodeDeleteClick = (row: CommonCode) => {
     if (isSubmitting) return;
 
-    setConfirmAction(() => commonCodeDeleteSubmit(row));
+    setConfirmAction(() => () => commonCodeDeleteSubmit(row));
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
   const commonCodeDeleteSubmit = async (row: CommonCode) => {
+    console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     try {
       await deleteCommonCode(row);
       toast({
