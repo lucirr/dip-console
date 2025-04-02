@@ -489,19 +489,22 @@ export default function CommonCodePage() {
   };
 
   const commonCodeDeleteClick = (row: CommonCode) => {
+    console.log(isSubmitting)
     if (isSubmitting) return;
 
     setSelectedCommonCode(row);
+    console.log(row, selectedCommonCode)
     setConfirmAction(() => commonCodeDeleteSubmit);
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
   const commonCodeDeleteSubmit = async () => {
+    console.log(selectedCommonCode)
     if (!selectedCommonCode) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
-
+    console.log(selectedCommonCode)
     try {
       await deleteCommonCode(selectedCommonCode);
       toast({
@@ -509,6 +512,7 @@ export default function CommonCodePage() {
         description: "공통 코드가 성공적으로 삭제되었습니다.",
       })
       fetchCommonCodes();
+      setSelectedCommonCode(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -656,7 +660,16 @@ export default function CommonCodePage() {
                     공통 코드
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex justify-end mb-4 border-t">
+                <div className="flex justify-end  gap-2 pb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshCommonCode}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    새로고침
+                  </Button>
                   <Sheet open={isCommonCodeNewSheetOpen} onOpenChange={setIsCommonCodeNewSheetOpen}>
                     <SheetTrigger asChild>
                       <Button
@@ -723,21 +736,9 @@ export default function CommonCodePage() {
                   </Sheet>
                 </div>
                 <div className="">
-                  <div className="flex justify-end pb-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRefreshCommonCode}
-                      disabled={isLoading}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      새로고침
-                    </Button>
-                  </div>
                   <DataTable
                     columns={commonCodeColumns}
                     data={paginatedCommonCode}
-                  // onRefresh={handleRefreshCommonCode}
                   />
                   <TablePagination
                     currentPage={pageCommonCode}
