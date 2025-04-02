@@ -270,7 +270,7 @@ export default function CommonCodePage() {
       setFormErrorsGroupCode(errors);
       return;
     }
-    setConfirmAction(newGroupCodeSubmit);
+    setConfirmAction(() => newGroupCodeSubmit);
     setConfirmDescription("저장하시겠습니까?");
     setIsConfirmOpen(true);
   };
@@ -323,7 +323,7 @@ export default function CommonCodePage() {
       setFormErrorsCommonCode(errors);
       return;
     }
-    setConfirmAction(newCommonCodeSubmit);
+    setConfirmAction(() => newCommonCodeSubmit);
     setConfirmDescription("저장하시겠습니까?");
     setIsConfirmOpen(true);
   };
@@ -392,7 +392,7 @@ export default function CommonCodePage() {
       setFormErrorsGroupCode(errors);
       return;
     }
-    setConfirmAction(groupCodeEditSubmit);
+    setConfirmAction(() => groupCodeEditSubmit);
     setConfirmDescription("수정하시겠습니까?");
     setIsConfirmOpen(true);
   };
@@ -439,7 +439,7 @@ export default function CommonCodePage() {
       setFormErrorsCommonCode(errors);
       return;
     }
-    setConfirmAction(commonCodeEditSubmit);
+    setConfirmAction(() => commonCodeEditSubmit);
     setConfirmDescription("수정하시겠습니까?");
     setIsConfirmOpen(true);
   };
@@ -488,7 +488,7 @@ export default function CommonCodePage() {
     if (isSubmitting) return;
 
     setSelectedCommonCode(row);
-    setConfirmAction(commonCodeDeleteSubmit);
+    setConfirmAction(() => commonCodeDeleteSubmit);
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
