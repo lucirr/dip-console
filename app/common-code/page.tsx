@@ -125,11 +125,11 @@ export default function CommonCodePage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => groupCodeEditClick(row)}>
+            <DropdownMenuItem onClick={() => groupCodeEditSheetClick(row)}>
               <Pencil className="h-4 w-4 mr-2" />
               편집
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => commonCodeClick(row)}>
+            <DropdownMenuItem onClick={() => commonCodeSheetClick(row)}>
               <Code className="h-4 w-4 mr-2" />
               공통코드
             </DropdownMenuItem>
@@ -178,7 +178,7 @@ export default function CommonCodePage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => commonCodeEditClick(row)}>
+            <DropdownMenuItem onClick={() => commonCodeEditSheetClick(row)}>
               <Pencil className="h-4 w-4 mr-2" />
               편집
             </DropdownMenuItem>
@@ -250,7 +250,7 @@ export default function CommonCodePage() {
     fetchCommonCodes();
   };
 
-  const saveClick = () => {
+  const groupCodeNewClick = () => {
     setFormErrorsGroupCode(null);
 
     const validationResult = formSchemaGroupCode.safeParse(newCode);
@@ -295,7 +295,7 @@ export default function CommonCodePage() {
     }
   };
 
-  const saveCommonCodeClick = () => {
+  const commonCodeNewClick = () => {
     setFormErrorsCommonCode(null);
 
     const validationResult = formSchemaCommonCode.safeParse(newCommonCode);
@@ -347,7 +347,7 @@ export default function CommonCodePage() {
     }
   };
 
-  const groupCodeEditClick = (row: GroupCode) => {
+  const groupCodeEditSheetClick = (row: GroupCode) => {
     setSelectedGroupCode(row);
     setEditGroupCode({
       uid: row.uid,
@@ -359,7 +359,7 @@ export default function CommonCodePage() {
     setIsGroupCodeEditSheetOpen(true);
   };
 
-  const updateClick = () => {
+  const groupCodeEditClick = () => {
     setFormErrorsGroupCode(null);
 
     const validationResult = formSchemaGroupCode.safeParse(editGroupCode);
@@ -399,7 +399,7 @@ export default function CommonCodePage() {
     }
   };
 
-  const updateCommonCodeClick = () => {
+  const editCommonCodeClick = () => {
     setFormErrorsCommonCode(null);
 
     const validationResult = formSchemaCommonCode.safeParse(editCommonCode);
@@ -439,7 +439,7 @@ export default function CommonCodePage() {
     }
   };
 
-  const commonCodeEditClick = (row: CommonCode) => {
+  const commonCodeEditSheetClick = (row: CommonCode) => {
     setSelectedCommonCode(row);
     setEditCommonCode({
       uid: row.uid,
@@ -484,7 +484,7 @@ export default function CommonCodePage() {
     }
   };
 
-  const commonCodeClick = (row: GroupCode) => {
+  const commonCodeSheetClick = (row: GroupCode) => {
     setSelectedGroupCode(row);
     setIsCommonCodeSheetOpen(true);
   };
@@ -558,7 +558,7 @@ export default function CommonCodePage() {
                   <Button variant="outline" size="sm" onClick={() => setIsGroupCodeNewSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={saveClick}>
+                  <Button size="sm" onClick={groupCodeNewClick}>
                     저장
                   </Button>
                 </div>
@@ -602,7 +602,7 @@ export default function CommonCodePage() {
                   <Button variant="outline" size="sm" onClick={() => setIsGroupCodeEditSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={updateClick}>
+                  <Button size="sm" onClick={groupCodeEditClick}>
                     저장
                   </Button>
                 </div>
@@ -677,7 +677,7 @@ export default function CommonCodePage() {
                           <Button variant="outline" size="sm" onClick={() => setIsCommonCodeNewSheetOpen(false)}>
                             취소
                           </Button>
-                          <Button size="sm" onClick={saveCommonCodeClick}>
+                          <Button size="sm" onClick={commonCodeNewClick}>
                             저장
                           </Button>
                         </div>
@@ -751,7 +751,7 @@ export default function CommonCodePage() {
                   <Button variant="outline" size="sm" onClick={() => setIsCommonCodeEditSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={updateCommonCodeClick}>
+                  <Button size="sm" onClick={editCommonCodeClick}>
                     저장
                   </Button>
                 </div>
