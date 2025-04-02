@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Code, MoreVertical, Check } from 'lucide-react';
+import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -723,10 +723,21 @@ export default function CommonCodePage() {
                   </Sheet>
                 </div>
                 <div className="">
+                  <div className="flex justify-end pb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefreshCommonCode}
+                      disabled={isLoading}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      새로고침
+                    </Button>
+                  </div>
                   <DataTable
                     columns={commonCodeColumns}
                     data={paginatedCommonCode}
-                    onRefresh={handleRefreshCommonCode}
+                  // onRefresh={handleRefreshCommonCode}
                   />
                   <TablePagination
                     currentPage={pageCommonCode}
