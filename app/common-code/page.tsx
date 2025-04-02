@@ -31,35 +31,27 @@ interface Column {
   cell?: (row: any, index?: number) => ReactNode;
 }
 
-const formSchema = z.object({
-  groupCode: z.string().min(1, { message: "그룹코드는 필수 입력 항목입니다." }),
-  groupCodeDesc: z.string().min(1, { message: "그룹코드 설명은 필수 입력 항목입니다." }),
-});
 
-const formSchemaCommonCode = z.object({
-  code: z.string().min(1, { message: "공통코드는 필수 입력 항목입니다." }),
-  codeDesc: z.string().min(1, { message: "공통코드 설명은 필수 입력 항목입니다." }),
-});
 
 export default function CommonCodePage() {
   const { toast } = useToast()
-  const [data, setData] = useState<GroupCode[]>([]);
+  const [groupCodeData, setGroupCodeData] = useState<GroupCode[]>([]);
   const [commonCodeData, setCommonCodeData] = useState<CommonCode[]>([]);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [isGroupCodeNewSheetOpen, setIsGroupCodeNewSheetOpen] = useState(false);
+  const [isGroupCodeEditSheetOpen, setIsGroupCodeEditSheetOpen] = useState(false);
   const [isCommonCodeSheetOpen, setIsCommonCodeSheetOpen] = useState(false);
   const [isCommonCodeNewSheetOpen, setIsCommonCodeNewSheetOpen] = useState(false);
   const [isCommonCodeEditSheetOpen, setIsCommonCodeEditSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
+  const [pageGroupCode, setPageGroupCode] = useState(1);
   const [pageCommonCode, setPageCommonCode] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedGroupCode, setSelectedGroupCode] = useState<GroupCode | null>(null);
   const [selectedCommonCode, setSelectedCommonCode] = useState<CommonCode | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<(() => Promise<void>)>(() => Promise.resolve());
+  const [confirmAction, setConfirmAction] = useState<() => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
-  const [formErrors, setFormErrors] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
+  const [formErrorsGroupCode, setFormErrorsGroupCode] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
   const [formErrorsCommonCode, setFormErrorsCommonCode] = useState<{ code?: string; codeDesc?: string } | null>(null);
 
   const [newCode, setNewCode] = useState<GroupCode>({
@@ -89,8 +81,18 @@ export default function CommonCodePage() {
     groupCodeId: '',
   });
 
-  const paginatedData = data.slice((page - 1) * pageSize, page * pageSize);
-  const totalPages = Math.ceil(data.length / pageSize);
+  const formSchemaGroupCode = z.object({
+    groupCode: z.string().min(1, { message: "그룹코드는 필수 입력 항목입니다." }),
+    groupCodeDesc: z.string().min(1, { message: "그룹코드 설명은 필수 입력 항목입니다." }),
+  });
+
+  const formSchemaCommonCode = z.object({
+    code: z.string().min(1, { message: "공통코드는 필수 입력 항목입니다." }),
+    codeDesc: z.string().min(1, { message: "공통코드 설명은 필수 입력 항목입니다." }),
+  });
+
+  const paginatedData = groupCodeData.slice((pageGroupCode - 1) * pageSize, pageGroupCode * pageSize);
+  const totalPages = Math.ceil(groupCodeData.length / pageSize);
 
   const paginatedCommonCode = commonCodeData.slice((pageCommonCode - 1) * pageSize, pageCommonCode * pageSize);
   const totalPagesCommonCode = Math.ceil(commonCodeData.length / pageSize);
@@ -104,7 +106,7 @@ export default function CommonCodePage() {
       cell: (row: any, index?: number) => {
         const rowIndex = paginatedData.findIndex(item => item === row);
         return (
-          <div className="text-center">{(page - 1) * pageSize + rowIndex + 1}</div>
+          <div className="text-center">{(pageGroupCode - 1) * pageSize + rowIndex + 1}</div>
         );
       }
     },
@@ -194,9 +196,9 @@ export default function CommonCodePage() {
     setIsLoading(true);
     try {
       const response = await getGroupCode()
-      setData(response);
+      setGroupCodeData(response);
     } catch (error) {
-      setData([]);
+      setGroupCodeData([]);
     } finally {
       setIsLoading(false);
     }
@@ -236,6 +238,10 @@ export default function CommonCodePage() {
     }
   }, [selectedGroupCode, isCommonCodeSheetOpen]);
 
+  useEffect(() => {
+    setFormErrorsGroupCode(null);
+  }, [isGroupCodeNewSheetOpen]);
+
   const handleRefresh = () => {
     fetchGroupCodes();
   };
@@ -245,9 +251,9 @@ export default function CommonCodePage() {
   };
 
   const saveClick = () => {
-    setFormErrors(null);
+    setFormErrorsGroupCode(null);
 
-    const validationResult = formSchema.safeParse(newCode);
+    const validationResult = formSchemaGroupCode.safeParse(newCode);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
@@ -258,11 +264,10 @@ export default function CommonCodePage() {
         return acc;
       }, {} as { [key: string]: string });
 
-      setFormErrors(errors);
+      setFormErrorsGroupCode(errors);
       return;
     }
-    setConfirmAction(async () => { await newGroupCodeSubmit(); });
-    setConfirmDescription("");
+    setConfirmAction(newGroupCodeSubmit);
     setIsConfirmOpen(true);
   };
 
@@ -277,15 +282,11 @@ export default function CommonCodePage() {
         groupCode: '',
         groupCodeDesc: '',
       });
-      setIsSheetOpen(false);
+      setIsGroupCodeNewSheetOpen(false);
       setIsConfirmOpen(false);
-      setConfirmAction(() => Promise.resolve());
-      setConfirmDescription("");
       fetchGroupCodes();
     } catch (error) {
       setIsConfirmOpen(false);
-      setConfirmAction(() => Promise.resolve());
-      setConfirmDescription("");
       toast({
         title: "Error",
         description: "그룹 코드 추가에 실패했습니다.",
@@ -312,8 +313,7 @@ export default function CommonCodePage() {
       setFormErrorsCommonCode(errors);
       return;
     }
-    setConfirmAction(async () => { await newCommonCodeSubmit(); });
-    setConfirmDescription("");
+    setConfirmAction(newCommonCodeSubmit);
     setIsConfirmOpen(true);
   };
 
@@ -335,14 +335,10 @@ export default function CommonCodePage() {
         });
         setIsCommonCodeNewSheetOpen(false);
         setIsConfirmOpen(false);
-        setConfirmAction(() => Promise.resolve());
-        setConfirmDescription("");
         fetchCommonCodes();
       }
     } catch (error) {
       setIsConfirmOpen(false);
-      setConfirmAction(() => Promise.resolve());
-      setConfirmDescription("");
       toast({
         title: "Error",
         description: "공통 코드 추가에 실패했습니다.",
@@ -359,14 +355,14 @@ export default function CommonCodePage() {
       groupCodeDesc: row.groupCodeDesc,
       createdAt: row.createdAt,
     });
-    setFormErrors(null);
-    setIsEditSheetOpen(true);
+    setFormErrorsGroupCode(null);
+    setIsGroupCodeEditSheetOpen(true);
   };
 
   const updateClick = () => {
-    setFormErrors(null);
+    setFormErrorsGroupCode(null);
 
-    const validationResult = formSchema.safeParse(editGroupCode);
+    const validationResult = formSchemaGroupCode.safeParse(editGroupCode);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
@@ -376,11 +372,10 @@ export default function CommonCodePage() {
         }
         return acc;
       }, {} as { [key: string]: string });
-      setFormErrors(errors);
+      setFormErrorsGroupCode(errors);
       return;
     }
-    setConfirmAction(async () => { await groupCodeEditSubmit(); });
-    setConfirmDescription("");
+    setConfirmAction(groupCodeEditSubmit);
     setIsConfirmOpen(true);
   };
 
@@ -391,9 +386,11 @@ export default function CommonCodePage() {
         title: "Success",
         description: "그룹 코드가 성공적으로 수정되었습니다.",
       })
-      setIsEditSheetOpen(false);
+      setIsGroupCodeEditSheetOpen(false);
+      setIsConfirmOpen(false);
       fetchGroupCodes();
     } catch (error) {
+      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "그룹 코드 수정에 실패했습니다.",
@@ -418,8 +415,7 @@ export default function CommonCodePage() {
       setFormErrorsCommonCode(errors);
       return;
     }
-    setConfirmAction(async () => { await commonCodeEditSubmit(); });
-    setConfirmDescription("");
+    setConfirmAction(commonCodeEditSubmit);
     setIsConfirmOpen(true);
   };
 
@@ -431,8 +427,10 @@ export default function CommonCodePage() {
         description: "공통 코드가 성공적으로 수정되었습니다.",
       })
       setIsCommonCodeEditSheetOpen(false);
+      setIsConfirmOpen(false);
       fetchCommonCodes();
     } catch (error) {
+      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "공통 코드 수정에 실패했습니다.",
@@ -459,11 +457,12 @@ export default function CommonCodePage() {
 
   const commonCodeDeleteClick = (row: CommonCode) => {
     setSelectedCommonCode(row);
-    setConfirmAction(async () => { await commonCodeDeleteSubmit(); });
+    setConfirmAction(commonCodeDeleteSubmit);
     setConfirmDescription("삭제하시겠습니까?");
 
     setIsConfirmOpen(true);
   };
+
   const commonCodeDeleteSubmit = async () => {
     if (!selectedCommonCode) return;
 
@@ -473,8 +472,10 @@ export default function CommonCodePage() {
         title: "Success",
         description: "공통 코드가 성공적으로 삭제되었습니다.",
       })
+      setIsConfirmOpen(false);
       fetchCommonCodes();
     } catch (error) {
+      setIsConfirmOpen(false);
       toast({
         title: "Error",
         description: "공통 코드 삭제에 실패했습니다.",
@@ -489,7 +490,7 @@ export default function CommonCodePage() {
   };
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setPageGroupCode(newPage);
   };
 
   const handlePageChangeCommonCode = (newPage: number) => {
@@ -505,7 +506,7 @@ export default function CommonCodePage() {
             <h2 className="text-3xl font-bold tracking-tight">공통 코드</h2>
             <p className="mt-1 text-sm text-gray-500">공통 코드를 생성하고 관리할 수 있습니다.</p>
           </div>
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <Sheet open={isGroupCodeNewSheetOpen} onOpenChange={setIsGroupCodeNewSheetOpen}>
             <SheetTrigger asChild>
               <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
@@ -517,7 +518,7 @@ export default function CommonCodePage() {
                 <SheetHeader>
                   <SheetTitle>새 그룹코드 추가</SheetTitle>
                 </SheetHeader>
-                <div className="grid gap-4 py-4 overflow-y-auto">
+                <div className="grid gap-4 py-4 border-t overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="new-code">그룹코드</Label>
                     <Input
@@ -526,7 +527,7 @@ export default function CommonCodePage() {
                       value={newCode.groupCode}
                       onChange={(e) => {
                         setNewCode({ ...newCode, groupCode: e.target.value });
-                        setFormErrors(prevErrors => ({
+                        setFormErrorsGroupCode(prevErrors => ({
                           ...prevErrors,
                           groupCode: undefined,
                         }));
@@ -534,7 +535,7 @@ export default function CommonCodePage() {
                       className="focus:ring-0"
                       autoFocus={false}
                     />
-                    {formErrors?.groupCode && <p className="text-red-500 text-sm">{formErrors.groupCode}</p>}
+                    {formErrorsGroupCode?.groupCode && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCode}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-desc">그룹코드 설명</Label>
@@ -544,17 +545,17 @@ export default function CommonCodePage() {
                       value={newCode.groupCodeDesc}
                       onChange={(e) => {
                         setNewCode({ ...newCode, groupCodeDesc: e.target.value });
-                        setFormErrors(prevErrors => ({
+                        setFormErrorsGroupCode(prevErrors => ({
                           ...prevErrors,
                           groupCodeDesc: undefined,
                         }));
                       }}
                     />
-                    {formErrors?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrors.groupCodeDesc}</p>}
+                    {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsSheetOpen(false)}>
+                <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
+                  <Button variant="outline" size="sm" onClick={() => setIsGroupCodeNewSheetOpen(false)}>
                     취소
                   </Button>
                   <Button size="sm" onClick={saveClick}>
@@ -564,7 +565,7 @@ export default function CommonCodePage() {
               </div>
             </SheetContent>
           </Sheet>
-          <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
+          <Sheet open={isGroupCodeEditSheetOpen} onOpenChange={setIsGroupCodeEditSheetOpen}>
             <SheetTrigger asChild>
             </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
@@ -572,7 +573,7 @@ export default function CommonCodePage() {
                 <SheetHeader>
                   <SheetTitle>그룹코드 수정</SheetTitle>
                 </SheetHeader>
-                <div className="grid gap-4 py-4 overflow-y-auto">
+                <div className="grid gap-4 py-4 border-t overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="edit-code">그룹코드</Label>
                     <div className="p-2 bg-muted rounded-md">
@@ -587,18 +588,18 @@ export default function CommonCodePage() {
                       value={editGroupCode.groupCodeDesc}
                       onChange={(e) => {
                         setEditGroupCode({ ...editGroupCode, groupCodeDesc: e.target.value }),
-                          setFormErrors(prevErrors => ({
+                          setFormErrorsGroupCode(prevErrors => ({
                             ...prevErrors,
                             groupCodeDesc: undefined,
                           }));
                       }}
                       autoFocus={true}
                     />
-                    {formErrors?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrors.groupCodeDesc}</p>}
+                    {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsEditSheetOpen(false)}>
+                <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
+                  <Button variant="outline" size="sm" onClick={() => setIsGroupCodeEditSheetOpen(false)}>
                     취소
                   </Button>
                   <Button size="sm" onClick={updateClick}>
@@ -618,7 +619,7 @@ export default function CommonCodePage() {
                     공통 코드
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end mb-4 border-t">
                   <Sheet open={isCommonCodeNewSheetOpen} onOpenChange={setIsCommonCodeNewSheetOpen}>
                     <SheetTrigger asChild>
                       <Button
@@ -632,7 +633,7 @@ export default function CommonCodePage() {
                         <SheetHeader>
                           <SheetTitle>새 공통코드 추가</SheetTitle>
                         </SheetHeader>
-                        <div className="grid gap-4 py-4 overflow-y-auto">
+                        <div className="grid gap-4 py-4 border-t overflow-y-auto">
                           <div className="space-y-2">
                             <Label htmlFor="new-code">그룹코드</Label>
                             <div className="p-2 bg-muted rounded-md">
@@ -672,7 +673,7 @@ export default function CommonCodePage() {
                             {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
                           </div>
                         </div>
-                        <div className="flex justify-end space-x-2 mt-6">
+                        <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
                           <Button variant="outline" size="sm" onClick={() => setIsCommonCodeNewSheetOpen(false)}>
                             취소
                           </Button>
@@ -709,7 +710,7 @@ export default function CommonCodePage() {
                 <SheetHeader>
                   <SheetTitle>공통코드 수정</SheetTitle>
                 </SheetHeader>
-                <div className="grid gap-4 py-4 overflow-y-auto">
+                <div className="grid gap-4 py-4 border-t overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="edit-code">코드</Label>
                     <div className="p-2 bg-muted rounded-md">
@@ -746,7 +747,7 @@ export default function CommonCodePage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
                   <Button variant="outline" size="sm" onClick={() => setIsCommonCodeEditSheetOpen(false)}>
                     취소
                   </Button>
@@ -768,9 +769,9 @@ export default function CommonCodePage() {
             isLoading={isLoading}
           />
           <TablePagination
-            currentPage={page}
+            currentPage={pageGroupCode}
             totalPages={totalPages}
-            dataLength={data.length}
+            dataLength={groupCodeData.length}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />
@@ -779,7 +780,7 @@ export default function CommonCodePage() {
       <ConfirmDialog
         isOpen={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}
-        onConfirm={confirmAction || (() => { })}
+        onConfirm={confirmAction}
         description={confirmDescription}
       />
 

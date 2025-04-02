@@ -24,7 +24,7 @@ const ConfirmDialog = ({
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm?: () => Promise<void>;
+  onConfirm: () => Promise<void>;
   title?: string;
   description?: string;
   confirmText?: string;
@@ -36,7 +36,7 @@ const ConfirmDialog = ({
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      await (onConfirm ? onConfirm() : Promise.resolve());
+      await onConfirm();
     } catch (error) {
       console.error("Confirmation action failed:", error);
     } finally {
@@ -50,7 +50,7 @@ const ConfirmDialog = ({
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            {description}
+            {description == "" ? "저장하시겠습니까?" : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
