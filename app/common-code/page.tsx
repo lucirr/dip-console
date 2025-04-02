@@ -240,10 +240,6 @@ export default function CommonCodePage() {
   }, [selectedGroupCode, isCommonCodeSheetOpen]);
 
   useEffect(() => {
-    setSelectedCommonCode(selectedCommonCode);
-  }, [selectedCommonCode, isCommonCodeSheetOpen]);
-
-  useEffect(() => {
     setFormErrorsGroupCode(null);
   }, [isGroupCodeNewSheetOpen]);
 
@@ -489,30 +485,25 @@ export default function CommonCodePage() {
   };
 
   const commonCodeDeleteClick = (row: CommonCode) => {
-    console.log(isSubmitting)
     if (isSubmitting) return;
 
-    setSelectedCommonCode(row);
-    console.log(row, selectedCommonCode)
-    setConfirmAction(() => commonCodeDeleteSubmit);
+    setConfirmAction(() => commonCodeDeleteSubmit(row));
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const commonCodeDeleteSubmit = async () => {
-    console.log(selectedCommonCode)
-    if (!selectedCommonCode) return;
+  const commonCodeDeleteSubmit = async (row: CommonCode) => {
+    if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
-    console.log(selectedCommonCode)
+    
     try {
-      await deleteCommonCode(selectedCommonCode);
+      await deleteCommonCode(row);
       toast({
         title: "Success",
         description: "공통 코드가 성공적으로 삭제되었습니다.",
       })
       fetchCommonCodes();
-      setSelectedCommonCode(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -614,7 +605,7 @@ export default function CommonCodePage() {
                 <SheetHeader>
                   <SheetTitle>그룹코드 수정</SheetTitle>
                 </SheetHeader>
-                <div className="grid gap-4 py-4 border-t overflow-y-auto">
+                <div className="grid gap-4 py-4 overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="edit-code">그룹코드</Label>
                     <div className="p-2 bg-muted rounded-md">
@@ -683,7 +674,7 @@ export default function CommonCodePage() {
                         <SheetHeader>
                           <SheetTitle>새 공통코드 추가</SheetTitle>
                         </SheetHeader>
-                        <div className="grid gap-4 py-4 border-t overflow-y-auto">
+                        <div className="grid gap-4 py-4 overflow-y-auto">
                           <div className="space-y-2">
                             <Label htmlFor="new-code">그룹코드</Label>
                             <div className="p-2 bg-muted rounded-md">
@@ -759,7 +750,7 @@ export default function CommonCodePage() {
                 <SheetHeader>
                   <SheetTitle>공통코드 수정</SheetTitle>
                 </SheetHeader>
-                <div className="grid gap-4 py-4 border-t overflow-y-auto">
+                <div className="grid gap-4 py-4 overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="edit-code">코드</Label>
                     <div className="p-2 bg-muted rounded-md">
