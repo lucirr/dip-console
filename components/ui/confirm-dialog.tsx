@@ -24,7 +24,7 @@ const ConfirmDialog = ({
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => Promise<void>;
+  onConfirm?: () => Promise<void>;
   title?: string;
   description?: string;
   confirmText?: string;
@@ -36,7 +36,7 @@ const ConfirmDialog = ({
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      await onConfirm();
+      await (onConfirm ? onConfirm() : Promise.resolve());
     } catch (error) {
       console.error("Confirmation action failed:", error);
     } finally {

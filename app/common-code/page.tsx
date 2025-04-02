@@ -57,10 +57,8 @@ export default function CommonCodePage() {
   const [selectedGroupCode, setSelectedGroupCode] = useState<GroupCode | null>(null);
   const [selectedCommonCode, setSelectedCommonCode] = useState<CommonCode | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isConfirmOpenUpdate, setIsConfirmOpenUpdate] = useState(false);
-  const [isConfirmOpenCommonCode, setIsConfirmOpenCommonCode] = useState(false);
-  const [isConfirmOpenCommonCodeUpdate, setIsConfirmOpenCommonCodeUpdate] = useState(false);
-  const [isConfirmOpenCommonCodeDelete, setIsConfirmOpenCommonCodeDelete] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(() => Promise<void>)>(() => Promise.resolve());
+  const [confirmDescription, setConfirmDescription] = useState<string>("");
   const [formErrors, setFormErrors] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
   const [formErrorsCommonCode, setFormErrorsCommonCode] = useState<{ code?: string; codeDesc?: string } | null>(null);
 
@@ -155,10 +153,10 @@ export default function CommonCodePage() {
     { key: 'groupCode', title: '그룹코드', align: 'left' },
     { key: 'code', title: '코드', align: 'left' },
     { key: 'codeDesc', title: '코드설명', align: 'left' },
-    { 
-      key: 'enable', 
-      title: '활성화', 
-      width: 'w-[100px]', 
+    {
+      key: 'enable',
+      title: '활성화',
+      width: 'w-[100px]',
       align: 'left',
       cell: (row: CommonCode) => (
         <div className="flex justify-left">
@@ -263,6 +261,8 @@ export default function CommonCodePage() {
       setFormErrors(errors);
       return;
     }
+    setConfirmAction(async () => { await newGroupCodeSubmit(); });
+    setConfirmDescription("");
     setIsConfirmOpen(true);
   };
 
@@ -279,9 +279,13 @@ export default function CommonCodePage() {
       });
       setIsSheetOpen(false);
       setIsConfirmOpen(false);
+      setConfirmAction(() => Promise.resolve());
+      setConfirmDescription("");
       fetchGroupCodes();
     } catch (error) {
       setIsConfirmOpen(false);
+      setConfirmAction(() => Promise.resolve());
+      setConfirmDescription("");
       toast({
         title: "Error",
         description: "그룹 코드 추가에 실패했습니다.",
@@ -308,7 +312,9 @@ export default function CommonCodePage() {
       setFormErrorsCommonCode(errors);
       return;
     }
-    setIsConfirmOpenCommonCode(true);
+    setConfirmAction(async () => { await newCommonCodeSubmit(); });
+    setConfirmDescription("");
+    setIsConfirmOpen(true);
   };
 
   const newCommonCodeSubmit = async () => {
@@ -328,11 +334,15 @@ export default function CommonCodePage() {
           groupCodeId: '',
         });
         setIsCommonCodeNewSheetOpen(false);
-        setIsConfirmOpenCommonCode(false);
+        setIsConfirmOpen(false);
+        setConfirmAction(() => Promise.resolve());
+        setConfirmDescription("");
         fetchCommonCodes();
       }
     } catch (error) {
-      setIsConfirmOpenCommonCode(false);
+      setIsConfirmOpen(false);
+      setConfirmAction(() => Promise.resolve());
+      setConfirmDescription("");
       toast({
         title: "Error",
         description: "공통 코드 추가에 실패했습니다.",
@@ -369,7 +379,9 @@ export default function CommonCodePage() {
       setFormErrors(errors);
       return;
     }
-    setIsConfirmOpenUpdate(true);
+    setConfirmAction(async () => { await groupCodeEditSubmit(); });
+    setConfirmDescription("");
+    setIsConfirmOpen(true);
   };
 
   const groupCodeEditSubmit = async () => {
@@ -406,7 +418,9 @@ export default function CommonCodePage() {
       setFormErrorsCommonCode(errors);
       return;
     }
-    setIsConfirmOpenCommonCodeUpdate(true);
+    setConfirmAction(async () => { await commonCodeEditSubmit(); });
+    setConfirmDescription("");
+    setIsConfirmOpen(true);
   };
 
   const commonCodeEditSubmit = async () => {
@@ -445,9 +459,11 @@ export default function CommonCodePage() {
 
   const commonCodeDeleteClick = (row: CommonCode) => {
     setSelectedCommonCode(row);
-    setIsConfirmOpenCommonCodeDelete(true);
-  };
+    setConfirmAction(async () => { await commonCodeDeleteSubmit(); });
+    setConfirmDescription("삭제하시겠습니까?");
 
+    setIsConfirmOpen(true);
+  };
   const commonCodeDeleteSubmit = async () => {
     if (!selectedCommonCode) return;
 
@@ -717,8 +733,8 @@ export default function CommonCodePage() {
                     {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Label htmlFor="edit-desc">활성화</Label>
+                    <Label htmlFor="edit-desc">활성화</Label>
+                    <div className="mt-2">
                       <Checkbox
                         id="edit-enable"
                         placeholder="활성화"
@@ -763,28 +779,8 @@ export default function CommonCodePage() {
       <ConfirmDialog
         isOpen={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}
-        onConfirm={newGroupCodeSubmit}
-      />
-      <ConfirmDialog
-        isOpen={isConfirmOpenUpdate}
-        onOpenChange={setIsConfirmOpenUpdate}
-        onConfirm={groupCodeEditSubmit}
-      />
-      <ConfirmDialog
-        isOpen={isConfirmOpenCommonCode}
-        onOpenChange={setIsConfirmOpenCommonCode}
-        onConfirm={newCommonCodeSubmit}
-      />
-      <ConfirmDialog
-        isOpen={isConfirmOpenCommonCodeUpdate}
-        onOpenChange={setIsConfirmOpenCommonCodeUpdate}
-        onConfirm={commonCodeEditSubmit}
-      />
-      <ConfirmDialog
-        isOpen={isConfirmOpenCommonCodeDelete}
-        onOpenChange={setIsConfirmOpenCommonCodeDelete}
-        onConfirm={commonCodeDeleteSubmit}
-        description="삭제하시겠습니까?"
+        onConfirm={confirmAction || (() => { })}
+        description={confirmDescription}
       />
 
     </div>
