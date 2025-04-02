@@ -240,6 +240,10 @@ export default function CommonCodePage() {
   }, [selectedGroupCode, isCommonCodeSheetOpen]);
 
   useEffect(() => {
+    setSelectedCommonCode(selectedCommonCode);
+  }, [selectedCommonCode, isCommonCodeSheetOpen]);
+
+  useEffect(() => {
     setFormErrorsGroupCode(null);
   }, [isGroupCodeNewSheetOpen]);
 
