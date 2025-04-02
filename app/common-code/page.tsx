@@ -660,7 +660,7 @@ export default function CommonCodePage() {
                     공통 코드
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex justify-end  gap-2 pb-4">
+                <div className="flex justify-end gap-2 pb-4">
                   <Button
                     variant="outline"
                     size="sm"
