@@ -10,7 +10,7 @@ const nextConfig = {
       return [
         {
           source: '/api/v1/:path*',
-          destination: process.env.NEXT_PUBLIC_API_URL + '/:path*',
+          destination: 'http://dip-api:8087/api/v1/:path*',
         },
       ]
     }

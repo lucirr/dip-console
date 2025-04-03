@@ -2,10 +2,8 @@
 
 import type { GroupCode, CommonCode } from "@/types/groupcode"
 
-const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? 'https://dip-api.paasup.io/api/v1';
-// const apiUrl: string = '/api/v1';
-//const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '')+':'+ (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
-const token: string = 'Basic ' + btoa('admin:admin');
+const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
+const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '')+':'+ (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
 const hostname: string = 'paasup.inopt.paasup.io';
 const headers: any = {
   'Authorization': token,
