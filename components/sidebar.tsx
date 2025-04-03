@@ -68,7 +68,6 @@ const menuItems: Record<MenuKey, MenuItem[]> = {
 export function Sidebar() {
   const pathname = usePathname();
   const { activeMenu } = useSidebarStore();
-  console.log(activeMenu)
   const currentMenuItems = activeMenu ? menuItems[activeMenu as MenuKey] : [];
 
   return (
