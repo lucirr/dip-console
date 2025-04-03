@@ -60,29 +60,29 @@ const columns = [
     key: 'actions',
     title: '',
     width: 'w-[40px]',
-    cell: (row) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => console.log('Edit', row)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            편집
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('Link', row)}>
-            <LinkIcon className="h-4 w-4 mr-2" />
-            링크
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('Details', row)}>
-            <Info className="h-4 w-4 mr-2" />
-            상세
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    // cell: (row) => (
+    //   <DropdownMenu>
+    //     <DropdownMenuTrigger asChild>
+    //       <Button variant="ghost" size="sm">
+    //         <MoreVertical className="h-4 w-4" />
+    //       </Button>
+    //     </DropdownMenuTrigger>
+    //     <DropdownMenuContent align="end">
+    //       <DropdownMenuItem onClick={() => console.log('Edit', row)}>
+    //         <Pencil className="h-4 w-4 mr-2" />
+    //         편집
+    //       </DropdownMenuItem>
+    //       <DropdownMenuItem onClick={() => console.log('Link', row)}>
+    //         <LinkIcon className="h-4 w-4 mr-2" />
+    //         링크
+    //       </DropdownMenuItem>
+    //       <DropdownMenuItem onClick={() => console.log('Details', row)}>
+    //         <Info className="h-4 w-4 mr-2" />
+    //         상세
+    //       </DropdownMenuItem>
+    //     </DropdownMenuContent>
+    //   </DropdownMenu>
+    // ),
   },
 ];
 
