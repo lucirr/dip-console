@@ -115,7 +115,8 @@ export default function CommonCodePage() {
     },
     { key: 'groupCode', title: '그룹코드', align: 'left' },
     { key: 'groupCodeDesc', title: '그룹코드 설명', align: 'left' },
-    { key: 'createdAt', title: '등록일자', align: 'left',
+    {
+      key: 'createdAt', title: '등록일자', align: 'left',
       cell: (row: GroupCode) => {
         if (!row.createdAt) return '-';
         return format(new Date(row.createdAt), 'yyyy-MM-dd');
