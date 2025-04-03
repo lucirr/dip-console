@@ -99,7 +99,8 @@ export default function CatalogPage() {
       '배포실패': 'bg-red-100 text-red-800',
       '배포대기': 'bg-gray-100 text-gray-800'
     };
-    return statusColors[status] || 'bg-gray-100 text-gray-800';
+    // return statusColors[status] || 'bg-gray-100 text-gray-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   const handleSearch = () => {
