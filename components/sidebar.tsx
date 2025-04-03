@@ -15,12 +15,24 @@ import {
   GitBranch,
   Plus,
   GitFork,
-  Users
+  Users,
+  LucideProps
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ForwardRefExoticComponent, RefAttributes } from 'react';
 
-const menuItems = {
+type MenuItem = {
+  name: string;
+  href: string;
+  icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+  subItems?: MenuItem[];  // 서브 메뉴 아이템을 위한 옵셔널 속성
+};
+
+// menuItems 객체의 타입을 명시적으로 지정
+type MenuKey = '데이터관리' | '시스템관리' | '시스템';
+
+const menuItems: Record<MenuKey, MenuItem[]> = {
   '데이터관리': [
     { name: '카탈로그 조회', href: '/catalog', icon: Database },
     { name: '프로젝트 관리', href: '/projects', icon: FolderKanban },
@@ -56,7 +68,7 @@ const menuItems = {
 export function Sidebar() {
   const pathname = usePathname();
   const { activeMenu } = useSidebarStore();
-  const currentMenuItems = activeMenu ? menuItems[activeMenu] : [];
+  const currentMenuItems = activeMenu ? menuItems[activeMenu as keyof typeof menuItems] : [];
 
   return (
     <div className="hidden md:flex w-56 flex-shrink-0 bg-white border-r overflow-y-auto">
