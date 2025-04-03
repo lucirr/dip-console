@@ -13,7 +13,7 @@ out
 .gitignore
 
 # Environment variables
-.env*.local
+.env*
 !.env.example
 
 # IDE
