@@ -250,6 +250,10 @@ export default function CommonCodePage() {
     setFormErrorsGroupCode(null);
   }, [isGroupCodeNewSheetOpen]);
 
+  useEffect(() => {
+    setFormErrorsCommonCode(null);
+  }, [isCommonCodeNewSheetOpen]);
+
   const handleRefresh = () => {
     fetchGroupCodes();
   };
