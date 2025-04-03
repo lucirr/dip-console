@@ -45,27 +45,40 @@ export function Header() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname.startsWith('/catalog') || pathname.startsWith('/projects')) {
+    // 시스템 메뉴의 하위 경로들
+    const systemPaths = [
+      '/common-code',
+      '/catalog-types',
+      '/cluster',
+      '/argocd',
+      '/dns-lookup',
+      '/system-catalog'
+    ];
+
+    // 데이터관리 메뉴의 하위 경로들
+    const dataPaths = ['/catalog', '/projects'];
+
+    // 시스템관리 메뉴의 하위 경로들
+    const systemManagementPaths = [
+      '/cluster-catalog',
+      '/project-catalog',
+      '/system-catalog',
+      '/project-management',
+      '/user-management',
+      '/dns-lookup',
+      '/catalog-types',
+      '/license-management'
+    ];
+
+    // 현재 경로가 어느 메뉴에 속하는지 확인
+    if (systemPaths.some(path => pathname.startsWith(path))) {
+      setActiveMenu('시스템');
+      setActiveSubMenu(pathname);
+    } else if (dataPaths.some(path => pathname.startsWith(path))) {
       setActiveMenu('데이터관리');
       setActiveSubMenu(pathname);
-    } else if (
-      pathname.startsWith('/cluster-catalog') || 
-      pathname.startsWith('/project-catalog') ||
-      pathname.startsWith('/system-catalog') ||
-      pathname.startsWith('/project-management') ||
-      pathname.startsWith('/user-management') ||
-      pathname.startsWith('/dns-lookup') ||
-      pathname.startsWith('/catalog-types') ||
-      pathname.startsWith('/license-management')
-    ) {
+    } else if (systemManagementPaths.some(path => pathname.startsWith(path))) {
       setActiveMenu('시스템관리');
-      setActiveSubMenu(pathname);
-    } else if (
-      pathname.startsWith('/common-code') ||
-      pathname.startsWith('/cluster') ||
-      pathname.startsWith('/argocd')
-    ) {
-      setActiveMenu('시스템');
       setActiveSubMenu(pathname);
     }
   }, [pathname, setActiveMenu, setActiveSubMenu]);

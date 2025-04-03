@@ -68,7 +68,8 @@ const menuItems: Record<MenuKey, MenuItem[]> = {
 export function Sidebar() {
   const pathname = usePathname();
   const { activeMenu } = useSidebarStore();
-  const currentMenuItems = activeMenu ? menuItems[activeMenu as keyof typeof menuItems] : [];
+  console.log(activeMenu)
+  const currentMenuItems = activeMenu ? menuItems[activeMenu as MenuKey] : [];
 
   return (
     <div className="hidden md:flex w-56 flex-shrink-0 bg-white border-r overflow-y-auto">
