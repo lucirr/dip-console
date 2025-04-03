@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import * as React from 'react';
 import { Button } from './button';
 interface PaginationProps {
@@ -53,7 +55,8 @@ const TablePagination: React.FC<PaginationProps> = ({
           disabled={currentPage === 1}
           aria-label="이전 페이지"
         >
-          이전
+          <ChevronLeft className="h-4 w-4" />
+          <span className="sr-only">이전 페이지</span>
         </Button>
         <div className="flex items-center">
           {pageNumbers.map((pageNum) => (
@@ -77,7 +80,8 @@ const TablePagination: React.FC<PaginationProps> = ({
           disabled={currentPage === totalPages || totalPages === 0}
           aria-label="다음 페이지"
         >
-          다음
+          <ChevronRight className="h-4 w-4" />
+          <span className="sr-only">다음 페이지</span>
         </Button>
       </div>
     </div>

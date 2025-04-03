@@ -22,6 +22,8 @@ import type { GroupCode, CommonCode } from "@/types/groupcode"
 import { getGroupCode, insertGroupCode, updateGroupCode, getCommonCode, deleteCommonCode, insertCommonCode, updateCommonCode } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 interface Column {
   key: string;
@@ -113,7 +115,12 @@ export default function CommonCodePage() {
     },
     { key: 'groupCode', title: '그룹코드', align: 'left' },
     { key: 'groupCodeDesc', title: '그룹코드 설명', align: 'left' },
-    { key: 'createdAt', title: '등록일자', width: 'w-[220px]', align: 'left' },
+    { key: 'createdAt', title: '등록일자', align: 'left',
+      cell: (row: GroupCode) => {
+        if (!row.createdAt) return '-';
+        return format(new Date(row.createdAt), 'yyyy-MM-dd');
+      }
+    },
     {
       key: 'actions',
       title: '',
@@ -642,7 +649,7 @@ export default function CommonCodePage() {
           <Sheet open={isCommonCodeSheetOpen} onOpenChange={setIsCommonCodeSheetOpen}>
             <SheetTrigger asChild>
             </SheetTrigger>
-            <SheetContent className="min-w-[650px] overflow-y-auto">
+            <SheetContent className="min-w-[850px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
                   <SheetTitle>
