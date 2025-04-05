@@ -19,4 +19,5 @@ export interface CatalogVersion {
   uid?: string;
   catalogType: string;
   catalogVersion: string;
+  catalogTypeId: string;
 }

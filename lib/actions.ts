@@ -1,9 +1,10 @@
 "use client"
 
 import type { GroupCode, CommonCode } from "@/types/groupcode"
+import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
-const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '')+':'+ (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
+const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '') + ':' + (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
 const hostname: string = 'paasup.inopt.paasup.io';
 const headers: any = {
   'Authorization': token,
@@ -120,3 +121,113 @@ export async function deleteCommonCode(commonCode: CommonCode) {
   }
 }
 
+// ------------------------------------------------------------------------------------------------------
+
+export async function getCatalogType(): Promise<CatalogType[]> {
+  try {
+    const response = await fetch(apiUrl + '/catalogs', {
+      method: 'GET',
+      headers: headers,
+    });
+
+    const responseData: CatalogType[] = await response.json();
+    return responseData
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function insertCatalogType(newData: CatalogType) {
+  try {
+    const response = await fetch(apiUrl + '/catalogs', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(newData),
+    });
+
+    const responseData = await response.json();
+    console.log("Success:", responseData);
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function updateCatalogType(updateData: CatalogType) {
+  try {
+    const response = await fetch(`${apiUrl}/catalogs/${updateData.uid}`, {
+      method: 'PUT',
+      headers: headers,
+      body: JSON.stringify(updateData),
+    });
+
+    const responseData = await response.json();
+    console.log("Update Success:", responseData);
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function getCatalogVersion(catalogTypeId: string) {
+  try {
+    const response = await fetch(`${apiUrl}/catalogs/version/${catalogTypeId}`, {
+      method: 'GET',
+      headers: headers,
+    });
+
+    const responseData: CatalogVersion[] = await response.json();
+    return responseData
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function insertCatalogVersion(newData: CatalogVersion) {
+  try {
+    const response = await fetch(apiUrl + `/catalogs/version/${newData.catalogTypeId}`, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(newData),
+    });
+
+    const responseData = await response.json();
+    console.log("Success:", responseData);
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function updateCatalogVersion(updateData: CatalogVersion) {
+  try {
+    const response = await fetch(`${apiUrl}/catalogs/version/${updateData.catalogTypeId}`, {
+      method: 'PUT',
+      headers: headers,
+      body: JSON.stringify(updateData),
+    });
+
+    const responseData = await response.json();
+    console.log("Update Success:", responseData);
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function deleteCatalogVersion(catalogVersion: CatalogVersion) {
+  try {
+    const response = await fetch(`${apiUrl}/catalogs/version/${catalogVersion.catalogTypeId}/${catalogVersion.uid}`, {
+      method: 'DELETE',
+      headers: headers,
+    });
+
+    const responseData = await response.json();
+    console.log("Delete Success:", responseData);
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}

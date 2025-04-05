@@ -18,8 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ReactNode } from 'react';
-import type { GroupCode, CommonCode } from "@/types/groupcode"
-import { getGroupCode, insertGroupCode, updateGroupCode, getCommonCode, deleteCommonCode, insertCommonCode, updateCommonCode } from "@/lib/actions"
+import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
+import { getCatalogType, insertCatalogType, updateCatalogType, getCatalogVersion, deleteCatalogVersion, insertCatalogVersion, updateCatalogVersion } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -37,51 +37,71 @@ interface Column {
 
 export default function CatalogTypesPage() {
   const { toast } = useToast()
-  const [groupCodeData, setGroupCodeData] = useState<GroupCode[]>([]);
-  const [commonCodeData, setCommonCodeData] = useState<CommonCode[]>([]);
-  const [isGroupCodeNewSheetOpen, setIsGroupCodeNewSheetOpen] = useState(false);
-  const [isGroupCodeEditSheetOpen, setIsGroupCodeEditSheetOpen] = useState(false);
-  const [isCommonCodeSheetOpen, setIsCommonCodeSheetOpen] = useState(false);
-  const [isCommonCodeNewSheetOpen, setIsCommonCodeNewSheetOpen] = useState(false);
-  const [isCommonCodeEditSheetOpen, setIsCommonCodeEditSheetOpen] = useState(false);
+  const [catalogTypeData, setCatalogTypeData] = useState<CatalogType[]>([]);
+  const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
+  const [isCatalogTypeNewSheetOpen, setIsCatalogTypeNewSheetOpen] = useState(false);
+  const [isCatalogTypeEditSheetOpen, setIsCatalogTypeEditSheetOpen] = useState(false);
+  const [isCatalogVersionSheetOpen, setIsCatalogVersionSheetOpen] = useState(false);
+  const [isCatalogVersionNewSheetOpen, setIsCatalogVersionNewSheetOpen] = useState(false);
+  const [isCatalogVersionEditSheetOpen, setIsCatalogVersionEditSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [pageGroupCode, setPageGroupCode] = useState(1);
-  const [pageCommonCode, setPageCommonCode] = useState(1);
+  const [pageCatalogType, setPageCatalogType] = useState(1);
+  const [pageCatalogVersion, setPageCatalogVersion] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [selectedGroupCode, setSelectedGroupCode] = useState<GroupCode | null>(null);
-  const [selectedCommonCode, setSelectedCommonCode] = useState<CommonCode | null>(null);
+  const [selectedCatalogType, setSelectedCatalogType] = useState<CatalogType | null>(null);
+  const [selectedCatalogVersion, setSelectedCatalogVersion] = useState<CatalogVersion | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
-  const [formErrorsGroupCode, setFormErrorsGroupCode] = useState<{ groupCode?: string; groupCodeDesc?: string } | null>(null);
-  const [formErrorsCommonCode, setFormErrorsCommonCode] = useState<{ code?: string; codeDesc?: string } | null>(null);
+  const [formErrorsCatalogType, setFormErrorsCatalogType] = useState<{ catalogType?: string; catalogTypeDesc?: string } | null>(null);
+  const [formErrorsCatalogVersion, setFormErrorsCatalogVersion] = useState<{ code?: string; codeDesc?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newCode, setNewCode] = useState<GroupCode>({
-    groupCode: '',
-    groupCodeDesc: '',
-  });
-
-  const [editGroupCode, setEditGroupCode] = useState<GroupCode>({
-    uid: '',
-    groupCode: '',
-    groupCodeDesc: '',
-  });
-
-  const [newCommonCode, setNewCommonCode] = useState<CommonCode>({
-    uid: '',
-    code: '',
-    codeDesc: '',
+  const [newCode, setNewCode] = useState<CatalogType>({
+    catalogType: '',
+    serviceType: '',
+    catalogServiceTypeId: '',
+    argoDeployType: '',
+    catalogImage: '',
     enable: true,
-    groupCodeId: '',
+    isClusterOnly: false,
+    isTenant: false,
+    keycloakUse: false,
+    keycloakRedirectUris: '',
+    valuesYaml: '',
+    isAdmin: false,
+    catalogDesc: '',
   });
 
-  const [editCommonCode, setEditCommonCode] = useState<CommonCode>({
+  const [editCatalogType, setEditCatalogType] = useState<CatalogType>({
     uid: '',
-    code: '',
-    codeDesc: '',
-    enable: false,
-    groupCodeId: '',
+    catalogType: '',
+    serviceType: '',
+    catalogServiceTypeId: '',
+    argoDeployType: '',
+    catalogImage: '',
+    enable: true,
+    isClusterOnly: false,
+    isTenant: false,
+    keycloakUse: false,
+    keycloakRedirectUris: '',
+    valuesYaml: '',
+    isAdmin: false,
+    catalogDesc: '',
+  });
+
+  const [newCatalogVersion, setNewCatalogVersion] = useState<CatalogVersion>({
+    uid: '',
+    catalogType: '',
+    catalogVersion: '',
+    catalogTypeId: '',
+  });
+
+  const [editCatalogVersion, setEditCatalogVersion] = useState<CatalogVersion>({
+    uid: '',
+    catalogType: '',
+    catalogVersion: '',
+    catalogTypeId: '',
   });
 
   const formSchemaCatalogType = z.object({
@@ -95,11 +115,11 @@ export default function CatalogTypesPage() {
     catalogVersion: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
   });
 
-  const paginatedData = groupCodeData.slice((pageGroupCode - 1) * pageSize, pageGroupCode * pageSize);
-  const totalPages = Math.ceil(groupCodeData.length / pageSize);
+  const paginatedData = catalogTypeData.slice((pageCatalogType - 1) * pageSize, pageCatalogType * pageSize);
+  const totalPages = Math.ceil(catalogTypeData.length / pageSize);
 
-  const paginatedCommonCode = commonCodeData.slice((pageCommonCode - 1) * pageSize, pageCommonCode * pageSize);
-  const totalPagesCommonCode = Math.ceil(commonCodeData.length / pageSize);
+  const paginatedCatalogVersion = catalogVersionData.slice((pageCatalogVersion - 1) * pageSize, pageCatalogVersion * pageSize);
+  const totalPagesCatalogVersion = Math.ceil(catalogVersionData.length / pageSize);
 
   const columns: Column[] = [
     {
@@ -110,67 +130,30 @@ export default function CatalogTypesPage() {
       cell: (row: any, index?: number) => {
         const rowIndex = paginatedData.findIndex(item => item === row);
         return (
-          <div className="text-center">{(pageGroupCode - 1) * pageSize + rowIndex + 1}</div>
+          <div className="text-center">{(pageCatalogType - 1) * pageSize + rowIndex + 1}</div>
         );
       }
     },
-    { key: 'groupCode', title: '그룹코드', align: 'left' },
-    { key: 'groupCodeDesc', title: '그룹코드 설명', align: 'left' },
+    { key: 'catalogType', title: '카탈로그 유형', align: 'left' },
     {
-      key: 'createdAt', title: '등록일자', align: 'left',
-      cell: (row: GroupCode) => {
-        if (!row.createdAt) return '-';
-        return format(new Date(row.createdAt), 'yyyy-MM-dd');
-      }
+      key: 'isTenant', title: '테넌트 여부', align: 'left',
+      cell: (row: CatalogType) => (
+        <div className="flex justify-left">
+          {row.isTenant && <Check className="h-4 w-4 text-green-500" />}
+        </div>
+      )
     },
     {
-      key: 'actions',
-      title: '',
-      width: 'w-[40px]',
-      cell: (row: GroupCode) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => groupCodeEditSheetClick(row)}>
-              <Pencil className="h-4 w-4 mr-2" />
-              편집
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => commonCodeSheetClick(row)}>
-              <Code className="h-4 w-4 mr-2" />
-              공통코드
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      key: 'keycloakUse', title: 'Keycloak 연계', align: 'left',
+      cell: (row: CatalogType) => (
+        <div className="flex justify-left">
+          {row.keycloakUse && <Check className="h-4 w-4 text-green-500" />}
+        </div>
+      )
     },
-  ];
-
-  const commonCodeColumns: Column[] = [
     {
-      key: 'sequence',
-      title: '번호',
-      width: 'w-[80px]',
-      align: 'center',
-      cell: (row: any, index?: number) => {
-        const rowIndex = paginatedCommonCode.findIndex(item => item === row);
-        return (
-          <div className="text-center">{(pageCommonCode - 1) * pageSize + rowIndex + 1}</div>
-        );
-      }
-    },
-    { key: 'groupCode', title: '그룹코드', align: 'left' },
-    { key: 'code', title: '코드', align: 'left' },
-    { key: 'codeDesc', title: '코드설명', align: 'left' },
-    {
-      key: 'enable',
-      title: '활성화',
-      width: 'w-[100px]',
-      align: 'left',
-      cell: (row: CommonCode) => (
+      key: 'enable', title: '활성화', align: 'left',
+      cell: (row: CatalogType) => (
         <div className="flex justify-left">
           {row.enable && <Check className="h-4 w-4 text-green-500" />}
         </div>
@@ -180,7 +163,7 @@ export default function CatalogTypesPage() {
       key: 'actions',
       title: '',
       width: 'w-[40px]',
-      cell: (row: CommonCode) => (
+      cell: (row: CatalogType) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
@@ -188,11 +171,59 @@ export default function CatalogTypesPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => commonCodeEditSheetClick(row)}>
+            <DropdownMenuItem onClick={() => catalogTypeEditSheetClick(row)}>
               <Pencil className="h-4 w-4 mr-2" />
               편집
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => commonCodeDeleteClick(row)}>
+            <DropdownMenuItem onClick={() => catalogVersionSheetClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              버전
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const catalogVersionColumns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        const rowIndex = paginatedCatalogVersion.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(pageCatalogVersion - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'catalogType', title: '그룹코드', align: 'left' },
+    { key: 'code', title: '코드', align: 'left' },
+    { key: 'codeDesc', title: '코드설명', align: 'left' },
+    {
+      key: 'enable',
+      title: '활성화',
+      width: 'w-[100px]',
+      align: 'left',
+    },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: CatalogVersion) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => catalogVersionEditSheetClick(row)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              편집
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => catalogVersionDeleteClick(row)}>
               <Code className="h-4 w-4 mr-2" />
               삭제
             </DropdownMenuItem>
@@ -202,112 +233,123 @@ export default function CatalogTypesPage() {
     },
   ];
 
-  const fetchGroupCodes = async () => {
+  const fetchCatalogTypes = async () => {
     setIsLoading(true);
     try {
-      const response = await getGroupCode()
-      setGroupCodeData(response);
+      const response = await getCatalogType()
+      setCatalogTypeData(response);
     } catch (error) {
-      setGroupCodeData([]);
+      setCatalogTypeData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchCommonCodes = async () => {
+  const fetchCatalogVersions = async () => {
     setIsLoading(true);
     try {
-      if (selectedGroupCode?.uid) {
-        const response = await getCommonCode(selectedGroupCode.uid);
+      if (selectedCatalogType?.uid) {
+        const response = await getCatalogVersion(selectedCatalogType.uid);
 
         const enhancedResponse = response.map(item => ({
           ...item,
-          groupCode: selectedGroupCode.groupCode
+          catalogType: selectedCatalogType.catalogType
         }));
 
-        setCommonCodeData(enhancedResponse);
+        setCatalogVersionData(enhancedResponse);
       } else {
-        setCommonCodeData([]);
+        setCatalogVersionData([]);
       }
     } catch (error) {
       console.error('Error fetching common codes:', error);
-      setCommonCodeData([]);
+      setCatalogVersionData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchGroupCodes();
+    fetchCatalogTypes();
   }, []);
 
 
   useEffect(() => {
-    if (selectedGroupCode && isCommonCodeSheetOpen) {
-      fetchCommonCodes();
+    if (selectedCatalogType && isCatalogVersionSheetOpen) {
+      fetchCatalogVersions();
     }
-  }, [selectedGroupCode, isCommonCodeSheetOpen]);
+  }, [selectedCatalogType, isCatalogVersionSheetOpen]);
 
   useEffect(() => {
-    setFormErrorsGroupCode(null);
-  }, [isGroupCodeNewSheetOpen]);
+    setFormErrorsCatalogType(null);
+  }, [isCatalogTypeNewSheetOpen]);
 
   useEffect(() => {
-    setFormErrorsCommonCode(null);
-  }, [isCommonCodeNewSheetOpen]);
+    setFormErrorsCatalogVersion(null);
+  }, [isCatalogVersionNewSheetOpen]);
 
   const handleRefresh = () => {
-    fetchGroupCodes();
+    fetchCatalogTypes();
   };
 
-  const handleRefreshCommonCode = () => {
-    fetchCommonCodes();
+  const handleRefreshCatalogVersion = () => {
+    fetchCatalogVersions();
   };
 
-  const groupCodeNewClick = () => {
+  const catalogTypeNewClick = () => {
     if (isSubmitting) return;
 
-    setFormErrorsGroupCode(null);
+    setFormErrorsCatalogType(null);
 
-    const validationResult = formSchemaGroupCode.safeParse(newCode);
+    const validationResult = formSchemaCatalogType.safeParse(newCode);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        if (field === 'groupCode' || field === 'groupCodeDesc') {
+        if (field === 'catalogType' || field === 'catalogTypeDesc') {
           acc[field] = error.message;
         }
         return acc;
       }, {} as { [key: string]: string });
 
-      setFormErrorsGroupCode(errors);
+      setFormErrorsCatalogType(errors);
       return;
     }
-    setConfirmAction(() => newGroupCodeSubmit);
+    setConfirmAction(() => newCatalogTypeSubmit);
     setConfirmDescription("저장하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const newGroupCodeSubmit = async () => {
+  const newCatalogTypeSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      await insertGroupCode(newCode);
+      await insertCatalogType(newCode);
       toast({
         title: "Success",
-        description: "그룹 코드가 성공적으로 추가되었습니다.",
+        description: "카탈로그 유형이 성공적으로 추가되었습니다.",
       })
       setNewCode({
-        groupCode: '',
-        groupCodeDesc: '',
+        catalogType: '',
+        serviceType: '',
+        catalogServiceTypeId: '',
+        argoDeployType: '',
+        catalogImage: '',
+        enable: true,
+        isClusterOnly: false,
+        isTenant: false,
+        keycloakUse: false,
+        keycloakRedirectUris: '',
+        valuesYaml: '',
+        isAdmin: false,
+        catalogDesc: '',
       });
-      setIsGroupCodeNewSheetOpen(false);
-      fetchGroupCodes();
+      setIsCatalogTypeNewSheetOpen(false);
+      fetchCatalogTypes();
     } catch (error) {
       toast({
         title: "Error",
-        description: "그룹 코드 추가에 실패했습니다.",
+        description: "카탈로그 유형 추가에 실패했습니다.",
         variant: "destructive"
       })
     } finally {
@@ -316,12 +358,12 @@ export default function CatalogTypesPage() {
     }
   };
 
-  const commonCodeNewClick = () => {
+  const catalogVersionNewClick = () => {
     if (isSubmitting) return;
 
-    setFormErrorsCommonCode(null);
+    setFormErrorsCatalogVersion(null);
 
-    const validationResult = formSchemaCommonCode.safeParse(newCommonCode);
+    const validationResult = formSchemaCatalogVersion.safeParse(newCatalogVersion);
 
     if (!validationResult.success) {
       const errors: { [key: string]: string } = {};
@@ -333,40 +375,39 @@ export default function CatalogTypesPage() {
           errors.codeDesc = error.message;
         }
       });
-      setFormErrorsCommonCode(errors);
+      setFormErrorsCatalogVersion(errors);
       return;
     }
-    setConfirmAction(() => newCommonCodeSubmit);
+    setConfirmAction(() => newCatalogVersionSubmit);
     setConfirmDescription("저장하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const newCommonCodeSubmit = async () => {
+  const newCatalogVersionSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      if (selectedGroupCode?.uid) {
-        newCommonCode.groupCodeId = selectedGroupCode.uid;
-        await insertCommonCode(newCommonCode);
+      if (selectedCatalogType?.uid) {
+        newCatalogVersion.catalogTypeId = selectedCatalogType.uid;
+        await insertCatalogVersion(newCatalogVersion);
         toast({
           title: "Success",
-          description: "공통 코드가 성공적으로 추가되었습니다.",
+          description: "카탈로그 버전이 성공적으로 추가되었습니다.",
         })
-        setNewCommonCode({
+        setNewCatalogVersion({
           uid: '',
-          code: '',
-          codeDesc: '',
-          enable: true,
-          groupCodeId: '',
+          catalogType: '',
+          catalogVersion: '',
+          catalogTypeId: '',
         });
-        setIsCommonCodeNewSheetOpen(false);
-        fetchCommonCodes();
+        setIsCatalogVersionNewSheetOpen(false);
+        fetchCatalogVersions();
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "공통 코드 추가에 실패했습니다.",
+        description: "카탈로그 버전 추가에 실패했습니다.",
         variant: "destructive"
       })
     } finally {
@@ -375,57 +416,67 @@ export default function CatalogTypesPage() {
     }
   };
 
-  const groupCodeEditSheetClick = (row: GroupCode) => {
-    setSelectedGroupCode(row);
-    setEditGroupCode({
+  const catalogTypeEditSheetClick = (row: CatalogType) => {
+    setSelectedCatalogType(row);
+    setEditCatalogType({
       uid: row.uid,
-      groupCode: row.groupCode,
-      groupCodeDesc: row.groupCodeDesc,
-      createdAt: row.createdAt,
+      catalogType: row.catalogType,
+      serviceType: row.serviceType,
+      catalogServiceTypeId: row.catalogServiceTypeId,
+      argoDeployType: row.argoDeployType,
+      catalogImage: row.catalogImage,
+      enable: row.enable,
+      isClusterOnly: row.isClusterOnly,
+      isTenant: row.isTenant,
+      keycloakUse: row.keycloakUse,
+      keycloakRedirectUris: row.keycloakRedirectUris,
+      valuesYaml: row.valuesYaml,
+      isAdmin: row.isAdmin,
+      catalogDesc: row.catalogDesc,
     });
-    setFormErrorsGroupCode(null);
-    setIsGroupCodeEditSheetOpen(true);
+    setFormErrorsCatalogType(null);
+    setIsCatalogTypeEditSheetOpen(true);
   };
 
-  const groupCodeEditClick = () => {
+  const catalogTypeEditClick = () => {
     if (isSubmitting) return;
 
-    setFormErrorsGroupCode(null);
+    setFormErrorsCatalogType(null);
 
-    const validationResult = formSchemaGroupCode.safeParse(editGroupCode);
+    const validationResult = formSchemaCatalogType.safeParse(editCatalogType);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        if (field === 'groupCodeDesc') {
+        if (field === 'catalogTypeDesc') {
           acc[field] = error.message;
         }
         return acc;
       }, {} as { [key: string]: string });
-      setFormErrorsGroupCode(errors);
+      setFormErrorsCatalogType(errors);
       return;
     }
-    setConfirmAction(() => groupCodeEditSubmit);
+    setConfirmAction(() => catalogTypeEditSubmit);
     setConfirmDescription("수정하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const groupCodeEditSubmit = async () => {
+  const catalogTypeEditSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      await updateGroupCode(editGroupCode);
+      await updateCatalogType(editCatalogType);
       toast({
         title: "Success",
-        description: "그룹 코드가 성공적으로 수정되었습니다.",
+        description: "카탈로그 유형이 성공적으로 수정되었습니다.",
       })
-      setIsGroupCodeEditSheetOpen(false);
-      fetchGroupCodes();
+      setIsCatalogTypeEditSheetOpen(false);
+      fetchCatalogTypes();
     } catch (error) {
       toast({
         title: "Error",
-        description: "그룹 코드 수정에 실패했습니다.",
+        description: "카탈로그 유형 수정에 실패했습니다.",
         variant: "destructive"
       })
     } finally {
@@ -434,12 +485,12 @@ export default function CatalogTypesPage() {
     }
   };
 
-  const editCommonCodeClick = () => {
+  const editCatalogVersionClick = () => {
     if (isSubmitting) return;
 
-    setFormErrorsCommonCode(null);
+    setFormErrorsCatalogVersion(null);
 
-    const validationResult = formSchemaCommonCode.safeParse(editCommonCode);
+    const validationResult = formSchemaCatalogVersion.safeParse(editCatalogVersion);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
@@ -449,30 +500,30 @@ export default function CatalogTypesPage() {
         }
         return acc;
       }, {} as { [key: string]: string });
-      setFormErrorsCommonCode(errors);
+      setFormErrorsCatalogVersion(errors);
       return;
     }
-    setConfirmAction(() => commonCodeEditSubmit);
+    setConfirmAction(() => catalogVersionEditSubmit);
     setConfirmDescription("수정하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const commonCodeEditSubmit = async () => {
+  const catalogVersionEditSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      await updateCommonCode(editCommonCode);
+      await updateCatalogVersion(editCatalogVersion);
       toast({
         title: "Success",
-        description: "공통 코드가 성공적으로 수정되었습니다.",
+        description: "카탈로그 버전이 성공적으로 수정되었습니다.",
       })
-      setIsCommonCodeEditSheetOpen(false);
-      fetchCommonCodes();
+      setIsCatalogVersionEditSheetOpen(false);
+      fetchCatalogVersions();
     } catch (error) {
       toast({
         title: "Error",
-        description: "공통 코드 수정에 실패했습니다.",
+        description: "카탈로그 버전 수정에 실패했습니다.",
         variant: "destructive"
       })
     } finally {
@@ -481,47 +532,43 @@ export default function CatalogTypesPage() {
     }
   };
 
-  const commonCodeEditSheetClick = (row: CommonCode) => {
-    setSelectedCommonCode(row);
-    setEditCommonCode({
+  const catalogVersionEditSheetClick = (row: CatalogVersion) => {
+    setSelectedCatalogVersion(row);
+    setEditCatalogVersion({
       uid: row.uid,
-      code: row.code,
-      codeDesc: row.codeDesc,
-      codeCategory: row.codeCategory,
-      codeValue: row.codeValue,
-      enable: row.enable,
-      groupCodeId: row.groupCodeId,
-      createdAt: row.createdAt,
+      catalogType: row.catalogType,
+      catalogVersion: row.catalogVersion,
+      catalogTypeId: row.catalogTypeId,
     });
-    setIsCommonCodeEditSheetOpen(true);
-    setFormErrorsCommonCode(null);
+    setIsCatalogVersionEditSheetOpen(true);
+    setFormErrorsCatalogVersion(null);
   };
 
-  const commonCodeDeleteClick = (row: CommonCode) => {
+  const catalogVersionDeleteClick = (row: CatalogVersion) => {
     if (isSubmitting) return;
 
-    setConfirmAction(() => () => commonCodeDeleteSubmit(row));
+    setConfirmAction(() => () => catalogVersionDeleteSubmit(row));
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const commonCodeDeleteSubmit = async (row: CommonCode) => {
+  const catalogVersionDeleteSubmit = async (row: CatalogVersion) => {
     console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      await deleteCommonCode(row);
+      await deleteCatalogVersion(row);
       toast({
         title: "Success",
-        description: "공통 코드가 성공적으로 삭제되었습니다.",
+        description: "카탈로그 버전이 성공적으로 삭제되었습니다.",
       })
-      fetchCommonCodes();
+      fetchCatalogVersions();
     } catch (error) {
       toast({
         title: "Error",
-        description: "공통 코드 삭제에 실패했습니다.",
+        description: "카탈로그 버전 삭제에 실패했습니다.",
         variant: "destructive"
       })
     } finally {
@@ -530,17 +577,17 @@ export default function CatalogTypesPage() {
     }
   };
 
-  const commonCodeSheetClick = (row: GroupCode) => {
-    setSelectedGroupCode(row);
-    setIsCommonCodeSheetOpen(true);
+  const catalogVersionSheetClick = (row: CatalogType) => {
+    setSelectedCatalogType(row);
+    setIsCatalogVersionSheetOpen(true);
   };
 
   const handlePageChange = (newPage: number) => {
-    setPageGroupCode(newPage);
+    setPageCatalogType(newPage);
   };
 
-  const handlePageChangeCommonCode = (newPage: number) => {
-    setPageCommonCode(newPage);
+  const handlePageChangeCatalogVersion = (newPage: number) => {
+    setPageCatalogVersion(newPage);
   };
 
 
@@ -549,187 +596,134 @@ export default function CatalogTypesPage() {
       <div className="bg-white border-b shadow-sm -mx-4">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">공통 코드</h2>
-            <p className="mt-1 text-sm text-gray-500">공통 코드를 생성하고 관리할 수 있습니다.</p>
+            <h2 className="text-3xl font-bold tracking-tight">카탈로그 유형</h2>
+            <p className="mt-1 text-sm text-gray-500">카탈로그 유형을 생성하고 관리할 수 있습니다.</p>
           </div>
-          <Sheet open={isGroupCodeNewSheetOpen} onOpenChange={setIsGroupCodeNewSheetOpen}>
+          <Sheet open={isCatalogTypeNewSheetOpen} onOpenChange={setIsCatalogTypeNewSheetOpen}>
             <SheetTrigger asChild>
               <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
-                그룹코드 추가
+                카탈로그 유형 추가
               </Button>
             </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
-                  <SheetTitle>새 그룹코드 추가</SheetTitle>
+                  <SheetTitle>새 카탈로그 유형 추가</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="new-code">그룹코드</Label>
+                    <Label htmlFor="new-code">카탈로그 유형</Label>
                     <Input
                       id="new-code"
                       placeholder="그룹코드 입력"
-                      value={newCode.groupCode}
+                      value={newCode.catalogType}
                       onChange={(e) => {
-                        setNewCode({ ...newCode, groupCode: e.target.value });
-                        setFormErrorsGroupCode(prevErrors => ({
+                        setNewCode({ ...newCode, catalogType: e.target.value });
+                        setFormErrorsCatalogType(prevErrors => ({
                           ...prevErrors,
-                          groupCode: undefined,
+                          catalogType: undefined,
                         }));
                       }}
                     />
-                    {formErrorsGroupCode?.groupCode && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCode}</p>}
+                    {formErrorsCatalogType?.catalogType && <p className="text-red-500 text-sm">{formErrorsCatalogType.catalogType}</p>}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-desc">그룹코드 설명</Label>
-                    <Input
-                      id="new-desc"
-                      placeholder="그룹코드 설명 입력"
-                      value={newCode.groupCodeDesc}
-                      onChange={(e) => {
-                        setNewCode({ ...newCode, groupCodeDesc: e.target.value });
-                        setFormErrorsGroupCode(prevErrors => ({
-                          ...prevErrors,
-                          groupCodeDesc: undefined,
-                        }));
-                      }}
-                    />
-                    {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
-                  </div>
+
                 </div>
                 <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsGroupCodeNewSheetOpen(false)}>
+                  <Button variant="outline" size="sm" onClick={() => setIsCatalogTypeNewSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={groupCodeNewClick} disabled={isSubmitting}>
+                  <Button size="sm" onClick={catalogTypeNewClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
-          <Sheet open={isGroupCodeEditSheetOpen} onOpenChange={setIsGroupCodeEditSheetOpen}>
+          <Sheet open={isCatalogTypeEditSheetOpen} onOpenChange={setIsCatalogTypeEditSheetOpen}>
             <SheetTrigger asChild>
             </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
-                  <SheetTitle>그룹코드 수정</SheetTitle>
+                  <SheetTitle>카탈로그 유형 수정</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
                     <Label htmlFor="edit-code">그룹코드</Label>
                     <div className="p-2 bg-muted rounded-md">
-                      <span className="text-sm">{editGroupCode.groupCode}</span>
+                      <span className="text-sm">{editCatalogType.catalogType}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-desc">그룹코드 설명</Label>
-                    <Input
-                      id="edit-desc"
-                      placeholder="그룹코드 설명 입력"
-                      value={editGroupCode.groupCodeDesc}
-                      onChange={(e) => {
-                        setEditGroupCode({ ...editGroupCode, groupCodeDesc: e.target.value }),
-                          setFormErrorsGroupCode(prevErrors => ({
-                            ...prevErrors,
-                            groupCodeDesc: undefined,
-                          }));
-                      }}
-                    />
-                    {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsGroupCodeEditSheetOpen(false)}>
+                  <Button variant="outline" size="sm" onClick={() => setIsCatalogTypeEditSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={groupCodeEditClick} disabled={isSubmitting}>
+                  <Button size="sm" onClick={catalogTypeEditClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
-          <Sheet open={isCommonCodeSheetOpen} onOpenChange={setIsCommonCodeSheetOpen}>
+          <Sheet open={isCatalogVersionSheetOpen} onOpenChange={setIsCatalogVersionSheetOpen}>
             <SheetTrigger asChild>
             </SheetTrigger>
             <SheetContent className="min-w-[850px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
                   <SheetTitle>
-                    공통 코드
+                    카탈로그 버전
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex justify-end gap-2 pb-4 border-t pt-4">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleRefreshCommonCode}
+                    onClick={handleRefreshCatalogVersion}
                     disabled={isLoading}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     새로고침
                   </Button>
-                  <Sheet open={isCommonCodeNewSheetOpen} onOpenChange={setIsCommonCodeNewSheetOpen}>
+                  <Sheet open={isCatalogVersionNewSheetOpen} onOpenChange={setIsCatalogVersionNewSheetOpen}>
                     <SheetTrigger asChild>
                       <Button
                         size="sm">
                         <Plus className="mr-2 h-4 w-4" />
-                        <span>공통코드 추가</span>
+                        <span>카탈로그 버전 추가</span>
                       </Button>
                     </SheetTrigger>
                     <SheetContent className="min-w-[650px] overflow-y-auto">
                       <div className="flex flex-col h-full">
                         <SheetHeader className='pb-4'>
-                          <SheetTitle>새 공통코드 추가</SheetTitle>
+                          <SheetTitle>새 카탈로그 버전 추가</SheetTitle>
                         </SheetHeader>
                         <div className="grid gap-4 py-4 border-t">
                           <div className="space-y-2">
                             <Label htmlFor="new-code">그룹코드</Label>
                             <div className="p-2 bg-muted rounded-md">
-                              <span className="text-sm">{selectedGroupCode?.groupCode}</span>
+                              <span className="text-sm">{selectedCatalogType?.catalogType}</span>
                             </div>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="new-desc">코드</Label>
-                            <Input
-                              id="new-code"
-                              placeholder="코드"
-                              value={newCommonCode.code}
-                              onChange={(e) => {
-                                setNewCommonCode({ ...newCommonCode, code: e.target.value });
-                                setFormErrorsCommonCode(prevErrors => ({
-                                  ...prevErrors,
-                                  code: undefined,
-                                }));
-                              }}
-                            />
-                            {formErrorsCommonCode?.code && <p className="text-red-500 text-sm">{formErrorsCommonCode.code}</p>}
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="new-desc">코드설명</Label>
-                            <Input
-                              id="new-desc"
-                              placeholder="코드설명"
-                              value={newCommonCode.codeDesc}
-                              onChange={(e) => {
-                                setNewCommonCode({ ...newCommonCode, codeDesc: e.target.value });
-                                setFormErrorsCommonCode(prevErrors => ({
-                                  ...prevErrors,
-                                  codeDesc: undefined,
-                                }));
-                              }}
-                            />
-                            {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
+
                           </div>
                         </div>
                         <div className="flex justify-end space-x-2 mt-6">
-                          <Button variant="outline" size="sm" onClick={() => setIsCommonCodeNewSheetOpen(false)}>
+                          <Button variant="outline" size="sm" onClick={() => setIsCatalogVersionNewSheetOpen(false)}>
                             취소
                           </Button>
-                          <Button size="sm" onClick={commonCodeNewClick} disabled={isSubmitting}>
+                          <Button size="sm" onClick={catalogVersionNewClick} disabled={isSubmitting}>
                             저장
                           </Button>
                         </div>
@@ -739,70 +733,51 @@ export default function CatalogTypesPage() {
                 </div>
                 <div className="">
                   <DataTable
-                    columns={commonCodeColumns}
-                    data={paginatedCommonCode}
+                    columns={catalogVersionColumns}
+                    data={paginatedCatalogVersion}
                   />
                   <TablePagination
-                    currentPage={pageCommonCode}
-                    totalPages={totalPagesCommonCode}
-                    dataLength={commonCodeData.length}
-                    onPageChange={handlePageChangeCommonCode}
+                    currentPage={pageCatalogVersion}
+                    totalPages={totalPagesCatalogVersion}
+                    dataLength={catalogVersionData.length}
+                    onPageChange={handlePageChangeCatalogVersion}
                     pageSize={pageSize}
                   />
                 </div>
               </div>
             </SheetContent>
           </Sheet>
-          <Sheet open={isCommonCodeEditSheetOpen} onOpenChange={setIsCommonCodeEditSheetOpen}>
+          <Sheet open={isCatalogVersionEditSheetOpen} onOpenChange={setIsCatalogVersionEditSheetOpen}>
             <SheetTrigger asChild>
             </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
-                  <SheetTitle>공통코드 수정</SheetTitle>
+                  <SheetTitle>카탈로그 버전 수정</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
                     <Label htmlFor="edit-code">코드</Label>
                     <div className="p-2 bg-muted rounded-md">
-                      <span className="text-sm">{editCommonCode.code}</span>
+                      <span className="text-sm"> </span>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-desc">코드설명</Label>
-                    <Input
-                      id="edit-desc"
-                      placeholder="코드설명"
-                      value={editCommonCode.codeDesc}
-                      onChange={(e) => {
-                        setEditCommonCode({ ...editCommonCode, codeDesc: e.target.value });
-                        setFormErrorsCommonCode(prevErrors => ({
-                          ...prevErrors,
-                          codeDesc: undefined,
-                        }));
-                      }}
-                    />
-                    {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
+
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-desc">활성화</Label>
                     <div className="mt-2">
-                      <Checkbox
-                        id="edit-enable"
-                        placeholder="활성화"
-                        checked={editCommonCode.enable}
-                        onCheckedChange={(checked) => {
-                          setEditCommonCode({ ...editCommonCode, enable: checked as boolean });
-                        }}
-                      />
+
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsCommonCodeEditSheetOpen(false)}>
+                  <Button variant="outline" size="sm" onClick={() => setIsCatalogVersionEditSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={editCommonCodeClick} disabled={isSubmitting}>
+                  <Button size="sm" onClick={editCatalogVersionClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
@@ -820,9 +795,9 @@ export default function CatalogTypesPage() {
             isLoading={isLoading}
           />
           <TablePagination
-            currentPage={pageGroupCode}
+            currentPage={pageCatalogType}
             totalPages={totalPages}
-            dataLength={groupCodeData.length}
+            dataLength={catalogTypeData.length}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />
