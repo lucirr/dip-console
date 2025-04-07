@@ -2,6 +2,7 @@
 
 import type { GroupCode, CommonCode } from "@/types/groupcode"
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
+import { string } from "zod";
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '') + ':' + (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
@@ -20,8 +21,11 @@ export async function getCommonCodeByGroupCode(groupCode: string) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      // const errorText = await response.text().catch(() => response.statusText);
+      // throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData: CommonCode[] = await response.json();
@@ -40,8 +44,9 @@ export async function getGroupCode(): Promise<GroupCode[]> {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData: GroupCode[] = await response.json();
@@ -61,8 +66,9 @@ export async function insertGroupCode(newData: GroupCode) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -82,8 +88,9 @@ export async function updateGroupCode(updateData: GroupCode) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -102,8 +109,9 @@ export async function getCommonCode(groupCodeId: string) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData: CommonCode[] = await response.json();
@@ -123,8 +131,9 @@ export async function insertCommonCode(newData: CommonCode) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -144,8 +153,9 @@ export async function updateCommonCode(updateData: CommonCode) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -164,8 +174,9 @@ export async function deleteCommonCode(commonCode: CommonCode) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -186,8 +197,9 @@ export async function getCatalogType(): Promise<CatalogType[]> {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData: CatalogType[] = await response.json();
@@ -207,8 +219,9 @@ export async function insertCatalogType(newData: CatalogType) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -231,8 +244,9 @@ export async function updateCatalogType(updateData: CatalogType) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -252,8 +266,9 @@ export async function deleteCatalogType(catalogType: CatalogType) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -266,14 +281,15 @@ export async function deleteCatalogType(catalogType: CatalogType) {
 
 export async function getCatalogVersion(catalogTypeId: string) {
   try {
-    const response = await fetch(`${apiUrl}/catalogs/version/${catalogTypeId}`, {
+    const response = await fetch(`${apiUrl}/catalogtype/version/${catalogTypeId}`, {
       method: 'GET',
       headers: headers,
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData: CatalogVersion[] = await response.json();
@@ -293,8 +309,9 @@ export async function insertCatalogVersion(newData: CatalogVersion) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -308,15 +325,16 @@ export async function insertCatalogVersion(newData: CatalogVersion) {
 
 export async function updateCatalogVersion(updateData: CatalogVersion) {
   try {
-    const response = await fetch(`${apiUrl}/catalogs/version/${updateData.uid}`, {
+    const response = await fetch(`${apiUrl}/catalogtype/version/${updateData.uid}`, {
       method: 'PUT',
       headers: headers,
       body: JSON.stringify(updateData),
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();
@@ -330,14 +348,15 @@ export async function updateCatalogVersion(updateData: CatalogVersion) {
 
 export async function deleteCatalogVersion(catalogVersion: CatalogVersion) {
   try {
-    const response = await fetch(`${apiUrl}/catalogs/version/${catalogVersion.catalogTypeId}/${catalogVersion.uid}`, {
+    const response = await fetch(`${apiUrl}/catalogtype/version/${catalogVersion.catalogTypeId}/${catalogVersion.uid}`, {
       method: 'DELETE',
       headers: headers,
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      throw new Error(`Server error ${response.status}: ${errorText}`);
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
     }
 
     const responseData = await response.json();

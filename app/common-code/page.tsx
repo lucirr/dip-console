@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getErrorMessage } from '@/lib/utils';
 
 interface Column {
   key: string;
@@ -306,7 +307,7 @@ export default function CommonCodePage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "그룹 코드 추가에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -365,7 +366,7 @@ export default function CommonCodePage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "공통 코드 추가에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -424,7 +425,7 @@ export default function CommonCodePage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "그룹 코드 수정에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -471,7 +472,7 @@ export default function CommonCodePage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "공통 코드 수정에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -520,7 +521,7 @@ export default function CommonCodePage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "공통 코드 삭제에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {

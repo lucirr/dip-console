@@ -31,6 +31,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
+import { getErrorMessage } from '@/lib/utils';
 
 interface Column {
   key: string;
@@ -123,7 +124,6 @@ export default function CatalogTypesPage() {
   });
 
   const formSchemaCatalogVersion = z.object({
-    catalogTypeId: z.string().min(1, { message: "카탈로그는 필수 입력 항목입니다." }),
     catalogVersion: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
   });
 
@@ -192,10 +192,10 @@ export default function CatalogTypesPage() {
               버전
             </DropdownMenuItem>
             {row.enable == false && (
-            <DropdownMenuItem onClick={() => catalogTypeDeleteClick(row)}>
-              <Code className="h-4 w-4 mr-2" />
-              삭제
-            </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => catalogTypeDeleteClick(row)}>
+                <Code className="h-4 w-4 mr-2" />
+                삭제
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -375,7 +375,7 @@ export default function CatalogTypesPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "카탈로그 유형 추가에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -394,11 +394,8 @@ export default function CatalogTypesPage() {
     if (!validationResult.success) {
       const errors: { [key: string]: string } = {};
       validationResult.error.errors.forEach(error => {
-        if (error.path[0] === 'code') {
-          errors.code = error.message;
-        }
-        if (error.path[0] === 'codeDesc') {
-          errors.codeDesc = error.message;
+        if (error.path[0] === 'catalogVersion') {
+          errors.catalogVersion = error.message;
         }
       });
       setFormErrorsCatalogVersion(errors);
@@ -415,6 +412,7 @@ export default function CatalogTypesPage() {
 
     try {
       if (selectedCatalogType?.uid) {
+        newCatalogVersion.catalogType = selectedCatalogType.catalogType
         newCatalogVersion.catalogTypeId = selectedCatalogType.uid;
         await insertCatalogVersion(newCatalogVersion);
         toast({
@@ -433,7 +431,7 @@ export default function CatalogTypesPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "카탈로그 버전 추가에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -503,7 +501,7 @@ export default function CatalogTypesPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "카탈로그 유형 수정에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -536,7 +534,7 @@ export default function CatalogTypesPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "카탈로그 유형형 삭제에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -583,7 +581,7 @@ export default function CatalogTypesPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "카탈로그 버전 수정에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
@@ -628,7 +626,7 @@ export default function CatalogTypesPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "카탈로그 버전 삭제에 실패했습니다.",
+        description: getErrorMessage(error),
         variant: "destructive"
       })
     } finally {
