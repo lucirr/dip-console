@@ -12,6 +12,21 @@ const headers: any = {
   "Content-Type": "application/json",
 };
 
+export async function getCommonCodeByGroupCode(groupCode: string) {
+  try {
+    const response = await fetch(`${apiUrl}/code/common?groupcode=${groupCode}`, {
+      method: 'GET',
+      headers: headers,
+    });
+
+    const responseData: CommonCode[] = await response.json();
+    return responseData
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
 export async function getGroupCode(): Promise<GroupCode[]> {
   try {
     const response = await fetch(apiUrl + '/code/group', {

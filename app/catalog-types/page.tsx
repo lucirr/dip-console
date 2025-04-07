@@ -17,13 +17,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
 import type { ReactNode } from 'react';
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
-import { getCatalogType, insertCatalogType, updateCatalogType, getCatalogVersion, deleteCatalogVersion, insertCatalogVersion, updateCatalogVersion } from "@/lib/actions"
+import { getCatalogType, insertCatalogType, updateCatalogType, getCatalogVersion, deleteCatalogVersion, insertCatalogVersion, updateCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { CommonCode } from '@/types/groupcode';
 
 interface Column {
   key: string;
@@ -53,9 +58,15 @@ export default function CatalogTypesPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
-  const [formErrorsCatalogType, setFormErrorsCatalogType] = useState<{ catalogType?: string; catalogTypeDesc?: string } | null>(null);
+  const [formErrorsCatalogType, setFormErrorsCatalogType] = useState<{
+    catalogType?: string;
+    catalogTypeDesc?: string;
+    serviceType?: string;
+    argoDeployType?: string;
+  } | null>(null);
   const [formErrorsCatalogVersion, setFormErrorsCatalogVersion] = useState<{ code?: string; codeDesc?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [codeServiceType, setCodeServiceType] = useState<CommonCode[]>([]);
 
   const [newCode, setNewCode] = useState<CatalogType>({
     catalogType: '',
@@ -245,6 +256,18 @@ export default function CatalogTypesPage() {
     }
   };
 
+  const fetchCommonCode = async (groupCode: string) => {
+    setIsLoading(true);
+    try {
+      const response = await getCommonCodeByGroupCode(groupCode)
+      setCodeServiceType(response);
+    } catch (error) {
+      setCodeServiceType([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchCatalogVersions = async () => {
     setIsLoading(true);
     try {
@@ -270,6 +293,7 @@ export default function CatalogTypesPage() {
 
   useEffect(() => {
     fetchCatalogTypes();
+    fetchCommonCode('service_type');
   }, []);
 
 
@@ -305,7 +329,8 @@ export default function CatalogTypesPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        if (field === 'catalogType' || field === 'catalogTypeDesc') {
+        // 필수 입력 필드 검증
+        if (field === 'catalogType' || field === 'serviceType' || field === 'argoDeployType') {
           acc[field] = error.message;
         }
         return acc;
@@ -448,7 +473,8 @@ export default function CatalogTypesPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        if (field === 'catalogTypeDesc') {
+        // 필수 입력 필드 검증
+        if (field === 'catalogType' || field === 'serviceType' || field === 'argoDeployType') {
           acc[field] = error.message;
         }
         return acc;
@@ -613,10 +639,12 @@ export default function CatalogTypesPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="new-code">카탈로그 유형</Label>
+                    <Label htmlFor="new-code" className="flex items-center">
+                      카탈로그 유형 <span className="text-red-500 ml-1">*</span>
+                    </Label>
                     <Input
                       id="new-code"
-                      placeholder="그룹코드 입력"
+                      placeholder="카탈로그 유형 입력"
                       value={newCode.catalogType}
                       onChange={(e) => {
                         setNewCode({ ...newCode, catalogType: e.target.value });
@@ -625,12 +653,196 @@ export default function CatalogTypesPage() {
                           catalogType: undefined,
                         }));
                       }}
+                      className={formErrorsCatalogType?.catalogType ? "border-red-500" : ""}
+                      required
                     />
                     {formErrorsCatalogType?.catalogType && <p className="text-red-500 text-sm">{formErrorsCatalogType.catalogType}</p>}
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-service-type" className="flex items-center">
+                      카탈로그 배포유형 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCode.catalogServiceTypeId}
+                      onValueChange={(value) => {
+                        setNewCode({ ...newCode, catalogServiceTypeId: value });
+                        setFormErrorsCatalogType(prevErrors => ({
+                          ...prevErrors,
+                          serviceType: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="catalog-service-type"
+                        className={formErrorsCatalogType?.serviceType ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="배포유형 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {codeServiceType.map((item) => (
+                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                            {item.codeDesc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalogType?.serviceType && <p className="text-red-500 text-sm">{formErrorsCatalogType.serviceType}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="argo-deploy-type" className="flex items-center">
+                      Argo 배포유형 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCode.argoDeployType}
+                      onValueChange={(value) => {
+                        setNewCode({ ...newCode, argoDeployType: value });
+                        setFormErrorsCatalogType(prevErrors => ({
+                          ...prevErrors,
+                          argoDeployType: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="argo-deploy-type"
+                        className={formErrorsCatalogType?.argoDeployType ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="배포 유형 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="helm">Helm</SelectItem>
+                        <SelectItem value="kustomize">Kustomize</SelectItem>
+                        <SelectItem value="directory">Directory</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalogType?.argoDeployType && <p className="text-red-500 text-sm">{formErrorsCatalogType.argoDeployType}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-image">카탈로그 이미지</Label>
+                    <Textarea
+                      id="catalog-image"
+                      placeholder="이미지 URL 입력"
+                      value={newCode.catalogImage}
+                      onChange={(e) => setNewCode(prev => ({ ...prev, catalogImage: e.target.value }))}
+                      className="min-h-[100px] resize-y"
+                      aria-describedby="catalog-image-description"
+                    />
+                    
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-desc">카탈로그 설명</Label>
+                    <Textarea
+                      id="catalog-desc"
+                      placeholder="카탈로그 설명 입력"
+                      value={newCode.catalogDesc || ''}
+                      onChange={(e) => setNewCode(prev => ({
+                        ...prev,
+                        catalogDesc: e.target.value
+                      }))}
+                      rows={4}
+                      className="resize-vertical"
+                      maxLength={500}
+                      aria-describedby="catalog-desc-description"
+                    />
+                    
+                  </div>
+
+                  
+
+                  <div className="space-y-2">
+                    <Label htmlFor="values-yaml">Values YAML</Label>
+                    <div className="border rounded-md overflow-hidden">
+                      <CodeMirror
+                        value={newCode.valuesYaml}
+                        height="200px"
+                        extensions={[javascript({ jsx: true })]}
+                        onChange={(value) => setNewCode({ ...newCode, valuesYaml: value })}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="enable"
+                        checked={newCode.enable}
+                        onCheckedChange={(checked) =>
+                          setNewCode({ ...newCode, enable: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="enable">활성화</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="is-admin"
+                        checked={newCode.isAdmin}
+                        onCheckedChange={(checked) =>
+                          setNewCode({ ...newCode, isAdmin: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="is-admin">관리자 배포</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="is-cluster-only"
+                        checked={newCode.isClusterOnly}
+                        onCheckedChange={(checked) =>
+                          setNewCode({ ...newCode, isClusterOnly: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="is-cluster-only">클러스터 단독 배포</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="is-tenant"
+                        checked={newCode.isTenant}
+                        onCheckedChange={(checked) =>
+                          setNewCode({ ...newCode, isTenant: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="is-tenant">테넌트 사용</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="keycloak-use"
+                        checked={newCode.keycloakUse}
+                        onCheckedChange={(checked) =>
+                          setNewCode({ ...newCode, keycloakUse: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="keycloak-use">Keycloak 사용</Label>
+                    </div>
+
+                    
+                  </div>
+
+                  {newCode.keycloakUse && (
+                    <div className="space-y-2">
+                      <Label htmlFor="keycloak-uri">Keycloak URI</Label>
+                      <Input
+                        id="keycloak-uri"
+                        placeholder="Keycloak URI 입력"
+                        value={newCode.keycloakRedirectUris || ''}
+                        onChange={(e) => setNewCode(prev => ({
+                          ...prev,
+                          keycloakRedirectUris: e.target.value
+                        }))}
+                        aria-describedby="keycloak-uri-description"
+                      />
+                     
+                    </div>
+                  )}
+
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCatalogTypeNewSheetOpen(false)}>
                     취소
                   </Button>
@@ -638,6 +850,7 @@ export default function CatalogTypesPage() {
                     저장
                   </Button>
                 </div>
+                
               </div>
             </SheetContent>
           </Sheet>
@@ -658,9 +871,30 @@ export default function CatalogTypesPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-desc">그룹코드 설명</Label>
+                    <Input
+                      id="edit-desc"
+                      placeholder="그룹코드 설명 입력"
+                      value={editCatalogType.catalogDesc}
+                      onChange={(e) => setEditCatalogType(prev => ({ ...prev, catalogDesc: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-catalog-image">카탈로그 이미지</Label>
+                    <Textarea
+                      id="edit-catalog-image"
+                      placeholder="이미지 URL 입력"
+                      value={editCatalogType.catalogImage}
+                      onChange={(e) => setEditCatalogType(prev => ({ ...prev, catalogImage: e.target.value }))}
+                      className="min-h-[100px] resize-y"
+                      aria-describedby="edit-catalog-image-description"
+                    />
+                    <p id="edit-catalog-image-description" className="text-xs text-muted-foreground">
+                      카탈로그 이미지 URL을 입력하세요. 여러 줄 입력 가능합니다.
+                    </p>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCatalogTypeEditSheetOpen(false)}>
                     취소
                   </Button>
@@ -719,7 +953,7 @@ export default function CatalogTypesPage() {
 
                           </div>
                         </div>
-                        <div className="flex justify-end space-x-2 mt-6">
+                        <div className="flex justify-end space-x-2 mt-6 pb-6">
                           <Button variant="outline" size="sm" onClick={() => setIsCatalogVersionNewSheetOpen(false)}>
                             취소
                           </Button>
@@ -773,7 +1007,7 @@ export default function CatalogTypesPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCatalogVersionEditSheetOpen(false)}>
                     취소
                   </Button>

@@ -597,7 +597,7 @@ export default function CommonCodePage() {
                     {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsGroupCodeNewSheetOpen(false)}>
                     취소
                   </Button>
@@ -640,7 +640,7 @@ export default function CommonCodePage() {
                     {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsGroupCodeEditSheetOpen(false)}>
                     취소
                   </Button>
@@ -724,7 +724,7 @@ export default function CommonCodePage() {
                             {formErrorsCommonCode?.codeDesc && <p className="text-red-500 text-sm">{formErrorsCommonCode.codeDesc}</p>}
                           </div>
                         </div>
-                        <div className="flex justify-end space-x-2 mt-6">
+                        <div className="flex justify-end space-x-2 mt-6 pb-6">
                           <Button variant="outline" size="sm" onClick={() => setIsCommonCodeNewSheetOpen(false)}>
                             취소
                           </Button>
@@ -797,7 +797,7 @@ export default function CommonCodePage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2 mt-6">
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCommonCodeEditSheetOpen(false)}>
                     취소
                   </Button>
