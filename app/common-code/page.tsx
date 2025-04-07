@@ -565,7 +565,7 @@ export default function CommonCodePage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="new-code">그룹코드</Label>
+                    <Label htmlFor="new-code">그룹코드 <span className="text-red-500 ml-1">*</span></Label>
                     <Input
                       id="new-code"
                       placeholder="그룹코드 입력"
@@ -577,11 +577,13 @@ export default function CommonCodePage() {
                           groupCode: undefined,
                         }));
                       }}
+                      className={formErrorsGroupCode?.groupCode ? "border-red-500" : ""}
+                      required
                     />
                     {formErrorsGroupCode?.groupCode && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCode}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-desc">그룹코드 설명</Label>
+                    <Label htmlFor="new-desc">그룹코드 설명 <span className="text-red-500 ml-1">*</span></Label>
                     <Input
                       id="new-desc"
                       placeholder="그룹코드 설명 입력"
@@ -593,6 +595,8 @@ export default function CommonCodePage() {
                           groupCodeDesc: undefined,
                         }));
                       }}
+                      className={formErrorsGroupCode?.groupCodeDesc ? "border-red-500" : ""}
+                      required
                     />
                     {formErrorsGroupCode?.groupCodeDesc && <p className="text-red-500 text-sm">{formErrorsGroupCode.groupCodeDesc}</p>}
                   </div>
