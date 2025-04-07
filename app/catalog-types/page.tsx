@@ -216,15 +216,8 @@ export default function CatalogTypesPage() {
         );
       }
     },
-    { key: 'catalogType', title: '그룹코드', align: 'left' },
-    { key: 'code', title: '코드', align: 'left' },
-    { key: 'codeDesc', title: '코드설명', align: 'left' },
-    {
-      key: 'enable',
-      title: '활성화',
-      width: 'w-[100px]',
-      align: 'left',
-    },
+    { key: 'catalogType', title: '카탈로그', align: 'left' },
+    { key: 'catalogVersion', title: '카탈로그 버전', align: 'left' },
     {
       key: 'actions',
       title: '',

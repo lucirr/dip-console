@@ -286,7 +286,7 @@ export async function getCatalogVersion(catalogTypeId: string) {
 
 export async function insertCatalogVersion(newData: CatalogVersion) {
   try {
-    const response = await fetch(`${apiUrl}/catalogs/version/${newData.catalogTypeId}`, {
+    const response = await fetch(`${apiUrl}/catalogtype/version`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(newData),
@@ -308,7 +308,7 @@ export async function insertCatalogVersion(newData: CatalogVersion) {
 
 export async function updateCatalogVersion(updateData: CatalogVersion) {
   try {
-    const response = await fetch(`${apiUrl}/catalogs/version/${updateData.catalogTypeId}`, {
+    const response = await fetch(`${apiUrl}/catalogs/version/${updateData.uid}`, {
       method: 'PUT',
       headers: headers,
       body: JSON.stringify(updateData),
