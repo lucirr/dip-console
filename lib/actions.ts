@@ -244,6 +244,26 @@ export async function updateCatalogType(updateData: CatalogType) {
   }
 }
 
+export async function deleteCatalogType(catalogType: CatalogType) {
+  try {
+    const response = await fetch(`${apiUrl}/catalogs/${catalogType.uid}`, {
+      method: 'DELETE',
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    console.log("Delete Success:", responseData);
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
 export async function getCatalogVersion(catalogTypeId: string) {
   try {
     const response = await fetch(`${apiUrl}/catalogs/version/${catalogTypeId}`, {
@@ -279,7 +299,7 @@ export async function insertCatalogVersion(newData: CatalogVersion) {
 
     const responseData = await response.json();
     console.log("Success:", responseData);
-    return responseData; 
+    return responseData;
   } catch (error) {
     console.error(error);
     throw new Error(`${error instanceof Error ? error.message : String(error)}`);

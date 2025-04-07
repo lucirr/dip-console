@@ -25,7 +25,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
-import { getCatalogType, insertCatalogType, updateCatalogType, getCatalogVersion, deleteCatalogVersion, insertCatalogVersion, updateCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
+import { getCatalogType, insertCatalogType, updateCatalogType, deleteCatalogType, getCatalogVersion, deleteCatalogVersion, insertCatalogVersion, updateCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -191,6 +191,12 @@ export default function CatalogTypesPage() {
               <Code className="h-4 w-4 mr-2" />
               버전
             </DropdownMenuItem>
+            {row.enable == false && (
+            <DropdownMenuItem onClick={() => catalogTypeDeleteClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              삭제
+            </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -513,6 +519,39 @@ export default function CatalogTypesPage() {
     }
   };
 
+  const catalogTypeDeleteClick = (row: CatalogType) => {
+    if (isSubmitting) return;
+
+    setConfirmAction(() => () => catalogTypeSubmit(row));
+    setConfirmDescription("삭제하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const catalogTypeSubmit = async (row: CatalogType) => {
+    console.log(isSubmitting)
+    if (!row) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await deleteCatalogType(row);
+      toast({
+        title: "Success",
+        description: "카탈로그 유형이 성공적으로 삭제되었습니다.",
+      })
+      fetchCatalogTypes();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "카탈로그 유형형 삭제에 실패했습니다.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
   const editCatalogVersionClick = () => {
     if (isSubmitting) return;
 
@@ -735,6 +774,19 @@ export default function CatalogTypesPage() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="values-yaml">Values YAML</Label>
+                    <div className="border rounded-md overflow-hidden">
+                      <CodeMirror
+                        value={newCode.valuesYaml}
+                        height="200px"
+                        extensions={[yaml(), javascript({ jsx: true })]}
+                        onChange={(value) => setNewCode({ ...newCode, valuesYaml: value })}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="catalog-desc">카탈로그 설명</Label>
                     <Textarea
                       id="catalog-desc"
@@ -750,21 +802,6 @@ export default function CatalogTypesPage() {
                       aria-describedby="catalog-desc-description"
                     />
 
-                  </div>
-
-
-
-                  <div className="space-y-2">
-                    <Label htmlFor="values-yaml">Values YAML</Label>
-                    <div className="border rounded-md overflow-hidden">
-                      <CodeMirror
-                        value={newCode.valuesYaml}
-                        height="200px"
-                        extensions={[yaml(), javascript({ jsx: true })]}
-                        onChange={(value) => setNewCode({ ...newCode, valuesYaml: value })}
-                        className="text-sm"
-                      />
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -828,7 +865,7 @@ export default function CatalogTypesPage() {
 
                   {newCode.keycloakUse && (
                     <div className="space-y-2">
-                      <Label htmlFor="keycloak-uri">Keycloak URI</Label>
+                      <Label htmlFor="keycloak-uri">Keycloak Redirect URIs</Label>
                       <Input
                         id="keycloak-uri"
                         placeholder="Keycloak URI 입력"
@@ -865,7 +902,6 @@ export default function CatalogTypesPage() {
                   <SheetTitle>카탈로그 유형 수정</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
-                  {/* 카탈로그 유형 (읽기 전용) */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-type" className="flex items-center">
                       카탈로그 유형 <span className="text-red-500 ml-1">*</span>
@@ -875,7 +911,6 @@ export default function CatalogTypesPage() {
                     </div>
                   </div>
 
-                  {/* 카탈로그 배포유형 */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-service-type" className="flex items-center">
                       카탈로그 배포유형 <span className="text-red-500 ml-1">*</span>
@@ -907,7 +942,6 @@ export default function CatalogTypesPage() {
                     {formErrorsCatalogType?.catalogServiceTypeId && <p className="text-red-500 text-sm">{formErrorsCatalogType.catalogServiceTypeId}</p>}
                   </div>
 
-                  {/* Argo 배포유형 */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-argo-deploy-type" className="flex items-center">
                       Argo 배포유형 <span className="text-red-500 ml-1">*</span>
@@ -937,7 +971,6 @@ export default function CatalogTypesPage() {
                     {formErrorsCatalogType?.argoDeployType && <p className="text-red-500 text-sm">{formErrorsCatalogType.argoDeployType}</p>}
                   </div>
 
-                  {/* 카탈로그 이미지 */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-image">카탈로그 이미지</Label>
                     <Textarea
@@ -948,12 +981,21 @@ export default function CatalogTypesPage() {
                       className="min-h-[100px] resize-y"
                       aria-describedby="edit-catalog-image-description"
                     />
-                    <p id="edit-catalog-image-description" className="text-xs text-muted-foreground">
-                      카탈로그 이미지 URL을 입력하세요. 여러 줄 입력 가능합니다.
-                    </p>
                   </div>
 
-                  {/* 카탈로그 설명 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="values-yaml">Values YAML</Label>
+                    <div className="border rounded-md overflow-hidden">
+                      <CodeMirror
+                        value={editCatalogType.valuesYaml}
+                        height="200px"
+                        extensions={[yaml(), javascript({ jsx: true })]}
+                        onChange={(value) => setEditCatalogType(prev => ({ ...prev, valuesYaml: value }))}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-desc">카탈로그 설명</Label>
                     <Textarea
@@ -971,74 +1013,22 @@ export default function CatalogTypesPage() {
                     />
                   </div>
 
-                  {/* 추가 설정 */}
-                  <div className="space-y-4 pt-2">
-                    <h3 className="text-sm font-medium">추가 설정</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* 클러스터 전용 */}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          id="edit-is-cluster-only"
-                          checked={editCatalogType.isClusterOnly}
+                          id="enable"
+                          checked={editCatalogType.enable}
                           onCheckedChange={(checked) =>
                             setEditCatalogType(prev => ({
                               ...prev,
-                              isClusterOnly: checked as boolean
+                              enable: checked as boolean
                             }))
                           }
-                          aria-label="클러스터 전용 설정"
                         />
-                        <Label
-                          htmlFor="edit-is-cluster-only"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          클러스터 전용
-                        </Label>
+                        <Label htmlFor="enable">활성화</Label>
                       </div>
-                      
-                      {/* 테넌트 사용 */}
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-tenant"
-                          checked={editCatalogType.isTenant}
-                          onCheckedChange={(checked) =>
-                            setEditCatalogType(prev => ({
-                              ...prev,
-                              isTenant: checked as boolean
-                            }))
-                          }
-                          aria-label="테넌트 사용 설정"
-                        />
-                        <Label
-                          htmlFor="edit-is-tenant"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          테넌트 사용
-                        </Label>
-                      </div>
-                      
-                      {/* Keycloak 사용 */}
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-keycloak-use"
-                          checked={editCatalogType.keycloakUse}
-                          onCheckedChange={(checked) =>
-                            setEditCatalogType(prev => ({
-                              ...prev,
-                              keycloakUse: checked as boolean
-                            }))
-                          }
-                          aria-label="Keycloak 사용 설정"
-                        />
-                        <Label
-                          htmlFor="edit-keycloak-use"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          Keycloak 사용
-                        </Label>
-                      </div>
-                      
-                      {/* 관리자 전용 */}
+
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="edit-is-admin"
@@ -1049,28 +1039,64 @@ export default function CatalogTypesPage() {
                               isAdmin: checked as boolean
                             }))
                           }
-                          aria-label="관리자 전용 설정"
                         />
-                        <Label
-                          htmlFor="edit-is-admin"
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          관리자 전용
-                        </Label>
+                        <Label htmlFor="edit-is-admin">관리자 배포</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-is-cluster-only"
+                          checked={editCatalogType.isClusterOnly}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              isClusterOnly: checked as boolean
+                            }))
+                          }
+                        />
+                        <Label htmlFor="edit-is-cluster-only">클러스터 단독 배포</Label>
+                      </div>
+
+
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-is-tenant"
+                          checked={editCatalogType.isTenant}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              isTenant: checked as boolean
+                            }))
+                          }
+                        />
+                        <Label htmlFor="edit-is-tenant">테넌트 사용</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-keycloak-use"
+                          checked={editCatalogType.keycloakUse}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              keycloakUse: checked as boolean
+                            }))
+                          }
+                        />
+                        <Label htmlFor="edit-keycloak-use">Keycloak 사용</Label>
                       </div>
                     </div>
                   </div>
 
-                  {/* Keycloak Redirect URIs - 조건부 렌더링 */}
                   {editCatalogType.keycloakUse && (
                     <div className="space-y-2">
                       <Label htmlFor="edit-keycloak-redirect-uris">Keycloak Redirect URIs</Label>
-                      <Textarea
+                      <Input
                         id="edit-keycloak-redirect-uris"
-                        placeholder="Redirect URIs 입력 (줄바꿈으로 구분)"
+                        placeholder="Redirect URIs 입력"
                         value={editCatalogType.keycloakRedirectUris || ''}
                         onChange={(e) => setEditCatalogType(prev => ({ ...prev, keycloakRedirectUris: e.target.value }))}
-                        className="min-h-[80px] resize-y"
                       />
                     </div>
                   )}
