@@ -68,7 +68,7 @@ export default function CatalogTypesPage() {
   } | null>(null);
   const [formErrorsCatalogVersion, setFormErrorsCatalogVersion] = useState<{ catalogTypeId?: string; catalogVersion?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [codeServiceType, setCodeServiceType] = useState<CommonCode[]>([]);
+  const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
   const [newCode, setNewCode] = useState<CatalogType>({
     catalogType: '',
@@ -260,9 +260,9 @@ export default function CatalogTypesPage() {
     setIsLoading(true);
     try {
       const response = await getCommonCodeByGroupCode(groupCode)
-      setCodeServiceType(response);
+      setCodeType(response);
     } catch (error) {
-      setCodeServiceType([]);
+      setCodeType([]);
     } finally {
       setIsLoading(false);
     }
@@ -712,7 +712,7 @@ export default function CatalogTypesPage() {
                         <SelectValue placeholder="배포유형 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {codeServiceType.map((item) => (
+                        {codeType.map((item) => (
                           <SelectItem key={item.uid || ''} value={item.uid || ''}>
                             {item.codeDesc}
                           </SelectItem>
@@ -923,7 +923,7 @@ export default function CatalogTypesPage() {
                         <SelectValue placeholder="배포유형 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {codeServiceType.map((item) => (
+                        {codeType.map((item) => (
                           <SelectItem key={item.uid || ''} value={item.uid || ''}>
                             {item.codeDesc}
                           </SelectItem>
