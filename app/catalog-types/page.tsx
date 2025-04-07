@@ -329,7 +329,6 @@ export default function CatalogTypesPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        console.log(field)
         // 필수 입력 필드 검증
         if (field === 'catalogType' || field === 'catalogServiceTypeId' || field === 'argoDeployType') {
           acc[field] = error.message;

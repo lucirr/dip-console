@@ -2,6 +2,7 @@
 
 import type { GroupCode, CommonCode } from "@/types/groupcode"
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
+import type { Cluster } from "@/types/cluster"
 import { string } from "zod";
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
@@ -72,7 +73,7 @@ export async function insertGroupCode(newData: GroupCode) {
     }
 
     const responseData = await response.json();
-    console.log("Success:", responseData);
+    return responseData
   } catch (error) {
     console.error(error)
     throw new Error(error instanceof Error ? error.message : String(error))
@@ -94,7 +95,7 @@ export async function updateGroupCode(updateData: GroupCode) {
     }
 
     const responseData = await response.json();
-    console.log("Update Success:", responseData);
+    return responseData
   } catch (error) {
     console.error(error)
     throw new Error(error instanceof Error ? error.message : String(error))
@@ -137,7 +138,7 @@ export async function insertCommonCode(newData: CommonCode) {
     }
 
     const responseData = await response.json();
-    console.log("Success:", responseData);
+    return responseData
   } catch (error) {
     console.error(error)
     throw new Error(error instanceof Error ? error.message : String(error))
@@ -159,7 +160,7 @@ export async function updateCommonCode(updateData: CommonCode) {
     }
 
     const responseData = await response.json();
-    console.log("Update Success:", responseData);
+    return responseData
   } catch (error) {
     console.error(error)
     throw new Error(error instanceof Error ? error.message : String(error))
@@ -180,7 +181,7 @@ export async function deleteCommonCode(commonCode: CommonCode) {
     }
 
     const responseData = await response.json();
-    console.log("Delete Success:", responseData);
+    return responseData
   } catch (error) {
     console.error(error)
     throw new Error(error instanceof Error ? error.message : String(error))
@@ -225,7 +226,6 @@ export async function insertCatalogType(newData: CatalogType) {
     }
 
     const responseData = await response.json();
-    console.log("Success:", responseData);
     return responseData;
   } catch (error) {
     console.error(error);
@@ -250,7 +250,6 @@ export async function updateCatalogType(updateData: CatalogType) {
     }
 
     const responseData = await response.json();
-    console.log("Update Success:", responseData);
     return responseData;
   } catch (error) {
     console.error(error);
@@ -272,7 +271,7 @@ export async function deleteCatalogType(catalogType: CatalogType) {
     }
 
     const responseData = await response.json();
-    console.log("Delete Success:", responseData);
+    return responseData
   } catch (error) {
     console.error(error)
     throw new Error(error instanceof Error ? error.message : String(error))
@@ -315,7 +314,6 @@ export async function insertCatalogVersion(newData: CatalogVersion) {
     }
 
     const responseData = await response.json();
-    console.log("Success:", responseData);
     return responseData;
   } catch (error) {
     console.error(error);
@@ -338,7 +336,6 @@ export async function updateCatalogVersion(updateData: CatalogVersion) {
     }
 
     const responseData = await response.json();
-    console.log("Update Success:", responseData);
     return responseData;
   } catch (error) {
     console.error(error);
@@ -360,7 +357,94 @@ export async function deleteCatalogVersion(catalogVersion: CatalogVersion) {
     }
 
     const responseData = await response.json();
-    console.log("Delete Success:", responseData);
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+// --------------------------------------------------------------------------------
+
+export async function getClusters(): Promise<Cluster[]> {
+  try {
+    const response = await fetch(apiUrl + '/clusters', {
+      method: 'GET',
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
+    }
+
+    const responseData: Cluster[] = await response.json();
+    return responseData
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function insertCluster(newData: Cluster) {
+  try {
+    const response = await fetch(apiUrl + '/clusters', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(newData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
+    }
+
+    const responseData = await response.json();
+    return responseData
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function updateCluster(updateData: Cluster) {
+  try {
+    const response = await fetch(`${apiUrl}/clusters/${updateData.uid}`, {
+      method: 'PUT',
+      headers: headers,
+      body: JSON.stringify(updateData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
+    }
+
+    const responseData = await response.json();
+    return responseData
+  } catch (error) {
+    console.error(error)
+    throw new Error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+export async function deleteCluster(cluster: Cluster) {
+  try {
+    const response = await fetch(`${apiUrl}/clusters/${cluster.uid}`, {
+      method: 'DELETE',
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+      throw new Error(errorMessage);
+    }
+
+    const responseData = await response.json();
     return responseData;
   } catch (error) {
     console.error(error);

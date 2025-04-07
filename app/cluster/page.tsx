@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import TablePagination from "@/components/ui/table-pagination";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,12 +20,13 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { Cluster } from "@/types/cluster"
-import { getCluster, insertCluster, updateCluster, deleteCluster, getCommonCodeByGroupCode } from "@/lib/actions"
+import { getClusters, insertCluster, updateCluster, deleteCluster, getCommonCodeByGroupCode } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -124,7 +125,7 @@ export default function ClusterPage() {
     { key: 'clusterName', title: '클러스터 이름', align: 'left' },
     { key: 'clusterType', title: '클러스터 타입', align: 'left' },
     {
-      key: 'isArgo', title: 'Argo 등록여부부', align: 'left',
+      key: 'isArgo', title: 'Argo 등록여부', align: 'left',
       cell: (row: Cluster) => (
         <div className="flex justify-left">
           {row.isArgo && <Check className="h-4 w-4 text-green-500" />}
@@ -163,7 +164,7 @@ export default function ClusterPage() {
   const fetchClusters = async () => {
     setIsLoading(true);
     try {
-      const response = await getCluster()
+      const response = await getClusters()
       setClusterData(response);
     } catch (error) {
       setClusterData([]);
@@ -216,9 +217,8 @@ export default function ClusterPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        console.log(field)
         // 필수 입력 필드 검증
-        if (field === 'cluster' || field === 'catalogServiceTypeId' || field === 'argoDeployType') {
+        if (field === 'clusterName' || field === 'clusterTypeId' || field === 'clusterUrl' || field === 'domain' || field === 'clusterLbIp' || field === 'clusterToken') {
           acc[field] = error.message;
         }
         return acc;
@@ -240,7 +240,7 @@ export default function ClusterPage() {
       await insertCluster(newCode);
       toast({
         title: "Success",
-        description: "클러스터이 성공적으로 추가되었습니다.",
+        description: "클러스터가 성공적으로 추가되었습니다.",
       })
       setNewCode({
         clusterName: '',
@@ -298,7 +298,7 @@ export default function ClusterPage() {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
         // 필수 입력 필드 검증
-        if (field === 'cluster' || field === 'serviceType' || field === 'argoDeployType') {
+        if (field === 'clusterName' || field === 'clusterTypeId' || field === 'clusterUrl' || field === 'domain' || field === 'clusterLbIp' || field === 'clusterToken') {
           acc[field] = error.message;
         }
         return acc;
@@ -383,7 +383,7 @@ export default function ClusterPage() {
         <div className="flex items-center justify-between px-6 py-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">클러스터</h2>
-            <p className="mt-1 text-sm text-gray-500">클러스터을 생성하고 관리할 수 있습니다.</p>
+            <p className="mt-1 text-sm text-gray-500">클러스터를 생성하고 관리할 수 있습니다.</p>
           </div>
           <Sheet open={isClusterNewSheetOpen} onOpenChange={setIsClusterNewSheetOpen}>
             <SheetTrigger asChild>
@@ -399,12 +399,12 @@ export default function ClusterPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="new-code" className="flex items-center">
+                    <Label htmlFor="cluster-name" className="flex items-center">
                       클러스터 이름 <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
-                      id="new-code"
-                      placeholder="클러스터 입력"
+                      id="cluster-name"
+                      placeholder="클러스터 이름 입력"
                       value={newCode.clusterName}
                       onChange={(e) => {
                         setNewCode({ ...newCode, clusterName: e.target.value });
@@ -418,15 +418,20 @@ export default function ClusterPage() {
                     />
                     {formErrorsCluster?.clusterName && <p className="text-red-500 text-sm">{formErrorsCluster.clusterName}</p>}
                   </div>
-
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="catalog-service-type" className="flex items-center">
+                    <Label htmlFor="cluster-type" className="flex items-center">
                       클러스터 타입 <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Select
                       value={newCode.clusterTypeId}
                       onValueChange={(value) => {
-                        setNewCode({ ...newCode, clusterTypeId: value });
+                        const selectedType = codeType.find(item => item.uid === value);
+                        setNewCode({
+                          ...newCode,
+                          clusterTypeId: value,
+                          clusterType: selectedType?.codeDesc || ''
+                        });
                         setFormErrorsCluster(prevErrors => ({
                           ...prevErrors,
                           clusterTypeId: undefined,
@@ -434,7 +439,7 @@ export default function ClusterPage() {
                       }}
                     >
                       <SelectTrigger
-                        id="catalog-service-type"
+                        id="cluster-type"
                         className={formErrorsCluster?.clusterTypeId ? "border-red-500" : ""}
                       >
                         <SelectValue placeholder="클러스터 타입 선택" />
@@ -450,25 +455,100 @@ export default function ClusterPage() {
                     {formErrorsCluster?.clusterTypeId && <p className="text-red-500 text-sm">{formErrorsCluster.clusterTypeId}</p>}
                   </div>
 
-                  
-
                   <div className="space-y-2">
-                    <Label htmlFor="catalog-image">클러스터 토큰</Label>
-                    <Textarea
-                      id="catalog-image"
-                      placeholder="이미지 URL 입력"
-                      value={newCode.clusterToken}
-                      onChange={(e) => setNewCode(prev => ({ ...prev, clusterToken: e.target.value }))}
-                      className="min-h-[100px] resize-y"
-                      aria-describedby="catalog-image-description"
+                    <Label htmlFor="cluster-url" className="flex items-center">
+                      클러스터 주소 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="cluster-url"
+                      placeholder="https://cluster.example.com"
+                      value={newCode.clusterUrl}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, clusterUrl: e.target.value });
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          clusterUrl: undefined,
+                        }));
+                      }}
+                      className={formErrorsCluster?.clusterUrl ? "border-red-500" : ""}
+                      required
                     />
-
+                    {formErrorsCluster?.clusterUrl && <p className="text-red-500 text-sm">{formErrorsCluster.clusterUrl}</p>}
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="domain" className="flex items-center">
+                      서비스 도메인 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="domain"
+                      placeholder="example.com"
+                      value={newCode.domain}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, domain: e.target.value });
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          domain: undefined,
+                        }));
+                      }}
+                      className={formErrorsCluster?.domain ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCluster?.domain && <p className="text-red-500 text-sm">{formErrorsCluster.domain}</p>}
+                  </div>
                   
-
+                  <div className="space-y-2">
+                    <Label htmlFor="cluster-lb-ip" className="flex items-center">
+                      클러스터 LB IP <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="cluster-lb-ip"
+                      placeholder="192.168.1.1"
+                      value={newCode.clusterLbIp}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, clusterLbIp: e.target.value });
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          clusterLbIp: undefined,
+                        }));
+                      }}
+                      className={formErrorsCluster?.clusterLbIp ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCluster?.clusterLbIp && <p className="text-red-500 text-sm">{formErrorsCluster.clusterLbIp}</p>}
+                  </div>
                   
+                  <div className="space-y-2">
+                    <Label htmlFor="cluster-token" className="flex items-center">
+                      클러스터 토큰 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Textarea
+                      id="cluster-token"
+                      placeholder="클러스터 인증 토큰 입력"
+                      value={newCode.clusterToken}
+                      onChange={(e) => {
+                        setNewCode(prev => ({ ...prev, clusterToken: e.target.value }));
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          clusterToken: undefined,
+                        }));
+                      }}
+                      className={`min-h-[150px] resize-y ${formErrorsCluster?.clusterToken ? "border-red-500" : ""}`}
+                    />
+                    {formErrorsCluster?.clusterToken && <p className="text-red-500 text-sm">{formErrorsCluster.clusterToken}</p>}
+                  </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="cluster-desc">클러스터 설명</Label>
+                    <Textarea
+                      id="cluster-desc"
+                      placeholder="클러스터에 대한 설명 입력"
+                      value={newCode.clusterDesc}
+                      onChange={(e) => setNewCode(prev => ({ ...prev, clusterDesc: e.target.value }))}
+                      className="resize-y"
+                    />
+                  </div>
+               
                 </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsClusterNewSheetOpen(false)}>
@@ -478,13 +558,10 @@ export default function ClusterPage() {
                     저장
                   </Button>
                 </div>
-
               </div>
             </SheetContent>
           </Sheet>
           <Sheet open={isClusterEditSheetOpen} onOpenChange={setIsClusterEditSheetOpen}>
-            <SheetTrigger asChild>
-            </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
@@ -492,33 +569,50 @@ export default function ClusterPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-type" className="flex items-center">
-                      클러스터 <span className="text-red-500 ml-1">*</span>
+                    <Label htmlFor="edit-cluster-name" className="flex items-center">
+                      클러스터 이름 <span className="text-red-500 ml-1">*</span>
                     </Label>
-                    <div className="p-2 bg-muted rounded-md">
-                      <span className="text-sm">{editCluster.cluster}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-service-type" className="flex items-center">
-                      클러스터 배포유형 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Select
-                      value={editCluster.catalogServiceTypeId}
-                      onValueChange={(value) => {
-                        setEditCluster(prev => ({ ...prev, catalogServiceTypeId: value }));
+                    <Input
+                      id="edit-cluster-name"
+                      placeholder="클러스터 이름 입력"
+                      value={editCluster.clusterName}
+                      onChange={(e) => {
+                        setEditCluster({ ...editCluster, clusterName: e.target.value });
                         setFormErrorsCluster(prevErrors => ({
                           ...prevErrors,
-                          catalogServiceTypeId: undefined,
+                          clusterName: undefined,
+                        }));
+                      }}
+                      className={formErrorsCluster?.clusterName ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCluster?.clusterName && <p className="text-red-500 text-sm">{formErrorsCluster.clusterName}</p>}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-cluster-type" className="flex items-center">
+                      클러스터 타입 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={editCluster.clusterTypeId}
+                      onValueChange={(value) => {
+                        const selectedType = codeType.find(item => item.uid === value);
+                        setEditCluster({
+                          ...editCluster,
+                          clusterTypeId: value,
+                          clusterType: selectedType?.codeDesc || ''
+                        });
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          clusterTypeId: undefined,
                         }));
                       }}
                     >
                       <SelectTrigger
-                        id="edit-catalog-service-type"
-                        className={formErrorsCluster?.catalogServiceTypeId ? "border-red-500" : ""}
+                        id="edit-cluster-type"
+                        className={formErrorsCluster?.clusterTypeId ? "border-red-500" : ""}
                       >
-                        <SelectValue placeholder="배포유형 선택" />
+                        <SelectValue placeholder="클러스터 타입 선택" />
                       </SelectTrigger>
                       <SelectContent>
                         {codeType.map((item) => (
@@ -528,175 +622,129 @@ export default function ClusterPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {formErrorsCluster?.catalogServiceTypeId && <p className="text-red-500 text-sm">{formErrorsCluster.catalogServiceTypeId}</p>}
+                    {formErrorsCluster?.clusterTypeId && <p className="text-red-500 text-sm">{formErrorsCluster.clusterTypeId}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-argo-deploy-type" className="flex items-center">
-                      Argo 배포유형 <span className="text-red-500 ml-1">*</span>
+                    <Label htmlFor="edit-cluster-url" className="flex items-center">
+                      클러스터 주소 <span className="text-red-500 ml-1">*</span>
                     </Label>
-                    <Select
-                      value={editCluster.argoDeployType}
-                      onValueChange={(value) => {
-                        setEditCluster(prev => ({ ...prev, argoDeployType: value }));
+                    <Input
+                      id="edit-cluster-url"
+                      placeholder="https://cluster.example.com"
+                      value={editCluster.clusterUrl}
+                      onChange={(e) => {
+                        setEditCluster({ ...editCluster, clusterUrl: e.target.value });
                         setFormErrorsCluster(prevErrors => ({
                           ...prevErrors,
-                          argoDeployType: undefined,
+                          clusterUrl: undefined,
                         }));
                       }}
-                    >
-                      <SelectTrigger
-                        id="edit-argo-deploy-type"
-                        className={formErrorsCluster?.argoDeployType ? "border-red-500" : ""}
+                      className={formErrorsCluster?.clusterUrl ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCluster?.clusterUrl && <p className="text-red-500 text-sm">{formErrorsCluster.clusterUrl}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-domain" className="flex items-center">
+                      서비스 도메인 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="edit-domain"
+                      placeholder="example.com"
+                      value={editCluster.domain}
+                      onChange={(e) => {
+                        setEditCluster({ ...editCluster, domain: e.target.value });
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          domain: undefined,
+                        }));
+                      }}
+                      className={formErrorsCluster?.domain ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCluster?.domain && <p className="text-red-500 text-sm">{formErrorsCluster.domain}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-cluster-lb-ip" className="flex items-center">
+                      클러스터 LB IP <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="edit-cluster-lb-ip"
+                      placeholder="192.168.1.1"
+                      value={editCluster.clusterLbIp}
+                      onChange={(e) => {
+                        setEditCluster({ ...editCluster, clusterLbIp: e.target.value });
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          clusterLbIp: undefined,
+                        }));
+                      }}
+                      className={formErrorsCluster?.clusterLbIp ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCluster?.clusterLbIp && <p className="text-red-500 text-sm">{formErrorsCluster.clusterLbIp}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-cluster-token" className="flex items-center">
+                      클러스터 토큰 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Textarea
+                      id="edit-cluster-token"
+                      placeholder="클러스터 인증 토큰 입력"
+                      value={editCluster.clusterToken}
+                      onChange={(e) => {
+                        setEditCluster(prev => ({ ...prev, clusterToken: e.target.value }));
+                        setFormErrorsCluster(prevErrors => ({
+                          ...prevErrors,
+                          clusterToken: undefined,
+                        }));
+                      }}
+                      className={`min-h-[150px] resize-y ${formErrorsCluster?.clusterToken ? "border-red-500" : ""}`}
+                    />
+                    {formErrorsCluster?.clusterToken && <p className="text-red-500 text-sm">{formErrorsCluster.clusterToken}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="edit-is-argo"
+                        checked={editCluster.isArgo}
+                        disabled={true}
+                        aria-readonly="true"
+                        className="cursor-not-allowed"
+                      />
+                      <Label
+                        htmlFor="edit-is-argo"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
-                        <SelectValue placeholder="배포 유형 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="helm">Helm</SelectItem>
-                        <SelectItem value="kustomize">Kustomize</SelectItem>
-                        <SelectItem value="directory">Directory</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {formErrorsCluster?.argoDeployType && <p className="text-red-500 text-sm">{formErrorsCluster.argoDeployType}</p>}
+                        ArgoCD 등록여부
+                      </Label>
+                    </div>
                   </div>
-
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-image">클러스터 이미지</Label>
+                    <Label htmlFor="edit-cluster-desc">클러스터 설명</Label>
                     <Textarea
-                      id="edit-catalog-image"
-                      placeholder="이미지 URL 입력"
-                      value={editCluster.catalogImage}
-                      onChange={(e) => setEditCluster(prev => ({ ...prev, catalogImage: e.target.value }))}
-                      className="min-h-[100px] resize-y"
-                      aria-describedby="edit-catalog-image-description"
+                      id="edit-cluster-desc"
+                      placeholder="클러스터에 대한 설명 입력"
+                      value={editCluster.clusterDesc}
+                      onChange={(e) => setEditCluster(prev => ({ ...prev, clusterDesc: e.target.value }))}
+                      className="resize-y"
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="values-yaml">Values YAML</Label>
-                    <div className="border rounded-md overflow-hidden">
-                      <CodeMirror
-                        value={editCluster.valuesYaml}
-                        height="200px"
-                        extensions={[yaml(), javascript({ jsx: true })]}
-                        onChange={(value) => setEditCluster(prev => ({ ...prev, valuesYaml: value }))}
-                        className="text-sm"
-                      />
-                    </div>
+                  
+                  <div className="flex justify-end space-x-2 mt-6 pb-6">
+                    <Button variant="outline" size="sm" onClick={() => setIsClusterEditSheetOpen(false)}>
+                      취소
+                    </Button>
+                    <Button size="sm" onClick={clusterEditClick} disabled={isSubmitting}>
+                      저장
+                    </Button>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-desc">클러스터 설명</Label>
-                    <Textarea
-                      id="edit-catalog-desc"
-                      placeholder="클러스터 설명 입력"
-                      value={editCluster.catalogDesc || ''}
-                      onChange={(e) => setEditCluster(prev => ({
-                        ...prev,
-                        catalogDesc: e.target.value
-                      }))}
-                      rows={4}
-                      className="resize-vertical"
-                      maxLength={500}
-                      aria-describedby="edit-catalog-desc-description"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="enable"
-                          checked={editCluster.enable}
-                          onCheckedChange={(checked) =>
-                            setEditCluster(prev => ({
-                              ...prev,
-                              enable: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="enable">활성화</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-admin"
-                          checked={editCluster.isAdmin}
-                          onCheckedChange={(checked) =>
-                            setEditCluster(prev => ({
-                              ...prev,
-                              isAdmin: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-is-admin">관리자 배포</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-cluster-only"
-                          checked={editCluster.isClusterOnly}
-                          onCheckedChange={(checked) =>
-                            setEditCluster(prev => ({
-                              ...prev,
-                              isClusterOnly: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-is-cluster-only">클러스터 단독 배포</Label>
-                      </div>
-
-
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-tenant"
-                          checked={editCluster.isTenant}
-                          onCheckedChange={(checked) =>
-                            setEditCluster(prev => ({
-                              ...prev,
-                              isTenant: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-is-tenant">테넌트 사용</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-keycloak-use"
-                          checked={editCluster.keycloakUse}
-                          onCheckedChange={(checked) =>
-                            setEditCluster(prev => ({
-                              ...prev,
-                              keycloakUse: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-keycloak-use">Keycloak 사용</Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {editCluster.keycloakUse && (
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-keycloak-redirect-uris">Keycloak Redirect URIs</Label>
-                      <Input
-                        id="edit-keycloak-redirect-uris"
-                        placeholder="Redirect URIs 입력"
-                        value={editCluster.keycloakRedirectUris || ''}
-                        onChange={(e) => setEditCluster(prev => ({ ...prev, keycloakRedirectUris: e.target.value }))}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end space-x-2 mt-6 pb-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsClusterEditSheetOpen(false)}>
-                    취소
-                  </Button>
-                  <Button size="sm" onClick={clusterEditClick} disabled={isSubmitting}>
-                    저장
-                  </Button>
                 </div>
               </div>
             </SheetContent>
