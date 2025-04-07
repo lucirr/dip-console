@@ -165,7 +165,20 @@ export default function ClusterPage() {
     setIsLoading(true);
     try {
       const response = await getClusters()
-      setClusterData(response);
+
+      const codeTypeMap = codeType.reduce((acc, code) => {
+        if (code.uid !== undefined) {
+          acc[code.uid] = code.codeDesc ?? '';
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      const enhancedResponse = response.map(item => ({
+        ...item,
+        clusterType: codeTypeMap[item.clusterTypeId ?? ''],
+      }));
+
+      setClusterData(enhancedResponse);
     } catch (error) {
       setClusterData([]);
     } finally {
@@ -418,7 +431,7 @@ export default function ClusterPage() {
                     />
                     {formErrorsCluster?.clusterName && <p className="text-red-500 text-sm">{formErrorsCluster.clusterName}</p>}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="cluster-type" className="flex items-center">
                       클러스터 타입 <span className="text-red-500 ml-1">*</span>
@@ -496,7 +509,7 @@ export default function ClusterPage() {
                     />
                     {formErrorsCluster?.domain && <p className="text-red-500 text-sm">{formErrorsCluster.domain}</p>}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="cluster-lb-ip" className="flex items-center">
                       클러스터 LB IP <span className="text-red-500 ml-1">*</span>
@@ -517,7 +530,7 @@ export default function ClusterPage() {
                     />
                     {formErrorsCluster?.clusterLbIp && <p className="text-red-500 text-sm">{formErrorsCluster.clusterLbIp}</p>}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="cluster-token" className="flex items-center">
                       클러스터 토큰 <span className="text-red-500 ml-1">*</span>
@@ -548,7 +561,7 @@ export default function ClusterPage() {
                       className="resize-y"
                     />
                   </div>
-               
+
                 </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsClusterNewSheetOpen(false)}>
@@ -588,7 +601,7 @@ export default function ClusterPage() {
                     />
                     {formErrorsCluster?.clusterName && <p className="text-red-500 text-sm">{formErrorsCluster.clusterName}</p>}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="edit-cluster-type" className="flex items-center">
                       클러스터 타입 <span className="text-red-500 ml-1">*</span>
@@ -725,7 +738,7 @@ export default function ClusterPage() {
                       </Label>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="edit-cluster-desc">클러스터 설명</Label>
                     <Textarea
@@ -736,7 +749,7 @@ export default function ClusterPage() {
                       className="resize-y"
                     />
                   </div>
-                  
+
                   <div className="flex justify-end space-x-2 mt-6 pb-6">
                     <Button variant="outline" size="sm" onClick={() => setIsClusterEditSheetOpen(false)}>
                       취소
