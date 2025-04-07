@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 import { getCatalogType, insertCatalogType, updateCatalogType, getCatalogVersion, deleteCatalogVersion, insertCatalogVersion, updateCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
@@ -729,7 +730,7 @@ export default function CatalogTypesPage() {
                       className="min-h-[100px] resize-y"
                       aria-describedby="catalog-image-description"
                     />
-                    
+
                   </div>
 
                   <div className="space-y-2">
@@ -747,10 +748,10 @@ export default function CatalogTypesPage() {
                       maxLength={500}
                       aria-describedby="catalog-desc-description"
                     />
-                    
+
                   </div>
 
-                  
+
 
                   <div className="space-y-2">
                     <Label htmlFor="values-yaml">Values YAML</Label>
@@ -758,7 +759,7 @@ export default function CatalogTypesPage() {
                       <CodeMirror
                         value={newCode.valuesYaml}
                         height="200px"
-                        extensions={[javascript({ jsx: true })]}
+                        extensions={[yaml(), javascript({ jsx: true })]}
                         onChange={(value) => setNewCode({ ...newCode, valuesYaml: value })}
                         className="text-sm"
                       />
@@ -821,7 +822,7 @@ export default function CatalogTypesPage() {
                       <Label htmlFor="keycloak-use">Keycloak 사용</Label>
                     </div>
 
-                    
+
                   </div>
 
                   {newCode.keycloakUse && (
@@ -837,7 +838,7 @@ export default function CatalogTypesPage() {
                         }))}
                         aria-describedby="keycloak-uri-description"
                       />
-                     
+
                     </div>
                   )}
 
@@ -850,7 +851,7 @@ export default function CatalogTypesPage() {
                     저장
                   </Button>
                 </div>
-                
+
               </div>
             </SheetContent>
           </Sheet>
