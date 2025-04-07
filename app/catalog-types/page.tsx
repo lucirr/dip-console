@@ -61,8 +61,7 @@ export default function CatalogTypesPage() {
   const [confirmDescription, setConfirmDescription] = useState<string>("");
   const [formErrorsCatalogType, setFormErrorsCatalogType] = useState<{
     catalogType?: string;
-    catalogTypeDesc?: string;
-    serviceType?: string;
+    catalogServiceTypeId?: string;
     argoDeployType?: string;
   } | null>(null);
   const [formErrorsCatalogVersion, setFormErrorsCatalogVersion] = useState<{ code?: string; codeDesc?: string } | null>(null);
@@ -118,7 +117,7 @@ export default function CatalogTypesPage() {
 
   const formSchemaCatalogType = z.object({
     catalogType: z.string().min(1, { message: "카탈로그 유형은 필수 입력 항목입니다." }),
-    serviceType: z.string().min(1, { message: "카탈로그 배포유형은 필수 입력 항목입니다." }),
+    catalogServiceTypeId: z.string().min(1, { message: "카탈로그 배포유형은 필수 입력 항목입니다." }),
     argoDeployType: z.string().min(1, { message: "Argo 배포유형은 필수 입력 항목입니다." }),
   });
 
@@ -330,8 +329,9 @@ export default function CatalogTypesPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
+        console.log(field)
         // 필수 입력 필드 검증
-        if (field === 'catalogType' || field === 'serviceType' || field === 'argoDeployType') {
+        if (field === 'catalogType' || field === 'catalogServiceTypeId' || field === 'argoDeployType') {
           acc[field] = error.message;
         }
         return acc;
@@ -670,13 +670,13 @@ export default function CatalogTypesPage() {
                         setNewCode({ ...newCode, catalogServiceTypeId: value });
                         setFormErrorsCatalogType(prevErrors => ({
                           ...prevErrors,
-                          serviceType: undefined,
+                          catalogServiceTypeId: undefined,
                         }));
                       }}
                     >
                       <SelectTrigger
                         id="catalog-service-type"
-                        className={formErrorsCatalogType?.serviceType ? "border-red-500" : ""}
+                        className={formErrorsCatalogType?.catalogServiceTypeId ? "border-red-500" : ""}
                       >
                         <SelectValue placeholder="배포유형 선택" />
                       </SelectTrigger>
@@ -688,7 +688,7 @@ export default function CatalogTypesPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {formErrorsCatalogType?.serviceType && <p className="text-red-500 text-sm">{formErrorsCatalogType.serviceType}</p>}
+                    {formErrorsCatalogType?.catalogServiceTypeId && <p className="text-red-500 text-sm">{formErrorsCatalogType.catalogServiceTypeId}</p>}
                   </div>
 
                   <div className="space-y-2">

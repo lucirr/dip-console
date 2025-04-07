@@ -19,6 +19,11 @@ export async function getCommonCodeByGroupCode(groupCode: string) {
       headers: headers,
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData: CommonCode[] = await response.json();
     return responseData
   } catch (error) {
@@ -33,6 +38,11 @@ export async function getGroupCode(): Promise<GroupCode[]> {
       method: 'GET',
       headers: headers,
     });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
 
     const responseData: GroupCode[] = await response.json();
     return responseData
@@ -50,6 +60,11 @@ export async function insertGroupCode(newData: GroupCode) {
       body: JSON.stringify(newData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Success:", responseData);
   } catch (error) {
@@ -66,6 +81,11 @@ export async function updateGroupCode(updateData: GroupCode) {
       body: JSON.stringify(updateData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Update Success:", responseData);
   } catch (error) {
@@ -80,6 +100,11 @@ export async function getCommonCode(groupCodeId: string) {
       method: 'GET',
       headers: headers,
     });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
 
     const responseData: CommonCode[] = await response.json();
     return responseData
@@ -97,6 +122,11 @@ export async function insertCommonCode(newData: CommonCode) {
       body: JSON.stringify(newData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Success:", responseData);
   } catch (error) {
@@ -113,6 +143,11 @@ export async function updateCommonCode(updateData: CommonCode) {
       body: JSON.stringify(updateData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Update Success:", responseData);
   } catch (error) {
@@ -128,6 +163,11 @@ export async function deleteCommonCode(commonCode: CommonCode) {
       headers: headers,
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Delete Success:", responseData);
   } catch (error) {
@@ -140,32 +180,45 @@ export async function deleteCommonCode(commonCode: CommonCode) {
 
 export async function getCatalogType(): Promise<CatalogType[]> {
   try {
-    const response = await fetch(apiUrl + '/catalogs', {
+    const response = await fetch(`${apiUrl}/catalogs`, {
       method: 'GET',
       headers: headers,
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData: CatalogType[] = await response.json();
-    return responseData
+    return responseData;
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 export async function insertCatalogType(newData: CatalogType) {
   try {
-    const response = await fetch(apiUrl + '/catalogs', {
+    const response = await fetch(`${apiUrl}/catalogs`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(newData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Success:", responseData);
+    return responseData;
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(
+      `${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -177,11 +230,17 @@ export async function updateCatalogType(updateData: CatalogType) {
       body: JSON.stringify(updateData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Update Success:", responseData);
+    return responseData;
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -192,27 +251,38 @@ export async function getCatalogVersion(catalogTypeId: string) {
       headers: headers,
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData: CatalogVersion[] = await response.json();
-    return responseData
+    return responseData;
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 export async function insertCatalogVersion(newData: CatalogVersion) {
   try {
-    const response = await fetch(apiUrl + `/catalogs/version/${newData.catalogTypeId}`, {
+    const response = await fetch(`${apiUrl}/catalogs/version/${newData.catalogTypeId}`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(newData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Success:", responseData);
+    return responseData; 
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -224,11 +294,17 @@ export async function updateCatalogVersion(updateData: CatalogVersion) {
       body: JSON.stringify(updateData),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Update Success:", responseData);
+    return responseData;
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -239,10 +315,16 @@ export async function deleteCatalogVersion(catalogVersion: CatalogVersion) {
       headers: headers,
     });
 
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Server error ${response.status}: ${errorText}`);
+    }
+
     const responseData = await response.json();
     console.log("Delete Success:", responseData);
+    return responseData;
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
   }
 }
