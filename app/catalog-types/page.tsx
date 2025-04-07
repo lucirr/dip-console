@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
@@ -64,7 +65,7 @@ export default function CatalogTypesPage() {
     catalogServiceTypeId?: string;
     argoDeployType?: string;
   } | null>(null);
-  const [formErrorsCatalogVersion, setFormErrorsCatalogVersion] = useState<{ code?: string; codeDesc?: string } | null>(null);
+  const [formErrorsCatalogVersion, setFormErrorsCatalogVersion] = useState<{ catalogTypeId?: string; catalogVersion?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [codeServiceType, setCodeServiceType] = useState<CommonCode[]>([]);
 
@@ -73,7 +74,7 @@ export default function CatalogTypesPage() {
     serviceType: '',
     catalogServiceTypeId: '',
     argoDeployType: '',
-    catalogImage: '',
+    catalogImage: '<p style="text-align:center"><img src=""   width="80px" height="80px"></p>',
     enable: true,
     isClusterOnly: false,
     isTenant: false,
@@ -360,7 +361,7 @@ export default function CatalogTypesPage() {
         serviceType: '',
         catalogServiceTypeId: '',
         argoDeployType: '',
-        catalogImage: '',
+        catalogImage: '<p style="text-align:center"><img src=""   width="80px" height="80px"></p>',
         enable: true,
         isClusterOnly: false,
         isTenant: false,
@@ -522,7 +523,7 @@ export default function CatalogTypesPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        if (field === 'codeDesc') {
+        if (field === 'catalogTypeId' || field === 'catalogVersion') {
           acc[field] = error.message;
         }
         return acc;
@@ -864,22 +865,79 @@ export default function CatalogTypesPage() {
                   <SheetTitle>카탈로그 유형 수정</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
+                  {/* 카탈로그 유형 (읽기 전용) */}
                   <div className="space-y-2">
-                    <Label htmlFor="edit-code">그룹코드</Label>
+                    <Label htmlFor="edit-catalog-type" className="flex items-center">
+                      카탈로그 유형 <span className="text-red-500 ml-1">*</span>
+                    </Label>
                     <div className="p-2 bg-muted rounded-md">
                       <span className="text-sm">{editCatalogType.catalogType}</span>
                     </div>
                   </div>
+
+                  {/* 카탈로그 배포유형 */}
                   <div className="space-y-2">
-                    <Label htmlFor="edit-desc">그룹코드 설명</Label>
-                    <Input
-                      id="edit-desc"
-                      placeholder="그룹코드 설명 입력"
-                      value={editCatalogType.catalogDesc}
-                      onChange={(e) => setEditCatalogType(prev => ({ ...prev, catalogDesc: e.target.value }))}
-                    />
+                    <Label htmlFor="edit-catalog-service-type" className="flex items-center">
+                      카탈로그 배포유형 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={editCatalogType.catalogServiceTypeId}
+                      onValueChange={(value) => {
+                        setEditCatalogType(prev => ({ ...prev, catalogServiceTypeId: value }));
+                        setFormErrorsCatalogType(prevErrors => ({
+                          ...prevErrors,
+                          catalogServiceTypeId: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="edit-catalog-service-type"
+                        className={formErrorsCatalogType?.catalogServiceTypeId ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="배포유형 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {codeServiceType.map((item) => (
+                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                            {item.codeDesc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalogType?.catalogServiceTypeId && <p className="text-red-500 text-sm">{formErrorsCatalogType.catalogServiceTypeId}</p>}
                   </div>
 
+                  {/* Argo 배포유형 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-argo-deploy-type" className="flex items-center">
+                      Argo 배포유형 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={editCatalogType.argoDeployType}
+                      onValueChange={(value) => {
+                        setEditCatalogType(prev => ({ ...prev, argoDeployType: value }));
+                        setFormErrorsCatalogType(prevErrors => ({
+                          ...prevErrors,
+                          argoDeployType: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="edit-argo-deploy-type"
+                        className={formErrorsCatalogType?.argoDeployType ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="배포 유형 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="helm">Helm</SelectItem>
+                        <SelectItem value="kustomize">Kustomize</SelectItem>
+                        <SelectItem value="directory">Directory</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalogType?.argoDeployType && <p className="text-red-500 text-sm">{formErrorsCatalogType.argoDeployType}</p>}
+                  </div>
+
+                  {/* 카탈로그 이미지 */}
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-image">카탈로그 이미지</Label>
                     <Textarea
@@ -894,6 +952,128 @@ export default function CatalogTypesPage() {
                       카탈로그 이미지 URL을 입력하세요. 여러 줄 입력 가능합니다.
                     </p>
                   </div>
+
+                  {/* 카탈로그 설명 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-catalog-desc">카탈로그 설명</Label>
+                    <Textarea
+                      id="edit-catalog-desc"
+                      placeholder="카탈로그 설명 입력"
+                      value={editCatalogType.catalogDesc || ''}
+                      onChange={(e) => setEditCatalogType(prev => ({
+                        ...prev,
+                        catalogDesc: e.target.value
+                      }))}
+                      rows={4}
+                      className="resize-vertical"
+                      maxLength={500}
+                      aria-describedby="edit-catalog-desc-description"
+                    />
+                  </div>
+
+                  {/* 추가 설정 */}
+                  <div className="space-y-4 pt-2">
+                    <h3 className="text-sm font-medium">추가 설정</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 클러스터 전용 */}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-is-cluster-only"
+                          checked={editCatalogType.isClusterOnly}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              isClusterOnly: checked as boolean
+                            }))
+                          }
+                          aria-label="클러스터 전용 설정"
+                        />
+                        <Label
+                          htmlFor="edit-is-cluster-only"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          클러스터 전용
+                        </Label>
+                      </div>
+                      
+                      {/* 테넌트 사용 */}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-is-tenant"
+                          checked={editCatalogType.isTenant}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              isTenant: checked as boolean
+                            }))
+                          }
+                          aria-label="테넌트 사용 설정"
+                        />
+                        <Label
+                          htmlFor="edit-is-tenant"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          테넌트 사용
+                        </Label>
+                      </div>
+                      
+                      {/* Keycloak 사용 */}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-keycloak-use"
+                          checked={editCatalogType.keycloakUse}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              keycloakUse: checked as boolean
+                            }))
+                          }
+                          aria-label="Keycloak 사용 설정"
+                        />
+                        <Label
+                          htmlFor="edit-keycloak-use"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Keycloak 사용
+                        </Label>
+                      </div>
+                      
+                      {/* 관리자 전용 */}
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="edit-is-admin"
+                          checked={editCatalogType.isAdmin}
+                          onCheckedChange={(checked) =>
+                            setEditCatalogType(prev => ({
+                              ...prev,
+                              isAdmin: checked as boolean
+                            }))
+                          }
+                          aria-label="관리자 전용 설정"
+                        />
+                        <Label
+                          htmlFor="edit-is-admin"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          관리자 전용
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Keycloak Redirect URIs - 조건부 렌더링 */}
+                  {editCatalogType.keycloakUse && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-keycloak-redirect-uris">Keycloak Redirect URIs</Label>
+                      <Textarea
+                        id="edit-keycloak-redirect-uris"
+                        placeholder="Redirect URIs 입력 (줄바꿈으로 구분)"
+                        value={editCatalogType.keycloakRedirectUris || ''}
+                        onChange={(e) => setEditCatalogType(prev => ({ ...prev, keycloakRedirectUris: e.target.value }))}
+                        className="min-h-[80px] resize-y"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCatalogTypeEditSheetOpen(false)}>
@@ -941,17 +1121,30 @@ export default function CatalogTypesPage() {
                         </SheetHeader>
                         <div className="grid gap-4 py-4 border-t">
                           <div className="space-y-2">
-                            <Label htmlFor="new-code">그룹코드</Label>
+                            <Label htmlFor="new-catalog-type">카탈로그 유형</Label>
                             <div className="p-2 bg-muted rounded-md">
                               <span className="text-sm">{selectedCatalogType?.catalogType}</span>
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="new-desc">코드</Label>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="new-desc">코드설명</Label>
-
+                            <Label htmlFor="new-catalog-version" className="flex items-center">
+                              카탈로그 버전 <span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <Input
+                              id="new-catalog-version"
+                              placeholder="카탈로그 버전 입력"
+                              value={newCatalogVersion.catalogVersion}
+                              onChange={(e) => {
+                                setNewCatalogVersion({ ...newCatalogVersion, catalogVersion: e.target.value });
+                                setFormErrorsCatalogVersion(prevErrors => ({
+                                  ...prevErrors,
+                                  catalogVersion: undefined,
+                                }));
+                              }}
+                              className={formErrorsCatalogVersion?.catalogVersion ? "border-red-500" : ""}
+                              required
+                            />
+                            {formErrorsCatalogVersion?.catalogVersion && <p className="text-red-500 text-sm">{formErrorsCatalogVersion.catalogVersion}</p>}
                           </div>
                         </div>
                         <div className="flex justify-end space-x-2 mt-6 pb-6">
@@ -992,20 +1185,30 @@ export default function CatalogTypesPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-code">코드</Label>
+                    <Label htmlFor="edit-catalog-type">카탈로그 유형</Label>
                     <div className="p-2 bg-muted rounded-md">
-                      <span className="text-sm"> </span>
+                      <span className="text-sm">{selectedCatalogType?.catalogType}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-desc">코드설명</Label>
-
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-desc">활성화</Label>
-                    <div className="mt-2">
-
-                    </div>
+                    <Label htmlFor="edit-catalog-version" className="flex items-center">
+                      카탈로그 버전 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="edit-catalog-version"
+                      placeholder="카탈로그 버전 입력"
+                      value={editCatalogVersion.catalogVersion}
+                      onChange={(e) => {
+                        setEditCatalogVersion({ ...editCatalogVersion, catalogVersion: e.target.value });
+                        setFormErrorsCatalogVersion(prevErrors => ({
+                          ...prevErrors,
+                          catalogVersion: undefined,
+                        }));
+                      }}
+                      className={formErrorsCatalogVersion?.catalogVersion ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCatalogVersion?.catalogVersion && <p className="text-red-500 text-sm">{formErrorsCatalogVersion.catalogVersion}</p>}
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
