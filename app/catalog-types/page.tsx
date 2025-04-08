@@ -518,7 +518,6 @@ export default function CatalogTypesPage() {
   };
 
   const catalogTypeSubmit = async (row: CatalogType) => {
-    console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -610,7 +609,6 @@ export default function CatalogTypesPage() {
   };
 
   const catalogVersionDeleteSubmit = async (row: CatalogVersion) => {
-    console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);

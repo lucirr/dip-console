@@ -42,8 +42,6 @@ interface Column {
   cell?: (row: any, index?: number) => ReactNode;
 }
 
-
-
 export default function ArgoClusterRegistrationPage() {
   const { toast } = useToast()
   const [clusterData, setClusterData] = useState<Cluster[]>([]);
@@ -58,47 +56,8 @@ export default function ArgoClusterRegistrationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
-  const [newCode, setNewCode] = useState<Cluster>({
-    clusterName: '',
-    clusterUrl: '',
-    clusterToken: '',
-    clusterLbIp: '',
-    clusterType: '',
-    clusterTypeId: '',
-    clusterDesc: '',
-    domain: '',
-    isArgo: false,
-  });
-
-  const [editCluster, setEditCluster] = useState<Cluster>({
-    uid: '',
-    clusterName: '',
-    clusterUrl: '',
-    clusterToken: '',
-    clusterLbIp: '',
-    clusterType: '',
-    clusterTypeId: '',
-    clusterDesc: '',
-    domain: '',
-    isArgo: false,
-  });
-
-
-
-  // const formSchemaCluster = z.object({
-  //   clusterName: z.string().min(1, { message: "클러스터 이름은 필수 입력 항목입니다." }),
-  //   clusterTypeId: z.string().min(1, { message: "클러스터 타입은 필수 입력 항목입니다." }),
-  //   clusterUrl: z.string().min(1, { message: "클러스터 주소는 필수 입력 항목입니다." }),
-  //   domain: z.string().min(1, { message: "서비스 도메인은 필수 입력 항목입니다." }),
-  //   clusterLbIp: z.string().min(1, { message: "클러스터 LB IP는 필수 입력 항목입니다." }),
-  //   clusterToken: z.string().min(1, { message: "클러스터 토큰은  필수 입력 항목입니다." }),
-  // });
-
-
-
   const paginatedData = clusterData.slice((pageCluster - 1) * pageSize, pageCluster * pageSize);
   const totalPages = Math.ceil(clusterData.length / pageSize);
-
 
   const columns: Column[] = [
     {
@@ -135,7 +94,7 @@ export default function ArgoClusterRegistrationPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => clusterDeleteClick(row)}>
+            <DropdownMenuItem onClick={() => clusterArgoClick(row)}>
               <Pencil className="h-4 w-4 mr-2" />
               Argo등록
             </DropdownMenuItem>
@@ -203,16 +162,15 @@ export default function ArgoClusterRegistrationPage() {
 
 
 
-  const clusterDeleteClick = (row: Cluster) => {
+  const clusterArgoClick = (row: Cluster) => {
     if (isSubmitting) return;
 
-    setConfirmAction(() => () => clusterDeleteSubmit(row));
-    setConfirmDescription("삭제하시겠습니까?");
+    setConfirmAction(() => () => clusterArgoSubmit(row));
+    setConfirmDescription("등록하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const clusterDeleteSubmit = async (row: Cluster) => {
-    console.log(isSubmitting)
+  const clusterArgoSubmit = async (row: Cluster) => {
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -221,7 +179,7 @@ export default function ArgoClusterRegistrationPage() {
       await insertClusterArgoCd(row);
       toast({
         title: "Success",
-        description: "클러스터가 성공적으로 삭제되었습니다.",
+        description: "클러스터가 ArgoCD에 성공적으로 등록되었습니다.",
       })
       fetchClusters(codeType);
     } catch (error) {
@@ -236,24 +194,9 @@ export default function ArgoClusterRegistrationPage() {
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
   const handlePageChange = (newPage: number) => {
     setPageCluster(newPage);
   };
-
-
-
 
   return (
     <div className="flex-1 space-y-4 py-4">

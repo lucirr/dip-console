@@ -506,7 +506,6 @@ export default function CommonCodePage() {
   };
 
   const commonCodeDeleteSubmit = async (row: CommonCode) => {
-    console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);

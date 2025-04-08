@@ -355,7 +355,6 @@ export default function ClusterPage() {
   };
 
   const clusterDeleteSubmit = async (row: Cluster) => {
-    console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
