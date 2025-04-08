@@ -64,7 +64,6 @@ export default function DnsLookupPage() {
     ttl?: number;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
   const [newCode, setNewCode] = useState<Dns>({
     name: '',
