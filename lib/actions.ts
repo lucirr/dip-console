@@ -2,7 +2,7 @@
 
 import type { GroupCode, CommonCode } from "@/types/groupcode"
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
-import type { Cluster } from "@/types/cluster"
+import type { CatalogGit, Cluster } from "@/types/cluster"
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -265,5 +265,24 @@ export async function insertClusterArgoCd(data: Cluster) {
   return fetchApi<Cluster>({
     endpoint: `${apiNonAuth}/system/clusters/${data.uid}`,
     method: 'POST',
+  });
+}
+
+export async function getCatalogGits(): Promise<CatalogGit[]> {
+  return fetchApi<CatalogGit[]>({ endpoint: `${apiAuth}/clusters` });
+}
+
+export async function insertCatalogGit(data: CatalogGit) {
+  return fetchApi<CatalogGit>({
+    endpoint: `${apiAuth}/clusters`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function deleteCatalogGit(data: CatalogGit) {
+  return fetchApi<CatalogGit>({
+    endpoint: `${apiAuth}/clusters/${data.uid}`,
+    method: 'DELETE',
   });
 }

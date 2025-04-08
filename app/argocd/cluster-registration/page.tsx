@@ -204,7 +204,7 @@ export default function ArgoClusterRegistrationPage() {
         <div className="flex items-center justify-between px-6 py-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">클러스터 등록</h2>
-            <p className="mt-1 text-sm text-gray-500">클러스터를 ArgoCD에 등록할 수 있습니다.</p>
+            <p className="mt-1 text-sm text-gray-500">ArgoCD에 클러스터를 등록할 수 있습니다.</p>
           </div>
         </div>
       </div>
