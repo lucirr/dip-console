@@ -5,6 +5,7 @@ import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 import type { CatalogGit, Cluster } from "@/types/cluster"
 import { Dns } from "@/types/dns";
 import { SystemLink } from "@/types/systemlink";
+import { License } from "@/types/license";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -265,6 +266,27 @@ export async function updateSystemLink(data: SystemLink) {
 export async function deleteSystemLink(data: SystemLink) {
   return fetchApi<SystemLink>({
     endpoint: `${apiNonAuth}/systemlink/${data.uid}`,
+    method: 'DELETE',
+  });
+}
+
+// --------------------------------------------------------------------------------
+
+export async function getLicense(): Promise<License[]> {
+  return fetchApi<License[]>({ endpoint: `${apiNonAuth}/license` });
+}
+
+export async function insertLicense(data: License) {
+  return fetchApi<License>({
+    endpoint: `${apiNonAuth}/license`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function deleteLicense(data: License) {
+  return fetchApi<License>({
+    endpoint: `${apiNonAuth}/license/${data.uid}`,
     method: 'DELETE',
   });
 }
