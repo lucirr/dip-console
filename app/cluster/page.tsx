@@ -161,17 +161,18 @@ export default function ClusterPage() {
 
 
 
-  const fetchClusters = async () => {
+  const fetchClusters = async (currentCodeType: CommonCode[]) => {
     setIsLoading(true);
     try {
       const response = await getClusters()
 
-      const codeTypeMap = codeType.reduce((acc, code) => {
+      const codeTypeMap = currentCodeType.reduce((acc, code) => {
         if (code.uid !== undefined) {
           acc[code.uid] = code.codeDesc ?? '';
         }
         return acc;
       }, {} as Record<string, string>);
+
 
       const enhancedResponse = response.map(item => ({
         ...item,
@@ -191,34 +192,31 @@ export default function ClusterPage() {
     try {
       const response = await getCommonCodeByGroupCode(groupCode)
       setCodeType(response);
+      return response;
     } catch (error) {
       setCodeType([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
   };
 
-
-
   useEffect(() => {
-    fetchClusters();
-    fetchCommonCode('cluster_type');
+    const fetchData = async () => {
+      const codeTypeData = await fetchCommonCode('cluster_type');
+      await fetchClusters(codeTypeData);
+    };
+
+    fetchData();
   }, []);
-
-
-
 
   useEffect(() => {
     setFormErrorsCluster(null);
   }, [isClusterNewSheetOpen]);
 
-
-
   const handleRefresh = () => {
-    fetchClusters();
+    fetchClusters(codeType);
   };
-
-
 
   const clusterNewClick = () => {
     if (isSubmitting) return;
@@ -267,7 +265,7 @@ export default function ClusterPage() {
         isArgo: false,
       });
       setIsClusterNewSheetOpen(false);
-      fetchClusters();
+      fetchClusters(codeType);
     } catch (error) {
       toast({
         title: "Error",
@@ -335,7 +333,7 @@ export default function ClusterPage() {
         description: "클러스터가 성공적으로 수정되었습니다.",
       })
       setIsClusterEditSheetOpen(false);
-      fetchClusters();
+      fetchClusters(codeType);
     } catch (error) {
       toast({
         title: "Error",
@@ -368,7 +366,7 @@ export default function ClusterPage() {
         title: "Success",
         description: "클러스터가 성공적으로 삭제되었습니다.",
       })
-      fetchClusters();
+      fetchClusters(codeType);
     } catch (error) {
       toast({
         title: "Error",
