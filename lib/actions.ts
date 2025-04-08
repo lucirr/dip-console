@@ -3,7 +3,7 @@
 import type { GroupCode, CommonCode } from "@/types/groupcode"
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 import type { Cluster } from "@/types/cluster"
-import { string } from "zod";
+
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '') + ':' + (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
@@ -14,440 +14,255 @@ const headers: any = {
   "Content-Type": "application/json",
 };
 
-export async function getCommonCodeByGroupCode(groupCode: string) {
+type ApiConfig = {
+  endpoint: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  body?: any;
+}
+
+async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promise<T> {
   try {
-    const response = await fetch(`${apiUrl}/code/common?groupcode=${groupCode}`, {
-      method: 'GET',
-      headers: headers,
+    const response = await fetch(`${apiUrl}${endpoint}`, {
+      method,
+      headers,
+      ...(body && { body: JSON.stringify(body) }),
     });
 
     if (!response.ok) {
-      // const errorText = await response.text().catch(() => response.statusText);
-      // throw new Error(`Server error ${response.status}: ${errorText}`);
       const errorData = await response.json();
       const errorMessage = errorData.errors?.[0]?.message || String(errorData);
       throw new Error(errorMessage);
     }
 
-    const responseData: CommonCode[] = await response.json();
-    return responseData
+    return await response.json();
   } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
+    console.error(error);
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
+}
+
+export async function getCommonCodeByGroupCode(groupCode: string): Promise<CommonCode[]> {
+  return fetchApi<CommonCode[]>({ endpoint: `/code/common?groupcode=${groupCode}` });
+
+  // try {
+  //   const response = await fetch(`${apiUrl}/code/common?groupcode=${groupCode}`, {
+  //     method: 'GET',
+  //     headers: headers,
+  //   });
+
+  //   if (!response.ok) {
+  //     // const errorText = await response.text().catch(() => response.statusText);
+  //     // throw new Error(`Server error ${response.status}: ${errorText}`);
+  //     const errorData = await response.json();
+  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+  //     throw new Error(errorMessage);
+  //   }
+
+  //   const responseData: CommonCode[] = await response.json();
+  //   return responseData
+  // } catch (error) {
+  //   console.error(error)
+  //   throw new Error(error instanceof Error ? error.message : String(error))
+  // }
 }
 
 export async function getGroupCode(): Promise<GroupCode[]> {
-  try {
-    const response = await fetch(apiUrl + '/code/group', {
-      method: 'GET',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData: GroupCode[] = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+  return fetchApi<GroupCode[]>({ endpoint: '/code/group' });
 }
 
-export async function insertGroupCode(newData: GroupCode) {
-  try {
-    const response = await fetch(apiUrl + '/code/group', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(newData),
-    });
+export async function insertGroupCode(data: GroupCode) {
+  return fetchApi<GroupCode>({
+    endpoint: '/code/group',
+    method: 'POST',
+    body: data,
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
+  // try {
+  //   const response = await fetch(apiUrl + '/code/group', {
+  //     method: 'POST',
+  //     headers: headers,
+  //     body: JSON.stringify(data),
+  //   });
 
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+  //   if (!response.ok) {
+  //     const errorData = await response.json();
+  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+  //     throw new Error(errorMessage);
+  //   }
+
+  //   const responseData = await response.json();
+  //   return responseData
+  // } catch (error) {
+  //   console.error(error)
+  //   throw new Error(error instanceof Error ? error.message : String(error))
+  // }
 }
 
-export async function updateGroupCode(updateData: GroupCode) {
-  try {
-    const response = await fetch(`${apiUrl}/code/group/${updateData.uid}`, {
-      method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(updateData),
-    });
+export async function updateGroupCode(data: GroupCode) {
+  return fetchApi<GroupCode>({
+    endpoint: `/code/group/${data.uid}`,
+    method: 'PUT',
+    body: data,
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
+  // try {
+  //   const response = await fetch(`${apiUrl}/code/group/${data.uid}`, {
+  //     method: 'PUT',
+  //     headers: headers,
+  //     body: JSON.stringify(data),
+  //   });
 
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+  //   if (!response.ok) {
+  //     const errorData = await response.json();
+  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+  //     throw new Error(errorMessage);
+  //   }
+
+  //   const responseData = await response.json();
+  //   return responseData
+  // } catch (error) {
+  //   console.error(error)
+  //   throw new Error(error instanceof Error ? error.message : String(error))
+  // }
 }
 
 export async function getCommonCode(groupCodeId: string) {
-  try {
-    const response = await fetch(`${apiUrl}/code/common/${groupCodeId}`, {
-      method: 'GET',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData: CommonCode[] = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+  return fetchApi<CommonCode[]>({ endpoint: `/code/common/${groupCodeId}` });
 }
 
-export async function insertCommonCode(newData: CommonCode) {
-  try {
-    const response = await fetch(apiUrl + `/code/common/${newData.groupCodeId}`, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(newData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+export async function insertCommonCode(data: CommonCode) {
+  return fetchApi<CommonCode>({
+    endpoint: `/code/common/${data.groupCodeId}`,
+    method: 'POST',
+    body: data,
+  });
 }
 
-export async function updateCommonCode(updateData: CommonCode) {
-  try {
-    const response = await fetch(`${apiUrl}/code/common/${updateData.groupCodeId}`, {
-      method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(updateData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+export async function updateCommonCode(data: CommonCode) {
+  return fetchApi<CommonCode>({
+    endpoint: `/code/common/${data.groupCodeId}`,
+    method: 'PUT',
+    body: data,
+  });
 }
 
-export async function deleteCommonCode(commonCode: CommonCode) {
-  try {
-    const response = await fetch(`${apiUrl}/code/common/${commonCode.groupCodeId}/${commonCode.uid}`, {
-      method: 'DELETE',
-      headers: headers,
-    });
+export async function deleteCommonCode(data: CommonCode) {
+  return fetchApi<CommonCode>({
+    endpoint: `/code/common/${data.groupCodeId}/${data.uid}`,
+    method: 'DELETE'
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
+  // try {
+  //   const response = await fetch(`${apiUrl}/code/common/${commonCode.groupCodeId}/${commonCode.uid}`, {
+  //     method: 'DELETE',
+  //     headers: headers,
+  //   });
 
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+  //   if (!response.ok) {
+  //     const errorData = await response.json();
+  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
+  //     throw new Error(errorMessage);
+  //   }
+
+  //   const responseData = await response.json();
+  //   return responseData
+  // } catch (error) {
+  //   console.error(error)
+  //   throw new Error(error instanceof Error ? error.message : String(error))
+  // }
 }
 
 // ------------------------------------------------------------------------------------------------------
 
 export async function getCatalogType(): Promise<CatalogType[]> {
-  try {
-    const response = await fetch(`${apiUrl}/catalogs`, {
-      method: 'GET',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData: CatalogType[] = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+  return fetchApi<CatalogType[]>({ endpoint: `/catalogs` });
 }
 
-export async function insertCatalogType(newData: CatalogType) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogs`, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(newData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(
-      `${error instanceof Error ? error.message : String(error)}`
-    );
-  }
+export async function insertCatalogType(data: CatalogType) {
+  return fetchApi<CatalogType>({
+    endpoint: `/catalogs`,
+    method: 'POST',
+    body: data,
+  });
 }
 
-export async function updateCatalogType(updateData: CatalogType) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogs/${updateData.uid}`, {
-      method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(updateData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function updateCatalogType(data: CatalogType) {
+  return fetchApi<CatalogType>({
+    endpoint: `/catalogs/${data.uid}`,
+    method: 'PUT',
+    body: data,
+  });
 }
 
-export async function deleteCatalogType(catalogType: CatalogType) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogs/${catalogType.uid}`, {
-      method: 'DELETE',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+export async function deleteCatalogType(data: CatalogType) {
+  return fetchApi<CatalogType>({
+    endpoint: `/catalogs/${data.uid}`,
+    method: 'DELETE',
+  });
 }
 
-export async function getCatalogVersion(catalogTypeId: string) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogtype/version/${catalogTypeId}`, {
-      method: 'GET',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData: CatalogVersion[] = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function getCatalogVersion(catalogTypeId: string): Promise<CatalogVersion[]> {
+  return fetchApi<CatalogVersion[]>({ endpoint: `/catalogtype/version/${catalogTypeId}` });
 }
 
-export async function insertCatalogVersion(newData: CatalogVersion) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogtype/version`, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(newData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function insertCatalogVersion(data: CatalogVersion) {
+  return fetchApi<CatalogVersion>({
+    endpoint: `/catalogtype/version`,
+    method: 'POST',
+    body: data,
+  });
 }
 
-export async function updateCatalogVersion(updateData: CatalogVersion) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogtype/version/${updateData.uid}`, {
-      method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(updateData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function updateCatalogVersion(data: CatalogVersion) {
+  return fetchApi<CatalogVersion>({
+    endpoint: `/catalogtype/version/${data.uid}`,
+    method: 'PUT',
+    body: data,
+  });
 }
 
-export async function deleteCatalogVersion(catalogVersion: CatalogVersion) {
-  try {
-    const response = await fetch(`${apiUrl}/catalogtype/version/${catalogVersion.catalogTypeId}/${catalogVersion.uid}`, {
-      method: 'DELETE',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function deleteCatalogVersion(data: CatalogVersion) {
+  return fetchApi<CatalogVersion>({
+    endpoint: `/catalogtype/version/${data.catalogTypeId}/${data.uid}`,
+    method: 'DELETE',
+  });
 }
 
 // --------------------------------------------------------------------------------
 
 export async function getClusters(): Promise<Cluster[]> {
-  try {
-    const response = await fetch(apiUrl + '/clusters', {
-      method: 'GET',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData: Cluster[] = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+  return fetchApi<Cluster[]>({ endpoint: `/clusters` });
 }
 
-export async function insertCluster(newData: Cluster) {
-  try {
-    const response = await fetch(apiUrl + '/clusters', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(newData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+export async function insertCluster(data: Cluster) {
+  return fetchApi<Cluster>({
+    endpoint: `/clusters`,
+    method: 'POST',
+    body: data
+  });
 }
 
-export async function updateCluster(updateData: Cluster) {
-  try {
-    const response = await fetch(`${apiUrl}/clusters/${updateData.uid}`, {
-      method: 'PUT',
-      headers: headers,
-      body: JSON.stringify(updateData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
-
-    const responseData = await response.json();
-    return responseData
-  } catch (error) {
-    console.error(error)
-    throw new Error(error instanceof Error ? error.message : String(error))
-  }
+export async function updateCluster(data: Cluster) {
+  return fetchApi<Cluster>({
+    endpoint: `/clusters/${data.uid}`,
+    method: 'PUT',
+    body: data
+  });
 }
 
-export async function deleteCluster(cluster: Cluster) {
-  try {
-    const response = await fetch(`${apiUrl}/clusters/${cluster.uid}`, {
-      method: 'DELETE',
-      headers: headers,
-    });
+export async function deleteCluster(data: Cluster) {
+  return fetchApi<Cluster>({
+    endpoint: `/clusters/${data.uid}`,
+    method: 'DELETE',
+  });
+}
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-      throw new Error(errorMessage);
-    }
+// --------------------------------------------------------------------------------
 
-    const responseData = await response.json();
-    return responseData;
-  } catch (error) {
-    console.error(error);
-    throw new Error(`${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function insertClusterArgoCd(data: Cluster) {
+  return fetchApi<Cluster>({
+    endpoint: `/clusters`,
+    method: 'POST',
+    body: data
+  });
 }

@@ -1,23 +1,294 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw } from 'lucide-react';
+import { DataTable } from '@/components/ui/data-table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import TablePagination from "@/components/ui/table-pagination";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { yaml } from '@codemirror/lang-yaml';
+import type { ReactNode } from 'react';
+import type { Cluster } from "@/types/cluster"
+import { getClusters, insertClusterArgoCd, getCommonCodeByGroupCode } from "@/lib/actions"
+import { useToast } from "@/hooks/use-toast"
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { CommonCode } from '@/types/groupcode';
+import { getErrorMessage } from '@/lib/utils';
+
+interface Column {
+  key: string;
+  title: string;
+  width?: string;
+  align?: string;
+  cell?: (row: any, index?: number) => ReactNode;
+}
+
+
 
 export default function ArgoClusterRegistrationPage() {
+  const { toast } = useToast()
+  const [clusterData, setClusterData] = useState<Cluster[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageCluster, setPageCluster] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
+  const [confirmDescription, setConfirmDescription] = useState<string>("");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [codeType, setCodeType] = useState<CommonCode[]>([]);
+
+  const [newCode, setNewCode] = useState<Cluster>({
+    clusterName: '',
+    clusterUrl: '',
+    clusterToken: '',
+    clusterLbIp: '',
+    clusterType: '',
+    clusterTypeId: '',
+    clusterDesc: '',
+    domain: '',
+    isArgo: false,
+  });
+
+  const [editCluster, setEditCluster] = useState<Cluster>({
+    uid: '',
+    clusterName: '',
+    clusterUrl: '',
+    clusterToken: '',
+    clusterLbIp: '',
+    clusterType: '',
+    clusterTypeId: '',
+    clusterDesc: '',
+    domain: '',
+    isArgo: false,
+  });
+
+
+
+  // const formSchemaCluster = z.object({
+  //   clusterName: z.string().min(1, { message: "클러스터 이름은 필수 입력 항목입니다." }),
+  //   clusterTypeId: z.string().min(1, { message: "클러스터 타입은 필수 입력 항목입니다." }),
+  //   clusterUrl: z.string().min(1, { message: "클러스터 주소는 필수 입력 항목입니다." }),
+  //   domain: z.string().min(1, { message: "서비스 도메인은 필수 입력 항목입니다." }),
+  //   clusterLbIp: z.string().min(1, { message: "클러스터 LB IP는 필수 입력 항목입니다." }),
+  //   clusterToken: z.string().min(1, { message: "클러스터 토큰은  필수 입력 항목입니다." }),
+  // });
+
+
+
+  const paginatedData = clusterData.slice((pageCluster - 1) * pageSize, pageCluster * pageSize);
+  const totalPages = Math.ceil(clusterData.length / pageSize);
+
+
+  const columns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        const rowIndex = paginatedData.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(pageCluster - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'clusterName', title: '클러스터 이름', align: 'left' },
+    { key: 'clusterType', title: '클러스터 타입', align: 'left' },
+    {
+      key: 'isArgo', title: 'Argo 등록여부', align: 'left',
+      cell: (row: Cluster) => (
+        <div className="flex justify-left">
+          {row.isArgo && <Check className="h-4 w-4 text-green-500" />}
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: Cluster) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => clusterDeleteClick(row)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Argo등록
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+
+
+  const fetchClusters = async (currentCodeType: CommonCode[]) => {
+    setIsLoading(true);
+    try {
+      const response = await getClusters()
+
+      const codeTypeMap = currentCodeType.reduce((acc, code) => {
+        if (code.uid !== undefined) {
+          acc[code.uid] = code.codeDesc ?? '';
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+
+      const enhancedResponse = response.map(item => ({
+        ...item,
+        clusterType: codeTypeMap[item.clusterTypeId ?? ''],
+      }));
+
+      setClusterData(enhancedResponse);
+    } catch (error) {
+      setClusterData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCommonCode = async (groupCode: string) => {
+    setIsLoading(true);
+    try {
+      const response = await getCommonCodeByGroupCode(groupCode)
+      setCodeType(response);
+      return response;
+    } catch (error) {
+      setCodeType([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const codeTypeData = await fetchCommonCode('cluster_type');
+      await fetchClusters(codeTypeData);
+    };
+
+    fetchData();
+  }, []);
+
+
+  const handleRefresh = () => {
+    fetchClusters(codeType);
+  };
+
+
+
+  const clusterDeleteClick = (row: Cluster) => {
+    if (isSubmitting) return;
+
+    setConfirmAction(() => () => clusterDeleteSubmit(row));
+    setConfirmDescription("삭제하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const clusterDeleteSubmit = async (row: Cluster) => {
+    console.log(isSubmitting)
+    if (!row) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await insertClusterArgoCd(row);
+      toast({
+        title: "Success",
+        description: "클러스터가 성공적으로 삭제되었습니다.",
+      })
+      fetchClusters(codeType);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const handlePageChange = (newPage: number) => {
+    setPageCluster(newPage);
+  };
+
+
+
+
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">ArgoCD 클러스터 등록</h2>
+    <div className="flex-1 space-y-4 py-4">
+      <div className="bg-white border-b shadow-sm -mx-4">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">클러스터 등록</h2>
+            <p className="mt-1 text-sm text-gray-500">클러스터를 ArgoCD에 등록할 수 있습니다.</p>
+          </div>
+        </div>
       </div>
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>클러스터 등록</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">ArgoCD 클러스터 등록 내용이 여기에 표시됩니다.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardContent className="p-2">
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+          <TablePagination
+            currentPage={pageCluster}
+            totalPages={totalPages}
+            dataLength={clusterData.length}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+          />
+        </CardContent>
+      </Card>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        onConfirm={confirmAction}
+        description={confirmDescription}
+      />
+
     </div>
   );
 }

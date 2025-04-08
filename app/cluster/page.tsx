@@ -349,12 +349,12 @@ export default function ClusterPage() {
   const clusterDeleteClick = (row: Cluster) => {
     if (isSubmitting) return;
 
-    setConfirmAction(() => () => clusterSubmit(row));
+    setConfirmAction(() => () => clusterDeleteSubmit(row));
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const clusterSubmit = async (row: Cluster) => {
+  const clusterDeleteSubmit = async (row: Cluster) => {
     console.log(isSubmitting)
     if (!row) return;
     if (isSubmitting) return;
