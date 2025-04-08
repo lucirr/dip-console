@@ -5,7 +5,9 @@ import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 import type { Cluster } from "@/types/cluster"
 
 
-const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
+const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
+const apiAuth: string = 'api/v1';
+const apiNonAuth: string = 'sapi/v1'
 const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '') + ':' + (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
 const hostname: string = 'paasup.inopt.paasup.io';
 const headers: any = {
@@ -42,7 +44,7 @@ async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promi
 }
 
 export async function getCommonCodeByGroupCode(groupCode: string): Promise<CommonCode[]> {
-  return fetchApi<CommonCode[]>({ endpoint: `/code/common?groupcode=${groupCode}` });
+  return fetchApi<CommonCode[]>({ endpoint: `${apiAuth}/code/common?groupcode=${groupCode}` });
 
   // try {
   //   const response = await fetch(`${apiUrl}/code/common?groupcode=${groupCode}`, {
@@ -67,7 +69,7 @@ export async function getCommonCodeByGroupCode(groupCode: string): Promise<Commo
 }
 
 export async function getGroupCode(): Promise<GroupCode[]> {
-  return fetchApi<GroupCode[]>({ endpoint: '/code/group' });
+  return fetchApi<GroupCode[]>({ endpoint: `${apiAuth}/code/group` });
 }
 
 export async function insertGroupCode(data: GroupCode) {
@@ -100,7 +102,7 @@ export async function insertGroupCode(data: GroupCode) {
 
 export async function updateGroupCode(data: GroupCode) {
   return fetchApi<GroupCode>({
-    endpoint: `/code/group/${data.uid}`,
+    endpoint: `${apiAuth}/code/group/${data.uid}`,
     method: 'PUT',
     body: data,
   });
@@ -127,12 +129,12 @@ export async function updateGroupCode(data: GroupCode) {
 }
 
 export async function getCommonCode(groupCodeId: string) {
-  return fetchApi<CommonCode[]>({ endpoint: `/code/common/${groupCodeId}` });
+  return fetchApi<CommonCode[]>({ endpoint: `${apiAuth}/code/common/${groupCodeId}` });
 }
 
 export async function insertCommonCode(data: CommonCode) {
   return fetchApi<CommonCode>({
-    endpoint: `/code/common/${data.groupCodeId}`,
+    endpoint: `${apiAuth}/code/common/${data.groupCodeId}`,
     method: 'POST',
     body: data,
   });
@@ -140,7 +142,7 @@ export async function insertCommonCode(data: CommonCode) {
 
 export async function updateCommonCode(data: CommonCode) {
   return fetchApi<CommonCode>({
-    endpoint: `/code/common/${data.groupCodeId}`,
+    endpoint: `${apiAuth}/code/common/${data.groupCodeId}`,
     method: 'PUT',
     body: data,
   });
@@ -148,7 +150,7 @@ export async function updateCommonCode(data: CommonCode) {
 
 export async function deleteCommonCode(data: CommonCode) {
   return fetchApi<CommonCode>({
-    endpoint: `/code/common/${data.groupCodeId}/${data.uid}`,
+    endpoint: `${apiAuth}/code/common/${data.groupCodeId}/${data.uid}`,
     method: 'DELETE'
   });
 
@@ -175,12 +177,12 @@ export async function deleteCommonCode(data: CommonCode) {
 // ------------------------------------------------------------------------------------------------------
 
 export async function getCatalogType(): Promise<CatalogType[]> {
-  return fetchApi<CatalogType[]>({ endpoint: `/catalogs` });
+  return fetchApi<CatalogType[]>({ endpoint: `${apiAuth}/catalogs` });
 }
 
 export async function insertCatalogType(data: CatalogType) {
   return fetchApi<CatalogType>({
-    endpoint: `/catalogs`,
+    endpoint: `${apiAuth}/catalogs`,
     method: 'POST',
     body: data,
   });
@@ -188,7 +190,7 @@ export async function insertCatalogType(data: CatalogType) {
 
 export async function updateCatalogType(data: CatalogType) {
   return fetchApi<CatalogType>({
-    endpoint: `/catalogs/${data.uid}`,
+    endpoint: `${apiAuth}/catalogs/${data.uid}`,
     method: 'PUT',
     body: data,
   });
@@ -196,18 +198,18 @@ export async function updateCatalogType(data: CatalogType) {
 
 export async function deleteCatalogType(data: CatalogType) {
   return fetchApi<CatalogType>({
-    endpoint: `/catalogs/${data.uid}`,
+    endpoint: `${apiAuth}/catalogs/${data.uid}`,
     method: 'DELETE',
   });
 }
 
 export async function getCatalogVersion(catalogTypeId: string): Promise<CatalogVersion[]> {
-  return fetchApi<CatalogVersion[]>({ endpoint: `/catalogtype/version/${catalogTypeId}` });
+  return fetchApi<CatalogVersion[]>({ endpoint: `${apiAuth}/catalogtype/version/${catalogTypeId}` });
 }
 
 export async function insertCatalogVersion(data: CatalogVersion) {
   return fetchApi<CatalogVersion>({
-    endpoint: `/catalogtype/version`,
+    endpoint: `${apiAuth}/catalogtype/version`,
     method: 'POST',
     body: data,
   });
@@ -215,7 +217,7 @@ export async function insertCatalogVersion(data: CatalogVersion) {
 
 export async function updateCatalogVersion(data: CatalogVersion) {
   return fetchApi<CatalogVersion>({
-    endpoint: `/catalogtype/version/${data.uid}`,
+    endpoint: `${apiAuth}/catalogtype/version/${data.uid}`,
     method: 'PUT',
     body: data,
   });
@@ -223,7 +225,7 @@ export async function updateCatalogVersion(data: CatalogVersion) {
 
 export async function deleteCatalogVersion(data: CatalogVersion) {
   return fetchApi<CatalogVersion>({
-    endpoint: `/catalogtype/version/${data.catalogTypeId}/${data.uid}`,
+    endpoint: `${apiAuth}/catalogtype/version/${data.catalogTypeId}/${data.uid}`,
     method: 'DELETE',
   });
 }
@@ -231,12 +233,12 @@ export async function deleteCatalogVersion(data: CatalogVersion) {
 // --------------------------------------------------------------------------------
 
 export async function getClusters(): Promise<Cluster[]> {
-  return fetchApi<Cluster[]>({ endpoint: `/clusters` });
+  return fetchApi<Cluster[]>({ endpoint: `${apiAuth}/clusters` });
 }
 
 export async function insertCluster(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `/clusters`,
+    endpoint: `${apiAuth}/clusters`,
     method: 'POST',
     body: data
   });
@@ -244,7 +246,7 @@ export async function insertCluster(data: Cluster) {
 
 export async function updateCluster(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `/clusters/${data.uid}`,
+    endpoint: `${apiAuth}/clusters/${data.uid}`,
     method: 'PUT',
     body: data
   });
@@ -252,7 +254,7 @@ export async function updateCluster(data: Cluster) {
 
 export async function deleteCluster(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `/clusters/${data.uid}`,
+    endpoint: `${apiAuth}/clusters/${data.uid}`,
     method: 'DELETE',
   });
 }
@@ -261,8 +263,7 @@ export async function deleteCluster(data: Cluster) {
 
 export async function insertClusterArgoCd(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `/clusters`,
+    endpoint: `${apiNonAuth}/system/clusters/${data.uid}`,
     method: 'POST',
-    body: data
   });
 }
