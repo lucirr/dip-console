@@ -4,6 +4,7 @@ import type { GroupCode, CommonCode } from "@/types/groupcode"
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 import type { CatalogGit, Cluster } from "@/types/cluster"
 import { Dns } from "@/types/dns";
+import { SystemLink } from "@/types/systemlink";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -156,12 +157,12 @@ export async function deleteCatalogVersion(data: CatalogVersion) {
 // --------------------------------------------------------------------------------
 
 export async function getClusters(): Promise<Cluster[]> {
-  return fetchApi<Cluster[]>({ endpoint: `${apiAuth}/clusters` });
+  return fetchApi<Cluster[]>({ endpoint: `${apiNonAuth}/clusters` });
 }
 
 export async function insertCluster(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `${apiAuth}/clusters`,
+    endpoint: `${apiNonAuth}/clusters`,
     method: 'POST',
     body: data
   });
@@ -169,7 +170,7 @@ export async function insertCluster(data: Cluster) {
 
 export async function updateCluster(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `${apiAuth}/clusters/${data.uid}`,
+    endpoint: `${apiNonAuth}/clusters/${data.uid}`,
     method: 'PUT',
     body: data
   });
@@ -177,7 +178,7 @@ export async function updateCluster(data: Cluster) {
 
 export async function deleteCluster(data: Cluster) {
   return fetchApi<Cluster>({
-    endpoint: `${apiAuth}/clusters/${data.uid}`,
+    endpoint: `${apiNonAuth}/clusters/${data.uid}`,
     method: 'DELETE',
   });
 }
@@ -235,6 +236,35 @@ export async function updateDns(data: Dns) {
 export async function deleteDns(data: Dns) {
   return fetchApi<Dns>({
     endpoint: `${apiAuth}/dns/${data.uid}`,
+    method: 'DELETE',
+  });
+}
+
+// --------------------------------------------------------------------------------
+
+export async function getSystemLink(): Promise<SystemLink[]> {
+  return fetchApi<SystemLink[]>({ endpoint: `${apiNonAuth}/systemlink` });
+}
+
+export async function insertSystemLink(data: SystemLink) {
+  return fetchApi<SystemLink>({
+    endpoint: `${apiNonAuth}/systemlink`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function updateSystemLink(data: SystemLink) {
+  return fetchApi<SystemLink>({
+    endpoint: `${apiNonAuth}/systemlink/${data.uid}`,
+    method: 'PUT',
+    body: data
+  });
+}
+
+export async function deleteSystemLink(data: SystemLink) {
+  return fetchApi<SystemLink>({
+    endpoint: `${apiNonAuth}/systemlink/${data.uid}`,
     method: 'DELETE',
   });
 }

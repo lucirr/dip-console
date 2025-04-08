@@ -52,7 +52,7 @@ export function Header() {
       '/cluster',
       '/argocd',
       '/dns-lookup',
-      '/system-catalog'
+      '/system-link'
     ];
 
     // 데이터관리 메뉴의 하위 경로들
@@ -300,7 +300,7 @@ export function Header() {
                   <li>
                     <NavigationMenuLink asChild>
                       <Link 
-                        href="/system-catalog"
+                        href="/system-link"
                         className="flex items-center gap-2 select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground whitespace-nowrap"
                       >
                         <HardDrive className="h-4 w-4" />

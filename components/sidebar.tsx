@@ -61,7 +61,7 @@ const menuItems: Record<MenuKey, MenuItem[]> = {
       ]
     },
     { name: 'DNS 조회', href: '/dns-lookup', icon: Globe },
-    { name: '시스템 카탈로그', href: '/system-catalog', icon: HardDrive },
+    { name: '시스템 카탈로그', href: '/system-link', icon: HardDrive },
   ],
 };
 
