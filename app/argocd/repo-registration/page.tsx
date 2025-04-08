@@ -134,7 +134,6 @@ export default function ArgoRepoRegistrationPage() {
     },
   ];
 
-
   const fetchCatalogGits = async () => {
     setIsLoading(true);
     try {
@@ -159,27 +158,18 @@ export default function ArgoRepoRegistrationPage() {
     }
   };
 
-
-
   useEffect(() => {
     fetchCatalogGits();
     fetchCommonCode('service_type');
   }, []);
 
-
-
-
   useEffect(() => {
     setFormErrorsCatalogGit(null);
   }, [isCatalogGitNewSheetOpen]);
 
-
-
   const handleRefresh = () => {
     fetchCatalogGits();
   };
-
-
 
   const catalogGitNewClick = () => {
     if (isSubmitting) return;
@@ -192,7 +182,7 @@ export default function ArgoRepoRegistrationPage() {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
         // 필수 입력 필드 검증
-        if (field === 'catalogGit' || field === 'catalogServiceTypeId' || field === 'argoDeployType') {
+        if (field === 'gitTypeId' || field === 'gitUrl' || field === 'gitUsername' || field === 'gitToken') {
           acc[field] = error.message;
         }
         return acc;
@@ -253,32 +243,6 @@ export default function ArgoRepoRegistrationPage() {
     setIsCatalogGitEditSheetOpen(true);
   };
 
-  const catalogGitEditClick = () => {
-    if (isSubmitting) return;
-
-    setFormErrorsCatalogGit(null);
-
-    const validationResult = formSchemaCatalogGit.safeParse(editCatalogGit);
-
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors.reduce((acc, error) => {
-        const field = error.path[0] as string;
-        // 필수 입력 필드 검증
-        if (field === 'catalogGit' || field === 'serviceType' || field === 'argoDeployType') {
-          acc[field] = error.message;
-        }
-        return acc;
-      }, {} as { [key: string]: string });
-      setFormErrorsCatalogGit(errors);
-      return;
-    }
-    //setConfirmAction(() => catalogGitEditSubmit);
-    //setConfirmDescription("수정하시겠습니까?");
-    setIsConfirmOpen(true);
-  };
-
-
-
   const catalogGitDeleteClick = (row: CatalogGit) => {
     if (isSubmitting) return;
 
@@ -311,16 +275,9 @@ export default function ArgoRepoRegistrationPage() {
     }
   };
 
-
-
   const handlePageChange = (newPage: number) => {
     setPageCatalogGit(newPage);
   };
-
-  const handlePageChangeCatalogVersion = (newPage: number) => {
-    setPageCatalogVersion(newPage);
-  };
-
 
   return (
     <div className="flex-1 space-y-4 py-4">
