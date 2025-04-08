@@ -3,6 +3,7 @@
 import type { GroupCode, CommonCode } from "@/types/groupcode"
 import type { CatalogType, CatalogVersion } from "@/types/catalogtype"
 import type { CatalogGit, Cluster } from "@/types/cluster"
+import { Dns } from "@/types/dns";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -205,6 +206,35 @@ export async function insertCatalogGit(data: CatalogGit) {
 export async function deleteCatalogGit(data: CatalogGit) {
   return fetchApi<CatalogGit>({
     endpoint: `${apiNonAuth}/system/repositories/${data.uid}`,
+    method: 'DELETE',
+  });
+}
+
+// --------------------------------------------------------------------------------
+
+export async function getDns(): Promise<Dns[]> {
+  return fetchApi<Dns[]>({ endpoint: `${apiAuth}/dns` });
+}
+
+export async function insertDns(data: Dns) {
+  return fetchApi<Dns>({
+    endpoint: `${apiAuth}/dns`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function updateDns(data: Dns) {
+  return fetchApi<Dns>({
+    endpoint: `${apiAuth}/dns/${data.uid}`,
+    method: 'PUT',
+    body: data
+  });
+}
+
+export async function deleteDns(data: Dns) {
+  return fetchApi<Dns>({
+    endpoint: `${apiAuth}/dns/${data.uid}`,
     method: 'DELETE',
   });
 }
