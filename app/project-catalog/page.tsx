@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw, LinkIcon, RotateCcw, Search } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,8 +25,8 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
-import type { Dns } from "@/types/dns"
-import { getDns, insertDns, updateDns, deleteDns } from "@/lib/actions"
+import type { CatalogDeploy } from "@/types/catalogdeploy"
+import { getProjectCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -47,17 +47,17 @@ interface Column {
 
 export default function ProjectCatalogPage() {
   const { toast } = useToast()
-  const [dnsData, setDnsData] = useState<Dns[]>([]);
-  const [isDnsNewSheetOpen, setIsDnsNewSheetOpen] = useState(false);
-  const [isDnsEditSheetOpen, setIsDnsEditSheetOpen] = useState(false);
+  const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
+  const [isCatalogDeployNewSheetOpen, setIsCatalogDeployNewSheetOpen] = useState(false);
+  const [isCatalogDeployEditSheetOpen, setIsCatalogDeployEditSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [pageDns, setPageDns] = useState(1);
+  const [pageCatalogDeploy, setPageCatalogDeploy] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [selectedDns, setSelectedDns] = useState<Dns | null>(null);
+  const [selectedCatalogDeploy, setSelectedCatalogDeploy] = useState<CatalogDeploy | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
-  const [formErrorsDns, setFormErrorsDns] = useState<{
+  const [formErrorsCatalogDeploy, setFormErrorsCatalogDeploy] = useState<{
     name?: string;
     type?: string;
     value?: string;
@@ -65,34 +65,43 @@ export default function ProjectCatalogPage() {
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newCode, setNewCode] = useState<Dns>({
-    name: '',
-    type: '',
-    value: '',
-    ttl: 600,
-  });
-
-  const [editDns, setEditDns] = useState<Dns>({
+  const [editCatalogDeploy, setEditCatalogDeploy] = useState<CatalogDeploy>({
     uid: '',
     name: '',
-    type: '',
-    value: '',
-    ttl: 600,
+    ValuesYaml: '',
+  });
+
+  const [selectedCluster, setSelectedCluster] = useState('');
+  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+
+  const clusterOptions = [
+  { value: '개발 클러스터', label: '개발 클러스터' },
+  { value: '운영 클러스터', label: '운영 클러스터' },
+  { value: '스테이징 클러스터', label: '스테이징 클러스터' },
+];
+
+const projectOptions = [
+  { value: '클라우드 플랫폼', label: '클라우드 플랫폼' },
+  { value: '마이크로서비스 전환', label: '마이크로서비스 전환' },
+  { value: 'API 게이트웨이', label: 'API 게이트웨이' },
+];
+
+const typeOptions = [
+  { value: '웹 애플리케이션', label: '웹 애플리케이션' },
+  { value: 'MSA', label: 'MSA' },
+  { value: 'API', label: 'API' },
+];
+
+
+  const formSchemaCatalogDeploy = z.object({
+    ValuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
   });
 
 
 
-  const formSchemaDns = z.object({
-    name: z.string().min(1, { message: "이름은 필수 입력 항목입니다." }),
-    type: z.string().min(1, { message: "유형은 필수 입력 항목입니다." }),
-    value: z.string().min(1, { message: "IP는 필수 입력 항목입니다." }),
-    ttl: z.number().min(1, { message: "ttl은 필수 입력 항목입니다." }),
-  });
-
-
-
-  const paginatedData = dnsData.slice((pageDns - 1) * pageSize, pageDns * pageSize);
-  const totalPages = Math.ceil(dnsData.length / pageSize);
+  const paginatedData = catalogDeployData.slice((pageCatalogDeploy - 1) * pageSize, pageCatalogDeploy * pageSize);
+  const totalPages = Math.ceil(catalogDeployData.length / pageSize);
 
 
   const columns: Column[] = [
@@ -104,22 +113,30 @@ export default function ProjectCatalogPage() {
       cell: (row: any, index?: number) => {
         const rowIndex = paginatedData.findIndex(item => item === row);
         return (
-          <div className="text-center">{(pageDns - 1) * pageSize + rowIndex + 1}</div>
+          <div className="text-center">{(pageCatalogDeploy - 1) * pageSize + rowIndex + 1}</div>
         );
       }
     },
-    { key: 'name', title: '이름', align: 'left' },
+    { key: 'clusterName', title: '클러스터', align: 'left' },
+    { key: 'clusterProjectName', title: '프로젝트', align: 'left' },
+    { key: 'catalogType', title: '카탈로그 유형', align: 'left' },
+    { key: 'catalogVersion', title: '카탈로그 버전', align: 'left' },
+    { key: 'catalogName', title: '카탈로그 이름', align: 'left' },
     {
-      key: 'type', title: ' 유형', align: 'left',
+      key: 'status', title: '배포 상태', align: 'left',
       cell: (row: any) => (
-        <Badge variant="secondary">{row.type}</Badge>
+        <Badge variant="secondary">{row.status}</Badge>
       )
     },
-    { key: 'value', title: 'IP', align: 'left' },
-    { key: 'ttl', title: 'ttl', align: 'left' },
+    {
+      key: 'syncStatus', title: '서비스 상태', align: 'left',
+      cell: (row: any) => (
+        <Badge variant="default">{row.syncStatus}</Badge>
+      )
+    },
     {
       key: 'createdAt', title: '등록일자', align: 'left',
-      cell: (row: Dns) => {
+      cell: (row: CatalogDeploy) => {
         if (!row.createdAt) return '-';
         return format(new Date(row.createdAt), 'yyyy-MM-dd');
       }
@@ -128,7 +145,7 @@ export default function ProjectCatalogPage() {
       key: 'actions',
       title: '',
       width: 'w-[40px]',
-      cell: (row: Dns) => (
+      cell: (row: CatalogDeploy) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
@@ -136,11 +153,22 @@ export default function ProjectCatalogPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => dnsEditSheetClick(row)}>
+            <DropdownMenuItem
+              onClick={() => {
+                if (row.catalogUrl) {
+                  handleClick(row.catalogUrl);
+                }
+              }}
+              disabled={!row.catalogUrl}
+            >
+              <LinkIcon className="h-4 w-4 mr-2" />
+              링크
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => catalogDeployEditSheetClick(row)}>
               <Pencil className="h-4 w-4 mr-2" />
               편집
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => dnsDeleteClick(row)}>
+            <DropdownMenuItem onClick={() => catalogDeployDeleteClick(row)}>
               <Code className="h-4 w-4 mr-2" />
               삭제
             </DropdownMenuItem>
@@ -152,138 +180,111 @@ export default function ProjectCatalogPage() {
 
 
 
-  const fetchDns = async () => {
+  const fetchCatalogDeploy = async () => {
     setIsLoading(true);
     try {
-      const response = await getDns()
-      setDnsData(response);
+      const response = await getProjectCatalogDeploy()
+      setCatalogDeployData(response);
     } catch (error) {
-      setDnsData([]);
+      setCatalogDeployData([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-
+  const handleClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   useEffect(() => {
-    fetchDns();
+    fetchCatalogDeploy();
   }, []);
 
   useEffect(() => {
-    setFormErrorsDns(null);
-  }, [isDnsNewSheetOpen]);
+    setFormErrorsCatalogDeploy(null);
+  }, [isCatalogDeployNewSheetOpen]);
 
   const handleRefresh = () => {
-    fetchDns();
+    fetchCatalogDeploy();
   };
 
-  const dnsNewClick = () => {
-    if (isSubmitting) return;
-
-    setFormErrorsDns(null);
-
-    const validationResult = formSchemaDns.safeParse(newCode);
-
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors.reduce((acc, error) => {
-        const field = error.path[0] as string;
-        // 필수 입력 필드 검증
-        if (field === 'name' || field === 'type' || field === 'value' || field === 'ttl') {
-          acc[field] = error.message;
-        }
-        return acc;
-      }, {} as { [key: string]: string });
-
-      setFormErrorsDns(errors);
-      return;
-    }
-    setConfirmAction(() => newDnsSubmit);
-    setConfirmDescription("저장하시겠습니까?");
-    setIsConfirmOpen(true);
-  };
-
-  const newDnsSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    try {
-      await insertDns(newCode);
-      toast({
-        title: "Success",
-        description: "클러스터가 성공적으로 추가되었습니다.",
-      })
-      setNewCode({
-        name: '',
-        type: '',
-        value: '',
-        ttl: 600,
-      });
-      setIsDnsNewSheetOpen(false);
-      fetchDns();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: getErrorMessage(error),
-        variant: "destructive"
-      })
-    } finally {
-      setIsSubmitting(false);
-      setIsConfirmOpen(false);
-    }
+  const handleReset = () => {
+    setSelectedCluster('');
+    setSelectedProject('');
+    setSelectedType('');
+    // setData(mockData);
   };
 
 
-
-  const dnsEditSheetClick = (row: Dns) => {
-    setSelectedDns(row);
-    setEditDns({
-      uid: row.uid,
+  const catalogDeployEditSheetClick = (row: CatalogDeploy) => {
+    setSelectedCatalogDeploy(row);
+    setEditCatalogDeploy({
+      uid: row.uid || '',
+      projectId: row.projectId,
+      catalogTypeId: row.catalogTypeId,
+      catalogVersionId: row.catalogVersionId,
       name: row.name,
-      type: row.type,
-      value: row.value,
-      ttl: row.ttl,
+      catalogName: row.catalogName,
+      namespace: row.namespace,
+      ValuesYaml: row.ValuesYaml || '',
+      userId: row.userId,
+      status: row.status,
+      syncStatus: row.syncStatus,
+      errorMessage: row.errorMessage,
+      catalogUrl: row.catalogUrl,
+      catalogUser: row.catalogUser,
+      IsAdminDeploy: row.IsAdminDeploy,
+      clusterId: row.clusterId,
+      catalogDeployId: row.catalogDeployId,
+      clientId: row.clientId,
+      catalogSvcUrl: row.catalogSvcUrl,
+      createdAt: row.createdAt,
+      clusterProjectName: row.clusterProjectName,
+      catalogType: row.catalogType,
+      catalogVersion: row.catalogVersion,
+      clusterName: row.clusterName,
+      username: row.username
     });
-    setFormErrorsDns(null);
-    setIsDnsEditSheetOpen(true);
+    setFormErrorsCatalogDeploy(null);
+    setIsCatalogDeployEditSheetOpen(true);
   };
 
-  const dnsEditClick = () => {
+  const catalogDeployEditClick = () => {
     if (isSubmitting) return;
 
-    setFormErrorsDns(null);
+    setFormErrorsCatalogDeploy(null);
 
-    const validationResult = formSchemaDns.safeParse(editDns);
+    const validationResult = formSchemaCatalogDeploy.safeParse(editCatalogDeploy);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
         // 필수 입력 필드 검증
-        if (field === 'name' || field === 'type' || field === 'value' || field === 'ttl') {
+        if (field === 'ValuesYaml') {
           acc[field] = error.message;
         }
         return acc;
       }, {} as { [key: string]: string });
-      setFormErrorsDns(errors);
+      setFormErrorsCatalogDeploy(errors);
       return;
     }
-    setConfirmAction(() => dnsEditSubmit);
-    setConfirmDescription("수정하시겠습니까?");
+    setConfirmAction(() => catalogDeployEditSubmit);
+    setConfirmDescription("재배포 하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const dnsEditSubmit = async () => {
+  const catalogDeployEditSubmit = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      await updateDns(editDns);
+      await updateProjectCatalogDeploy(editCatalogDeploy);
       toast({
         title: "Success",
-        description: "클러스터가 성공적으로 수정되었습니다.",
+        description: "재배포가 성공적으로 실행되었습니다.",
       })
-      setIsDnsEditSheetOpen(false);
-      fetchDns();
+      setIsCatalogDeployEditSheetOpen(false);
+      fetchCatalogDeploy();
     } catch (error) {
       toast({
         title: "Error",
@@ -296,26 +297,26 @@ export default function ProjectCatalogPage() {
     }
   };
 
-  const dnsDeleteClick = (row: Dns) => {
+  const catalogDeployDeleteClick = (row: CatalogDeploy) => {
     if (isSubmitting) return;
 
-    setConfirmAction(() => () => dnsDeleteSubmit(row));
+    setConfirmAction(() => () => catalogDeployDeleteSubmit(row));
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const dnsDeleteSubmit = async (row: Dns) => {
+  const catalogDeployDeleteSubmit = async (row: CatalogDeploy) => {
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      await deleteDns(row);
+      await deleteProjectCatalogDeploy(row);
       toast({
         title: "Success",
-        description: "클러스터가 성공적으로 삭제되었습니다.",
+        description: "카탈로그가 성공적으로 삭제되었습니다.",
       })
-      fetchDns();
+      fetchCatalogDeploy();
     } catch (error) {
       toast({
         title: "Error",
@@ -331,7 +332,7 @@ export default function ProjectCatalogPage() {
 
 
   const handlePageChange = (newPage: number) => {
-    setPageDns(newPage);
+    setPageCatalogDeploy(newPage);
   };
 
 
@@ -342,243 +343,45 @@ export default function ProjectCatalogPage() {
       <div className="bg-white border-b shadow-sm -mx-4">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">DNS 조회</h2>
-            <p className="mt-1 text-sm text-gray-500">DNS를 생성하고 관리할 수 있습니다.</p>
+            <h2 className="text-3xl font-bold tracking-tight">프로젝트 카탈로그</h2>
+            <p className="mt-1 text-sm text-gray-500">프로젝트에 배포한 카탈로그를 관리할 수 있습니다.</p>
           </div>
-          <Sheet open={isDnsNewSheetOpen} onOpenChange={setIsDnsNewSheetOpen}>
-            <SheetTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                DNS 추가
-              </Button>
-            </SheetTrigger>
+
+          <Sheet open={isCatalogDeployEditSheetOpen} onOpenChange={setIsCatalogDeployEditSheetOpen}>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
-                  <SheetTitle>새 DNS 추가</SheetTitle>
+                  <SheetTitle>카탈로그 상세정보</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="dns-name" className="flex items-center">
+                    <Label htmlFor="edit-catalogDeploy-name" className="flex items-center">
                       이름 <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
-                      id="dns-name"
+                      id="edit-catalogDeploy-name"
                       placeholder="이름 입력"
-                      value={newCode.name}
+                      value={editCatalogDeploy.name}
                       onChange={(e) => {
-                        setNewCode({ ...newCode, name: e.target.value });
-                        setFormErrorsDns(prevErrors => ({
+                        setEditCatalogDeploy({ ...editCatalogDeploy, name: e.target.value });
+                        setFormErrorsCatalogDeploy(prevErrors => ({
                           ...prevErrors,
                           name: undefined,
                         }));
                       }}
-                      className={formErrorsDns?.name ? "border-red-500" : ""}
+                      className={formErrorsCatalogDeploy?.name ? "border-red-500" : ""}
                       required
                     />
-                    {formErrorsDns?.name && <p className="text-red-500 text-sm">{formErrorsDns.name}</p>}
+                    {formErrorsCatalogDeploy?.name && <p className="text-red-500 text-sm">{formErrorsCatalogDeploy.name}</p>}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="dns-type" className="flex items-center">
-                      타입 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Select
-                      value={newCode.type}
-                      onValueChange={(value) => {
-                        setNewCode({
-                          ...newCode,
-                          type: value,
-                        });
-                        setFormErrorsDns(prevErrors => ({
-                          ...prevErrors,
-                          type: undefined,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        id="dns-type"
-                        className={formErrorsDns?.type ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="타입 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">A</SelectItem>
-                        <SelectItem value="MX">MX</SelectItem>
-                        <SelectItem value="CNAME">CNAME</SelectItem>
-                        <SelectItem value="TXT">TXT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {formErrorsDns?.type && <p className="text-red-500 text-sm">{formErrorsDns.type}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="dns-url" className="flex items-center">
-                      IP <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="dns-url"
-                      placeholder="192.168.1.1"
-                      value={newCode.value}
-                      onChange={(e) => {
-                        setNewCode({ ...newCode, value: e.target.value });
-                        setFormErrorsDns(prevErrors => ({
-                          ...prevErrors,
-                          value: undefined,
-                        }));
-                      }}
-                      className={formErrorsDns?.value ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsDns?.value && <p className="text-red-500 text-sm">{formErrorsDns.value}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="domain" className="flex items-center">
-                      ttl <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="ttl"
-                      placeholder="600"
-                      value={newCode.ttl}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        if (value) {
-                          setNewCode({ ...newCode, ttl: parseInt(value, 10) });
-                          setFormErrorsDns(prevErrors => ({
-                            ...prevErrors,
-                            ttl: undefined,
-                          }));
-                        }
-                      }}
-                      type="number"
-                      className={formErrorsDns?.ttl ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsDns?.ttl && <p className="text-red-500 text-sm">{formErrorsDns.ttl}</p>}
-                  </div>
-
-                </div>
-                <div className="flex justify-end space-x-2 mt-6 pb-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsDnsNewSheetOpen(false)}>
-                    취소
-                  </Button>
-                  <Button size="sm" onClick={dnsNewClick} disabled={isSubmitting}>
-                    저장
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <Sheet open={isDnsEditSheetOpen} onOpenChange={setIsDnsEditSheetOpen}>
-            <SheetContent className="min-w-[650px] overflow-y-auto">
-              <div className="flex flex-col h-full">
-                <SheetHeader className='pb-4'>
-                  <SheetTitle>DNS 수정</SheetTitle>
-                </SheetHeader>
-                <div className="grid gap-4 py-4 border-t">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-dns-name" className="flex items-center">
-                      이름 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="edit-dns-name"
-                      placeholder="이름 입력"
-                      value={editDns.name}
-                      onChange={(e) => {
-                        setEditDns({ ...editDns, name: e.target.value });
-                        setFormErrorsDns(prevErrors => ({
-                          ...prevErrors,
-                          name: undefined,
-                        }));
-                      }}
-                      className={formErrorsDns?.name ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsDns?.name && <p className="text-red-500 text-sm">{formErrorsDns.name}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-dns-type" className="flex items-center">
-                      유형 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Select
-                      value={editDns.type}
-                      onValueChange={(value) => {
-                        setEditDns({
-                          ...editDns,
-                          type: value,
-                        });
-                        setFormErrorsDns(prevErrors => ({
-                          ...prevErrors,
-                          type: undefined,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        id="edit-dns-type"
-                        className={formErrorsDns?.type ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="타입 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">A</SelectItem>
-                        <SelectItem value="MX">MX</SelectItem>
-                        <SelectItem value="CNAME">CNAME</SelectItem>
-                        <SelectItem value="TXT">TXT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {formErrorsDns?.type && <p className="text-red-500 text-sm">{formErrorsDns.type}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-dns-url" className="flex items-center">
-                      IP <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="edit-dns-url"
-                      placeholder="192.168.1.1"
-                      value={editDns.value}
-                      onChange={(e) => {
-                        setEditDns({ ...editDns, value: e.target.value });
-                        setFormErrorsDns(prevErrors => ({
-                          ...prevErrors,
-                          value: undefined,
-                        }));
-                      }}
-                      className={formErrorsDns?.value ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsDns?.value && <p className="text-red-500 text-sm">{formErrorsDns.value}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-domain" className="flex items-center">
-                      ttl <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="edit-domain"
-                      placeholder="example.com"
-                      value={editDns.ttl}
-                      onChange={(e) => {
-                        setEditDns({ ...editDns, ttl: parseInt(e.target.value, 10) });
-                        setFormErrorsDns(prevErrors => ({
-                          ...prevErrors,
-                          domain: undefined,
-                        }));
-                      }}
-                      type="number"
-                      className={formErrorsDns?.ttl ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsDns?.ttl && <p className="text-red-500 text-sm">{formErrorsDns.ttl}</p>}
-                  </div>
+                  
 
                   <div className="flex justify-end space-x-2 mt-6 pb-6">
-                    <Button variant="outline" size="sm" onClick={() => setIsDnsEditSheetOpen(false)}>
+                    <Button variant="outline" size="sm" onClick={() => setIsCatalogDeployEditSheetOpen(false)}>
                       취소
                     </Button>
-                    <Button size="sm" onClick={dnsEditClick} disabled={isSubmitting}>
+                    <Button size="sm" onClick={catalogDeployEditClick} disabled={isSubmitting}>
                       저장
                     </Button>
                   </div>
@@ -590,30 +393,92 @@ export default function ProjectCatalogPage() {
 
         </div>
       </div>
-      <Card>
-        <CardContent className="p-2">
-          <DataTable
-            columns={columns}
-            data={paginatedData}
-            onRefresh={handleRefresh}
-            isLoading={isLoading}
-          />
-          <TablePagination
-            currentPage={pageDns}
-            totalPages={totalPages}
-            dataLength={dnsData.length}
-            onPageChange={handlePageChange}
-            pageSize={pageSize}
-          />
-        </CardContent>
-      </Card>
-      <ConfirmDialog
-        isOpen={isConfirmOpen}
-        onOpenChange={setIsConfirmOpen}
-        onConfirm={confirmAction}
-        description={confirmDescription}
-      />
-
+      <div className="grid gap-4 px-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+              <div className="flex-1 space-y-2">
+                <Label>클러스터</Label>
+                <Select value={selectedCluster} onValueChange={setSelectedCluster}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="클러스터 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clusterOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label>프로젝트</Label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="프로젝트 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label>카탈로그 유형</Label>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="카탈로그 유형 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {typeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 md:ml-4">
+                <Button variant="outline" size="sm" onClick={handleReset}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  초기화
+                </Button>
+                <Button size="sm" onClick={handleRefresh}>
+                  <Search className="mr-2 h-4 w-4" />
+                  검색
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-2">
+            <DataTable
+              columns={columns}
+              data={paginatedData}
+              // onRefresh={handleRefresh}
+              isLoading={isLoading}
+            />
+            <TablePagination
+              currentPage={pageCatalogDeploy}
+              totalPages={totalPages}
+              dataLength={catalogDeployData.length}
+              onPageChange={handlePageChange}
+              pageSize={pageSize}
+            />
+          </CardContent>
+        </Card>
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          onOpenChange={setIsConfirmOpen}
+          onConfirm={confirmAction}
+          description={confirmDescription}
+        />
+      </div>
     </div>
   );
 }

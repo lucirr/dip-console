@@ -6,6 +6,7 @@ import type { CatalogGit, Cluster } from "@/types/cluster"
 import { Dns } from "@/types/dns";
 import { SystemLink } from "@/types/systemlink";
 import { License } from "@/types/license";
+import { CatalogDeploy } from "@/types/catalogdeploy";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -287,6 +288,27 @@ export async function insertLicense(data: License) {
 export async function deleteLicense(data: License) {
   return fetchApi<License>({
     endpoint: `${apiNonAuth}/license/${data.uid}`,
+    method: 'DELETE',
+  });
+}
+
+// --------------------------------------------------------------------------------
+
+export async function getProjectCatalogDeploy(): Promise<CatalogDeploy[]> {
+  return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project` });
+}
+
+export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
+  return fetchApi<CatalogDeploy>({
+    endpoint: `${apiAuth}/catalogs/project/${data.uid}`,
+    method: 'PUT',
+    body: data
+  });
+}
+
+export async function deleteProjectCatalogDeploy(data: CatalogDeploy) {
+  return fetchApi<CatalogDeploy>({
+    endpoint: `${apiAuth}/catalogs/project/${data.uid}`,
     method: 'DELETE',
   });
 }
