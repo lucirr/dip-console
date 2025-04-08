@@ -25,12 +25,12 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { CatalogGit } from "@/types/cluster"
-import { getCatalogGits, insertCatalogGit, deleteCatalogGit, getCommonCodeByGroupCode } from "@/lib/actions"
+import { getCatalogGits, insertCatalogGit, deleteCatalogGit, getGroupCode } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { CommonCode } from '@/types/groupcode';
+import { GroupCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 
 interface Column {
@@ -63,7 +63,7 @@ export default function ArgoRepoRegistrationPage() {
     gitToken?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [codeType, setCodeType] = useState<CommonCode[]>([]);
+  const [codeType, setCodeType] = useState<GroupCode[]>([]);
 
   const [newCode, setNewCode] = useState<CatalogGit>({
     gitUrl: '',
@@ -77,7 +77,6 @@ export default function ArgoRepoRegistrationPage() {
     uid: '',
     gitUrl: '',
     gitUsername: '',
-    gitToken: '',
     gitType: '',
     gitTypeId: '',
   });
@@ -106,7 +105,7 @@ export default function ArgoRepoRegistrationPage() {
         );
       }
     },
-    { key: 'gitTypeId', title: 'GIT 유형', align: 'left' },
+    { key: 'gitType', title: 'GIT 유형', align: 'left' },
     { key: 'gitUrl', title: 'GIT 주소', align: 'left' },
     {
       key: 'actions',
@@ -134,11 +133,25 @@ export default function ArgoRepoRegistrationPage() {
     },
   ];
 
-  const fetchCatalogGits = async () => {
+  const fetchCatalogGits = async (currentCodeType: GroupCode[]) => {
     setIsLoading(true);
     try {
       const response = await getCatalogGits()
-      setCatalogGitData(response);
+
+      const codeTypeMap = currentCodeType.reduce((acc, code) => {
+        if (code.uid !== undefined) {
+          acc[code.uid] = code.groupCodeDesc ?? '';
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+
+      const enhancedResponse = response.map(item => ({
+        ...item,
+        gitType: codeTypeMap[item.gitTypeId ?? ''],
+      }));
+
+      setCatalogGitData(enhancedResponse);
     } catch (error) {
       setCatalogGitData([]);
     } finally {
@@ -146,21 +159,35 @@ export default function ArgoRepoRegistrationPage() {
     }
   };
 
-  const fetchCommonCode = async (groupCode: string) => {
+  const fetchCommonCode = async () => {
     setIsLoading(true);
     try {
-      const response = await getCommonCodeByGroupCode(groupCode)
-      setCodeType(response);
+      const response = await getGroupCode();
+
+      const filteredData = response.filter(item =>
+        item.groupCode === 'service_catalog' ||
+        item.groupCode === 'tenant_catalog'
+      );
+
+      setCodeType(filteredData);
+      return filteredData;
     } catch (error) {
       setCodeType([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
   };
 
+
+
   useEffect(() => {
-    fetchCatalogGits();
-    fetchCommonCode('service_type');
+    const fetchData = async () => {
+      const codeTypeData = await fetchCommonCode();
+      await fetchCatalogGits(codeTypeData);
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -168,7 +195,7 @@ export default function ArgoRepoRegistrationPage() {
   }, [isCatalogGitNewSheetOpen]);
 
   const handleRefresh = () => {
-    fetchCatalogGits();
+    fetchCatalogGits(codeType);
   };
 
   const catalogGitNewClick = () => {
@@ -214,7 +241,7 @@ export default function ArgoRepoRegistrationPage() {
         gitTypeId: '',
       });
       setIsCatalogGitNewSheetOpen(false);
-      fetchCatalogGits();
+      fetchCatalogGits(codeType);
     } catch (error) {
       toast({
         title: "Error",
@@ -233,11 +260,10 @@ export default function ArgoRepoRegistrationPage() {
     setSelectedCatalogGit(row);
     setEditCatalogGit({
       uid: row.uid,
-      gitUrl: '',
-      gitUsername: '',
-      gitToken: '',
-      gitType: '',
-      gitTypeId: '',
+      gitUrl: row.gitUrl,
+      gitUsername: row.gitUsername,
+      gitType: row.gitType,
+      gitTypeId: row.gitTypeId,
     });
     setFormErrorsCatalogGit(null);
     setIsCatalogGitEditSheetOpen(true);
@@ -262,7 +288,7 @@ export default function ArgoRepoRegistrationPage() {
         title: "Success",
         description: "Repo가 성공적으로 삭제되었습니다.",
       })
-      fetchCatalogGits();
+      fetchCatalogGits(codeType);
     } catch (error) {
       toast({
         title: "Error",
@@ -323,7 +349,7 @@ export default function ArgoRepoRegistrationPage() {
                       <SelectContent>
                         {codeType.map((item) => (
                           <SelectItem key={item.uid || ''} value={item.uid || ''}>
-                            {item.codeDesc}
+                            {item.groupCodeDesc}
                           </SelectItem>
                         ))}
                       </SelectContent>

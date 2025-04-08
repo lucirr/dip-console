@@ -15,7 +15,7 @@ export interface CatalogGit {
   uid?: string;
   gitUrl: string;
   gitUsername: string;
-  gitToken: string;
+  gitToken?: string;
   gitType: string;
   gitTypeId: string;
 }

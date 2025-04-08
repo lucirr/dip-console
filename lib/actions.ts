@@ -45,28 +45,9 @@ async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promi
 
 export async function getCommonCodeByGroupCode(groupCode: string): Promise<CommonCode[]> {
   return fetchApi<CommonCode[]>({ endpoint: `${apiAuth}/code/common?groupcode=${groupCode}` });
-
-  // try {
-  //   const response = await fetch(`${apiUrl}/code/common?groupcode=${groupCode}`, {
-  //     method: 'GET',
-  //     headers: headers,
-  //   });
-
-  //   if (!response.ok) {
-  //     // const errorText = await response.text().catch(() => response.statusText);
-  //     // throw new Error(`Server error ${response.status}: ${errorText}`);
-  //     const errorData = await response.json();
-  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-  //     throw new Error(errorMessage);
-  //   }
-
-  //   const responseData: CommonCode[] = await response.json();
-  //   return responseData
-  // } catch (error) {
-  //   console.error(error)
-  //   throw new Error(error instanceof Error ? error.message : String(error))
-  // }
 }
+
+// ------------------------------------------------------------------------------------------------------
 
 export async function getGroupCode(): Promise<GroupCode[]> {
   return fetchApi<GroupCode[]>({ endpoint: `${apiAuth}/code/group` });
@@ -78,26 +59,6 @@ export async function insertGroupCode(data: GroupCode) {
     method: 'POST',
     body: data,
   });
-
-  // try {
-  //   const response = await fetch(apiUrl + '/code/group', {
-  //     method: 'POST',
-  //     headers: headers,
-  //     body: JSON.stringify(data),
-  //   });
-
-  //   if (!response.ok) {
-  //     const errorData = await response.json();
-  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-  //     throw new Error(errorMessage);
-  //   }
-
-  //   const responseData = await response.json();
-  //   return responseData
-  // } catch (error) {
-  //   console.error(error)
-  //   throw new Error(error instanceof Error ? error.message : String(error))
-  // }
 }
 
 export async function updateGroupCode(data: GroupCode) {
@@ -106,26 +67,6 @@ export async function updateGroupCode(data: GroupCode) {
     method: 'PUT',
     body: data,
   });
-
-  // try {
-  //   const response = await fetch(`${apiUrl}/code/group/${data.uid}`, {
-  //     method: 'PUT',
-  //     headers: headers,
-  //     body: JSON.stringify(data),
-  //   });
-
-  //   if (!response.ok) {
-  //     const errorData = await response.json();
-  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-  //     throw new Error(errorMessage);
-  //   }
-
-  //   const responseData = await response.json();
-  //   return responseData
-  // } catch (error) {
-  //   console.error(error)
-  //   throw new Error(error instanceof Error ? error.message : String(error))
-  // }
 }
 
 export async function getCommonCode(groupCodeId: string) {
@@ -153,25 +94,6 @@ export async function deleteCommonCode(data: CommonCode) {
     endpoint: `${apiAuth}/code/common/${data.groupCodeId}/${data.uid}`,
     method: 'DELETE'
   });
-
-  // try {
-  //   const response = await fetch(`${apiUrl}/code/common/${commonCode.groupCodeId}/${commonCode.uid}`, {
-  //     method: 'DELETE',
-  //     headers: headers,
-  //   });
-
-  //   if (!response.ok) {
-  //     const errorData = await response.json();
-  //     const errorMessage = errorData.errors?.[0]?.message || String(errorData);
-  //     throw new Error(errorMessage);
-  //   }
-
-  //   const responseData = await response.json();
-  //   return responseData
-  // } catch (error) {
-  //   console.error(error)
-  //   throw new Error(error instanceof Error ? error.message : String(error))
-  // }
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -269,12 +191,12 @@ export async function insertClusterArgoCd(data: Cluster) {
 }
 
 export async function getCatalogGits(): Promise<CatalogGit[]> {
-  return fetchApi<CatalogGit[]>({ endpoint: `${apiAuth}/clusters` });
+  return fetchApi<CatalogGit[]>({ endpoint: `${apiNonAuth}/catalogs/git` });
 }
 
 export async function insertCatalogGit(data: CatalogGit) {
   return fetchApi<CatalogGit>({
-    endpoint: `${apiAuth}/clusters`,
+    endpoint: `${apiNonAuth}/system/repositories`,
     method: 'POST',
     body: data
   });
@@ -282,7 +204,7 @@ export async function insertCatalogGit(data: CatalogGit) {
 
 export async function deleteCatalogGit(data: CatalogGit) {
   return fetchApi<CatalogGit>({
-    endpoint: `${apiAuth}/clusters/${data.uid}`,
+    endpoint: `${apiNonAuth}/system/repositories/${data.uid}`,
     method: 'DELETE',
   });
 }
