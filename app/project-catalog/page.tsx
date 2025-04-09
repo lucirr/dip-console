@@ -33,7 +33,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badgestatus';
 
 interface Column {
   key: string;
@@ -58,44 +58,41 @@ export default function ProjectCatalogPage() {
   const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
   const [formErrorsCatalogDeploy, setFormErrorsCatalogDeploy] = useState<{
-    name?: string;
-    type?: string;
-    value?: string;
-    ttl?: number;
+    valuesYaml?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [editCatalogDeploy, setEditCatalogDeploy] = useState<CatalogDeploy>({
     uid: '',
     name: '',
-    ValuesYaml: '',
+    valuesYaml: '',
   });
 
-  const [selectedCluster, setSelectedCluster] = useState('');
-  const [selectedProject, setSelectedProject] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedCluster, setSelectedCluster] = useState<string>('');
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [selectedCatalogType, setSelectedCatalogType] = useState<string>('');
 
   const clusterOptions = [
-  { value: '개발 클러스터', label: '개발 클러스터' },
-  { value: '운영 클러스터', label: '운영 클러스터' },
-  { value: '스테이징 클러스터', label: '스테이징 클러스터' },
-];
+    { value: '개발 클러스터', label: '개발 클러스터' },
+    { value: '운영 클러스터', label: '운영 클러스터' },
+    { value: '스테이징 클러스터', label: '스테이징 클러스터' },
+  ];
 
-const projectOptions = [
-  { value: '클라우드 플랫폼', label: '클라우드 플랫폼' },
-  { value: '마이크로서비스 전환', label: '마이크로서비스 전환' },
-  { value: 'API 게이트웨이', label: 'API 게이트웨이' },
-];
+  const projectOptions = [
+    { value: '클라우드 플랫폼', label: '클라우드 플랫폼' },
+    { value: '마이크로서비스 전환', label: '마이크로서비스 전환' },
+    { value: 'API 게이트웨이', label: 'API 게이트웨이' },
+  ];
 
-const typeOptions = [
-  { value: '웹 애플리케이션', label: '웹 애플리케이션' },
-  { value: 'MSA', label: 'MSA' },
-  { value: 'API', label: 'API' },
-];
+  const catalogTypeOptions = [
+    { value: '웹 애플리케이션', label: '웹 애플리케이션' },
+    { value: 'MSA', label: 'MSA' },
+    { value: 'API', label: 'API' },
+  ];
 
 
   const formSchemaCatalogDeploy = z.object({
-    ValuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
+    valuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
   });
 
 
@@ -125,22 +122,22 @@ const typeOptions = [
     {
       key: 'status', title: '배포 상태', align: 'left',
       cell: (row: any) => (
-        <Badge variant="secondary">{row.status}</Badge>
+        <StatusBadge status={row.status} />
       )
     },
     {
       key: 'syncStatus', title: '서비스 상태', align: 'left',
       cell: (row: any) => (
-        <Badge variant="default">{row.syncStatus}</Badge>
+        <StatusBadge status={row.syncStatus} />
       )
     },
-    {
-      key: 'createdAt', title: '등록일자', align: 'left',
-      cell: (row: CatalogDeploy) => {
-        if (!row.createdAt) return '-';
-        return format(new Date(row.createdAt), 'yyyy-MM-dd');
-      }
-    },
+    // {
+    //   key: 'createdAt', title: '등록일자', align: 'left',
+    //   cell: (row: CatalogDeploy) => {
+    //     if (!row.createdAt) return '-';
+    //     return format(new Date(row.createdAt), 'yyyy-MM-dd');
+    //   }
+    // },
     {
       key: 'actions',
       title: '',
@@ -166,7 +163,7 @@ const typeOptions = [
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => catalogDeployEditSheetClick(row)}>
               <Pencil className="h-4 w-4 mr-2" />
-              편집
+              보기
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => catalogDeployDeleteClick(row)}>
               <Code className="h-4 w-4 mr-2" />
@@ -211,7 +208,7 @@ const typeOptions = [
   const handleReset = () => {
     setSelectedCluster('');
     setSelectedProject('');
-    setSelectedType('');
+    setSelectedCatalogType('');
     // setData(mockData);
   };
 
@@ -226,7 +223,7 @@ const typeOptions = [
       name: row.name,
       catalogName: row.catalogName,
       namespace: row.namespace,
-      ValuesYaml: row.ValuesYaml || '',
+      valuesYaml: row.valuesYaml || '',
       userId: row.userId,
       status: row.status,
       syncStatus: row.syncStatus,
@@ -260,7 +257,7 @@ const typeOptions = [
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
         // 필수 입력 필드 검증
-        if (field === 'ValuesYaml') {
+        if (field === 'valuesYaml') {
           acc[field] = error.message;
         }
         return acc;
@@ -348,41 +345,144 @@ const typeOptions = [
           </div>
 
           <Sheet open={isCatalogDeployEditSheetOpen} onOpenChange={setIsCatalogDeployEditSheetOpen}>
-            <SheetContent className="min-w-[650px] overflow-y-auto">
+            <SheetContent className="min-w-[750px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
                   <SheetTitle>카탈로그 상세정보</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-catalogDeploy-name" className="flex items-center">
-                      이름 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="edit-catalogDeploy-name"
-                      placeholder="이름 입력"
-                      value={editCatalogDeploy.name}
-                      onChange={(e) => {
-                        setEditCatalogDeploy({ ...editCatalogDeploy, name: e.target.value });
-                        setFormErrorsCatalogDeploy(prevErrors => ({
-                          ...prevErrors,
-                          name: undefined,
-                        }));
-                      }}
-                      className={formErrorsCatalogDeploy?.name ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsCatalogDeploy?.name && <p className="text-red-500 text-sm">{formErrorsCatalogDeploy.name}</p>}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>카탈로그 유형</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogType}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>카탈로그 버전</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogVersion}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>프로젝트 이름</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.clusterProjectName}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>카탈로그 이름</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogName}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>배포 상태</Label>
+                        <div className="p-2 bg-background rounded-md">
+                          <span className="text-sm">
+                            <StatusBadge status={editCatalogDeploy.status as "install" | "deployed" | "healthy" | "error"} />
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>서비스 상태</Label>
+                        <div className="p-2 bg-background rounded-md">
+                          <span className="text-sm">
+                            <StatusBadge status={editCatalogDeploy.syncStatus as "install" | "deployed" | "healthy" | "error"} />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>네임스페이스</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.namespace}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-desc">테넌트 여부</Label>
+                        <div className="mt-2">
+                          {/* {editCatalogDeploy.isTenant == false && <Check className="h-4 w-4 text-green-500" />} */}
+                          <Checkbox
+                            id="edit-enable"
+                            placeholder="테넌트 여부"
+                            checked={editCatalogDeploy.isTenant}
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>카탈로그 주소</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogUrl}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>카탈로그 내부 주소</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogSvcUrl}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>설정값 (yaml) <span className="text-red-500 ml-1">*</span></Label>
+                      <div className="border rounded-md overflow-hidden">
+                        <CodeMirror
+                          value={editCatalogDeploy.valuesYaml}
+                          height="200px"
+                          extensions={[yaml(), javascript({ jsx: true })]}
+                          onChange={
+                            (value) => {
+                              setEditCatalogDeploy({ ...editCatalogDeploy, valuesYaml: value });
+                              setFormErrorsCatalogDeploy(prevErrors => ({
+                                ...prevErrors,
+                                valuesYaml: undefined,
+                              }));
+                            }}
+                          className="text-sm"
+                        />
+                      </div>
+                      {formErrorsCatalogDeploy?.valuesYaml && <p className="text-red-500 text-sm">{formErrorsCatalogDeploy.valuesYaml}</p>}
+                    </div>
                   </div>
-
-                  
+                  {editCatalogDeploy.errorMessage !== ' ' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-catalog-type" className="flex items-center">
+                        오류 메시지
+                      </Label>
+                      <div className="p-2 bg-background rounded-md">
+                        <span className="text-sm">{editCatalogDeploy.errorMessage}</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-catalog-type" className="flex items-center">
+                      등록 일자
+                    </Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">
+                        {editCatalogDeploy.createdAt && !isNaN(new Date(editCatalogDeploy.createdAt).getTime())
+                          ? format(new Date(editCatalogDeploy.createdAt), 'yyyy-MM-dd HH:mm:ss')
+                          : '-'
+                        }
+                      </span>
+                    </div>
+                  </div>
 
                   <div className="flex justify-end space-x-2 mt-6 pb-6">
                     <Button variant="outline" size="sm" onClick={() => setIsCatalogDeployEditSheetOpen(false)}>
                       취소
                     </Button>
                     <Button size="sm" onClick={catalogDeployEditClick} disabled={isSubmitting}>
-                      저장
+                      재배포
                     </Button>
                   </div>
                 </div>
@@ -429,12 +529,12 @@ const typeOptions = [
               </div>
               <div className="flex-1 space-y-2">
                 <Label>카탈로그 유형</Label>
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select value={selectedCatalogType} onValueChange={setSelectedCatalogType}>
                   <SelectTrigger>
                     <SelectValue placeholder="카탈로그 유형 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {typeOptions.map((option) => (
+                    {catalogTypeOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>

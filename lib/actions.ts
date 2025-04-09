@@ -300,7 +300,7 @@ export async function getProjectCatalogDeploy(): Promise<CatalogDeploy[]> {
 
 export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
   return fetchApi<CatalogDeploy>({
-    endpoint: `${apiAuth}/catalogs/project/${data.uid}`,
+    endpoint: `${apiAuth}/tenant/${data.clusterId}/${data.uid}`,
     method: 'PUT',
     body: data
   });
@@ -308,7 +308,7 @@ export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
 
 export async function deleteProjectCatalogDeploy(data: CatalogDeploy) {
   return fetchApi<CatalogDeploy>({
-    endpoint: `${apiAuth}/catalogs/project/${data.uid}`,
+    endpoint: `${apiAuth}/catalog/${data.clusterId}/${data.uid}`,
     method: 'DELETE',
   });
 }

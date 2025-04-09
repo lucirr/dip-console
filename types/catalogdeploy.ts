@@ -6,7 +6,7 @@ export interface CatalogDeploy {
   name: string;
   catalogName?: string;
   namespace?: string;
-  ValuesYaml?: string;
+  valuesYaml?: string;
   userId?: string;
   status?: string;
   syncStatus?: string;
@@ -24,5 +24,6 @@ export interface CatalogDeploy {
   catalogVersion?: string;
   clusterName?: string;
   username?: string;
+  isTenant?: boolean;
 }
 
