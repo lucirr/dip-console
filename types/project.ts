@@ -32,6 +32,8 @@ export interface LimitCpuMemory {
 export interface Project {
   uid?: string;
   clusterProjectName: string;
+  clusterId: string;
+  clusterName?: string;
   clusterProjectId?: string;
   limitsCpu?: string;
   requestsCpu?: string;
@@ -40,6 +42,33 @@ export interface Project {
   accessKey?: string;
   secretKey?: string;
   path?: string;
-  clusterTableId?: string;
+  createdAt?: string;
+}
+
+export interface ProjectUser {
+  uid?: string;
+  userId: string;
+  projectId: string;
+  roleId: string;
+  userName?: string;
+  projectName?: string;
+  roleName?: string;
+  createdAt?: string;
+}
+
+export interface User {
+  uid?: string;
+  username: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+  createdAt?: string;
+}
+
+export interface Role {
+  uid?: string;
+  name: string;
+  title?: string;
   createdAt?: string;
 }

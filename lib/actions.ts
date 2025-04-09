@@ -7,7 +7,7 @@ import { Dns } from "@/types/dns";
 import { SystemLink } from "@/types/systemlink";
 import { License } from "@/types/license";
 import { CatalogDeploy } from "@/types/catalogdeploy";
-import { Project } from "@/types/project";
+import { Project, ProjectUser, User } from "@/types/project";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -314,6 +314,50 @@ export async function deleteProjectCatalogDeploy(data: CatalogDeploy) {
   });
 }
 
+// --------------------------------------------------------------------------------
+
 export async function getProjects(): Promise<Project[]> {
   return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects` });
+}
+
+export async function insertProject(data: Project) {
+  return fetchApi<Project>({
+    endpoint: `${apiAuth}/projects`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function updateProject(data: Project) {
+  return fetchApi<CatalogDeploy>({
+    endpoint: `${apiAuth}/projects/${data.uid}`,
+    method: 'PUT',
+    body: data
+  });
+}
+
+export async function deleteProject(data: Project) {
+  return fetchApi<Project>({
+    endpoint: `${apiAuth}/projects/${data.uid}`,
+    method: 'DELETE',
+  });
+}
+
+export async function getProjectUser(projectId: string): Promise<ProjectUser[]> {
+  return fetchApi<ProjectUser[]>({ endpoint: `${apiAuth}/project/users/${projectId}` });
+}
+
+export async function insertProjectUser(data: ProjectUser) {
+  return fetchApi<ProjectUser>({
+    endpoint: `${apiAuth}/project/users`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function deleteProjectUser(data: ProjectUser) {
+  return fetchApi<ProjectUser>({
+    endpoint: `${apiAuth}/project/users/${data.uid}`,
+    method: 'DELETE',
+  });
 }
