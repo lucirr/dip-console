@@ -127,11 +127,11 @@ export default function CatalogTypesPage() {
     catalogVersion: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
   });
 
-  const paginatedData = catalogTypeData.slice((pageCatalogType - 1) * pageSize, pageCatalogType * pageSize);
-  const totalPages = Math.ceil(catalogTypeData.length / pageSize);
+  const paginatedData = catalogTypeData?.slice((pageCatalogType - 1) * pageSize, pageCatalogType * pageSize) || [];
+  const totalPages = Math.ceil((catalogTypeData?.length || 0) / pageSize);
 
-  const paginatedCatalogVersion = catalogVersionData.slice((pageCatalogVersion - 1) * pageSize, pageCatalogVersion * pageSize);
-  const totalPagesCatalogVersion = Math.ceil(catalogVersionData.length / pageSize);
+  const paginatedCatalogVersion = catalogVersionData?.slice((pageCatalogVersion - 1) * pageSize, pageCatalogVersion * pageSize) || [];
+  const totalPagesCatalogVersion = Math.ceil((catalogVersionData?.length || 0) / pageSize);
 
   const columns: Column[] = [
     {
@@ -1181,7 +1181,7 @@ export default function CatalogTypesPage() {
                   <TablePagination
                     currentPage={pageCatalogVersion}
                     totalPages={totalPagesCatalogVersion}
-                    dataLength={catalogVersionData.length}
+                    dataLength={(catalogVersionData?.length || 0)}
                     onPageChange={handlePageChangeCatalogVersion}
                     pageSize={pageSize}
                   />
@@ -1249,7 +1249,7 @@ export default function CatalogTypesPage() {
           <TablePagination
             currentPage={pageCatalogType}
             totalPages={totalPages}
-            dataLength={catalogTypeData.length}
+            dataLength={(catalogTypeData?.length || 0)}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />

@@ -89,8 +89,8 @@ export default function ArgoRepoRegistrationPage() {
   });
 
 
-  const paginatedData = catalogGitData.slice((pageCatalogGit - 1) * pageSize, pageCatalogGit * pageSize);
-  const totalPages = Math.ceil(catalogGitData.length / pageSize);
+  const paginatedData = catalogGitData?.slice((pageCatalogGit - 1) * pageSize, pageCatalogGit * pageSize) || [];
+  const totalPages = Math.ceil((catalogGitData?.length || 0) / pageSize);
 
   const columns: Column[] = [
     {
@@ -492,7 +492,7 @@ export default function ArgoRepoRegistrationPage() {
           <TablePagination
             currentPage={pageCatalogGit}
             totalPages={totalPages}
-            dataLength={catalogGitData.length}
+            dataLength={(catalogGitData?.length || 0)}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />

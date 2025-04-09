@@ -89,8 +89,8 @@ export default function SystemLinkPage() {
 
 
 
-  const paginatedData = systemLinkData.slice((pageSystemLink - 1) * pageSize, pageSystemLink * pageSize);
-  const totalPages = Math.ceil(systemLinkData.length / pageSize);
+  const paginatedData = systemLinkData?.slice((pageSystemLink - 1) * pageSize, pageSystemLink * pageSize) || [];
+  const totalPages = Math.ceil((systemLinkData?.length || 0) / pageSize);
 
 
   const columns: Column[] = [
@@ -534,7 +534,7 @@ export default function SystemLinkPage() {
           <TablePagination
             currentPage={pageSystemLink}
             totalPages={totalPages}
-            dataLength={systemLinkData.length}
+            dataLength={(systemLinkData?.length || 0)}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />

@@ -91,8 +91,8 @@ export default function DnsLookupPage() {
 
 
 
-  const paginatedData = dnsData.slice((pageDns - 1) * pageSize, pageDns * pageSize);
-  const totalPages = Math.ceil(dnsData.length / pageSize);
+  const paginatedData = dnsData?.slice((pageDns - 1) * pageSize, pageDns * pageSize) || [];
+  const totalPages = Math.ceil((dnsData?.length || 0) / pageSize);
 
 
   const columns: Column[] = [
@@ -601,7 +601,7 @@ export default function DnsLookupPage() {
           <TablePagination
             currentPage={pageDns}
             totalPages={totalPages}
-            dataLength={dnsData.length}
+            dataLength={(dnsData?.length || 0)}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />

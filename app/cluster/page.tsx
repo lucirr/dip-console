@@ -105,8 +105,8 @@ export default function ClusterPage() {
 
 
 
-  const paginatedData = clusterData.slice((pageCluster - 1) * pageSize, pageCluster * pageSize);
-  const totalPages = Math.ceil(clusterData.length / pageSize);
+  const paginatedData = clusterData?.slice((pageCluster - 1) * pageSize, pageCluster * pageSize) || [];
+  const totalPages = Math.ceil((clusterData?.length || 0) / pageSize);
 
 
   const columns: Column[] = [
@@ -774,7 +774,7 @@ export default function ClusterPage() {
           <TablePagination
             currentPage={pageCluster}
             totalPages={totalPages}
-            dataLength={clusterData.length}
+            dataLength={(clusterData?.length || 0)}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />

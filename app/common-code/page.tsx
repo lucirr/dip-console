@@ -95,11 +95,11 @@ export default function CommonCodePage() {
     codeDesc: z.string().min(1, { message: "공통코드 설명은 필수 입력 항목입니다." }),
   });
 
-  const paginatedData = groupCodeData.slice((pageGroupCode - 1) * pageSize, pageGroupCode * pageSize);
-  const totalPages = Math.ceil(groupCodeData.length / pageSize);
+  const paginatedData = groupCodeData?.slice((pageGroupCode - 1) * pageSize, pageGroupCode * pageSize) || [];
+  const totalPages = Math.ceil((groupCodeData?.length || 0) / pageSize);
 
-  const paginatedCommonCode = commonCodeData.slice((pageCommonCode - 1) * pageSize, pageCommonCode * pageSize);
-  const totalPagesCommonCode = Math.ceil(commonCodeData.length / pageSize);
+  const paginatedCommonCode = commonCodeData?.slice((pageCommonCode - 1) * pageSize, pageCommonCode * pageSize) || [];
+  const totalPagesCommonCode = Math.ceil((commonCodeData?.length || 0) / pageSize);
 
   const columns: Column[] = [
     {
@@ -748,7 +748,7 @@ export default function CommonCodePage() {
                   <TablePagination
                     currentPage={pageCommonCode}
                     totalPages={totalPagesCommonCode}
-                    dataLength={commonCodeData.length}
+                    dataLength={(commonCodeData.length || 0)}
                     onPageChange={handlePageChangeCommonCode}
                     pageSize={pageSize}
                   />
@@ -825,7 +825,7 @@ export default function CommonCodePage() {
           <TablePagination
             currentPage={pageGroupCode}
             totalPages={totalPages}
-            dataLength={groupCodeData.length}
+            dataLength={(groupCodeData?.length || 0)}
             onPageChange={handlePageChange}
             pageSize={pageSize}
           />
