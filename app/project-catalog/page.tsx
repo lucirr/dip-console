@@ -26,7 +26,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { CatalogDeploy } from "@/types/catalogdeploy"
-import { getProjectCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy } from "@/lib/actions"
+import { getProjectCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy, getClusters, getCatalogType, getProjects } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -34,6 +34,9 @@ import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/badgestatus';
+import { Cluster } from '@/types/cluster';
+import { Project } from '@/types/project';
+import { CatalogType } from '@/types/catalogtype';
 
 interface Column {
   key: string;
@@ -72,33 +75,16 @@ export default function ProjectCatalogPage() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedCatalogType, setSelectedCatalogType] = useState<string>('');
 
-  const clusterOptions = [
-    { value: '개발 클러스터', label: '개발 클러스터' },
-    { value: '운영 클러스터', label: '운영 클러스터' },
-    { value: '스테이징 클러스터', label: '스테이징 클러스터' },
-  ];
-
-  const projectOptions = [
-    { value: '클라우드 플랫폼', label: '클라우드 플랫폼' },
-    { value: '마이크로서비스 전환', label: '마이크로서비스 전환' },
-    { value: 'API 게이트웨이', label: 'API 게이트웨이' },
-  ];
-
-  const catalogTypeOptions = [
-    { value: '웹 애플리케이션', label: '웹 애플리케이션' },
-    { value: 'MSA', label: 'MSA' },
-    { value: 'API', label: 'API' },
-  ];
-
+  const [clusterOptions, setClusterOptions] = useState<Cluster[]>([]);
+  const [projectOptions, setProjectOptions] = useState<Project[]>([]);
+  const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
 
   const formSchemaCatalogDeploy = z.object({
     valuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
   });
 
-
-
-  const paginatedData = catalogDeployData.slice((pageCatalogDeploy - 1) * pageSize, pageCatalogDeploy * pageSize);
-  const totalPages = Math.ceil(catalogDeployData.length / pageSize);
+  const paginatedData = catalogDeployData?.slice((pageCatalogDeploy - 1) * pageSize, pageCatalogDeploy * pageSize) || [];
+  const totalPages = Math.ceil((catalogDeployData?.length || 0) / pageSize);
 
 
   const columns: Column[] = [
@@ -180,10 +166,52 @@ export default function ProjectCatalogPage() {
   const fetchCatalogDeploy = async () => {
     setIsLoading(true);
     try {
-      const response = await getProjectCatalogDeploy()
+      const response = await getProjectCatalogDeploy(selectedCluster, selectedProject, selectedCatalogType)
       setCatalogDeployData(response);
     } catch (error) {
       setCatalogDeployData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchClusters = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getClusters()
+      setClusterOptions(response);
+      return response;
+    } catch (error) {
+      setClusterOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchProject = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getProjects()
+      setProjectOptions(response);
+      return response;
+    } catch (error) {
+      setProjectOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCatalogType = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getCatalogType()
+      setCatalogTypeOptions(response);
+      return response;
+    } catch (error) {
+      setCatalogTypeOptions([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -194,6 +222,9 @@ export default function ProjectCatalogPage() {
   };
 
   useEffect(() => {
+    fetchClusters();
+    fetchProject();
+    fetchCatalogType();
     fetchCatalogDeploy();
   }, []);
 
@@ -209,8 +240,11 @@ export default function ProjectCatalogPage() {
     setSelectedCluster('');
     setSelectedProject('');
     setSelectedCatalogType('');
-    // setData(mockData);
   };
+
+  useEffect(() => {
+    fetchCatalogDeploy();
+  }, [selectedCluster, selectedProject, selectedCatalogType]);
 
 
   const catalogDeployEditSheetClick = (row: CatalogDeploy) => {
@@ -505,8 +539,8 @@ export default function ProjectCatalogPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {clusterOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                      <SelectItem key={option.uid || ''} value={option.uid || ''}>
+                        {option.clusterName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -520,8 +554,8 @@ export default function ProjectCatalogPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {projectOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                      <SelectItem key={option.uid || ''} value={option.uid || ''}>
+                        {option.clusterProjectName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -535,8 +569,8 @@ export default function ProjectCatalogPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {catalogTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                      <SelectItem key={option.uid || ''} value={option.uid || ''}>
+                        {option.catalogType}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -566,7 +600,7 @@ export default function ProjectCatalogPage() {
             <TablePagination
               currentPage={pageCatalogDeploy}
               totalPages={totalPages}
-              dataLength={catalogDeployData.length}
+              dataLength={(catalogDeployData?.length || 0)}
               onPageChange={handlePageChange}
               pageSize={pageSize}
             />
