@@ -7,7 +7,7 @@ import { Dns } from "@/types/dns";
 import { SystemLink } from "@/types/systemlink";
 import { License } from "@/types/license";
 import { CatalogDeploy } from "@/types/catalogdeploy";
-import { Project, ProjectUser, User } from "@/types/project";
+import { Project, ProjectUser, Role, User } from "@/types/project";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -360,4 +360,12 @@ export async function deleteProjectUser(data: ProjectUser) {
     endpoint: `${apiAuth}/project/users/${data.uid}`,
     method: 'DELETE',
   });
+}
+
+export async function getUsers(): Promise<User[]> {
+  return fetchApi<User[]>({ endpoint: `${apiAuth}/users` });
+}
+
+export async function getRoles(): Promise<Role[]> {
+  return fetchApi<Role[]>({ endpoint: `${apiAuth}/roles` });
 }

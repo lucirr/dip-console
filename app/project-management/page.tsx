@@ -24,8 +24,8 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
-import type { Project, ProjectUser } from "@/types/project"
-import { getProjects, insertProject, deleteProject, getProjectUser, deleteProjectUser, insertProjectUser, getClusters, updateProject } from "@/lib/actions"
+import type { Project, ProjectUser, Role, User } from "@/types/project"
+import { getProjects, insertProject, deleteProject, getProjectUser, deleteProjectUser, insertProjectUser, getClusters, updateProject, getUsers, getRoles } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -98,6 +98,10 @@ export default function ProjectManagementPage() {
     userId: '',
     roleId: '',
   });
+
+  const [projectOptions, setProjectOptions] = useState<Project[]>([]);
+  const [userOptions, setUserOptions] = useState<User[]>([]);
+  const [roleOptions, setRoleOptions] = useState<Role[]>([]);
 
   const formSchemaProject = z.object({
     clusterId: z.string().min(1, { message: "클러스터는 필수 입력 항목입니다." }),
@@ -250,9 +254,39 @@ export default function ProjectManagementPage() {
     }
   };
 
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getUsers()
+      setUserOptions(response);
+      return response;
+    } catch (error) {
+      setUserOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getRoles()
+      setRoleOptions(response);
+      return response;
+    } catch (error) {
+      setRoleOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
     fetchClusters();
+    fetchUsers();
+    fetchRoles();
   }, []);
 
 
@@ -395,6 +429,7 @@ export default function ProjectManagementPage() {
       uid: row.uid,
       clusterProjectName: row.clusterProjectName,
       clusterId: row.clusterId,
+      clusterName: row.clusterName
     });
     setFormErrorsProject(null);
     setIsProjectEditSheetOpen(true);
@@ -619,214 +654,30 @@ export default function ProjectManagementPage() {
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
-                  <SheetTitle>카탈로그 유형 수정</SheetTitle>
+                  <SheetTitle>프로젝트 상세 정보</SheetTitle>
                 </SheetHeader>
                 <div className="grid gap-4 py-4 border-t">
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-type" className="flex items-center">
-                      카탈로그 유형 <span className="text-red-500 ml-1">*</span>
+                      클러스터
                     </Label>
                     <div className="p-2 bg-muted rounded-md">
-                      <span className="text-sm">{editProject.project}</span>
+                      <span className="text-sm">{editProject.clusterName}</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-service-type" className="flex items-center">
-                      카탈로그 배포유형 <span className="text-red-500 ml-1">*</span>
+                      프로젝트
                     </Label>
-                    <Select
-                      value={editProject.catalogServiceTypeId}
-                      onValueChange={(value) => {
-                        setEditProject(prev => ({ ...prev, catalogServiceTypeId: value }));
-                        setFormErrorsProject(prevErrors => ({
-                          ...prevErrors,
-                          catalogServiceTypeId: undefined,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        id="edit-catalog-service-type"
-                        className={formErrorsProject?.catalogServiceTypeId ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="배포유형 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {codeType.map((item) => (
-                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
-                            {item.codeDesc}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {formErrorsProject?.catalogServiceTypeId && <p className="text-red-500 text-sm">{formErrorsProject.catalogServiceTypeId}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-argo-deploy-type" className="flex items-center">
-                      Argo 배포유형 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Select
-                      value={editProject.argoDeployType}
-                      onValueChange={(value) => {
-                        setEditProject(prev => ({ ...prev, argoDeployType: value }));
-                        setFormErrorsProject(prevErrors => ({
-                          ...prevErrors,
-                          argoDeployType: undefined,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        id="edit-argo-deploy-type"
-                        className={formErrorsProject?.argoDeployType ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="배포 유형 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="helm">Helm</SelectItem>
-                        <SelectItem value="kustomize">Kustomize</SelectItem>
-                        <SelectItem value="directory">Directory</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {formErrorsProject?.argoDeployType && <p className="text-red-500 text-sm">{formErrorsProject.argoDeployType}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-image">카탈로그 이미지</Label>
-                    <Textarea
-                      id="edit-catalog-image"
-                      placeholder="이미지 URL 입력"
-                      value={editProject.catalogImage}
-                      onChange={(e) => setEditProject(prev => ({ ...prev, catalogImage: e.target.value }))}
-                      className="min-h-[100px] resize-y"
-                      aria-describedby="edit-catalog-image-description"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="values-yaml">Values YAML</Label>
-                    <div className="border rounded-md overflow-hidden">
-                      <CodeMirror
-                        value={editProject.valuesYaml}
-                        height="200px"
-                        extensions={[yaml(), javascript({ jsx: true })]}
-                        onChange={(value) => setEditProject(prev => ({ ...prev, valuesYaml: value }))}
-                        className="text-sm"
-                      />
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{editProject.clusterProjectName}</span>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-desc">카탈로그 설명</Label>
-                    <Textarea
-                      id="edit-catalog-desc"
-                      placeholder="카탈로그 설명 입력"
-                      value={editProject.catalogDesc || ''}
-                      onChange={(e) => setEditProject(prev => ({
-                        ...prev,
-                        catalogDesc: e.target.value
-                      }))}
-                      rows={4}
-                      className="resize-vertical"
-                      maxLength={500}
-                      aria-describedby="edit-catalog-desc-description"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="enable"
-                          checked={editProject.enable}
-                          onCheckedChange={(checked) =>
-                            setEditProject(prev => ({
-                              ...prev,
-                              enable: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="enable">활성화</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-admin"
-                          checked={editProject.isAdmin}
-                          onCheckedChange={(checked) =>
-                            setEditProject(prev => ({
-                              ...prev,
-                              isAdmin: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-is-admin">관리자 배포</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-cluster-only"
-                          checked={editProject.isClusterOnly}
-                          onCheckedChange={(checked) =>
-                            setEditProject(prev => ({
-                              ...prev,
-                              isClusterOnly: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-is-cluster-only">클러스터 단독 배포</Label>
-                      </div>
-
-
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-is-tenant"
-                          checked={editProject.isTenant}
-                          onCheckedChange={(checked) =>
-                            setEditProject(prev => ({
-                              ...prev,
-                              isTenant: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-is-tenant">테넌트 사용</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="edit-keycloak-use"
-                          checked={editProject.keycloakUse}
-                          onCheckedChange={(checked) =>
-                            setEditProject(prev => ({
-                              ...prev,
-                              keycloakUse: checked as boolean
-                            }))
-                          }
-                        />
-                        <Label htmlFor="edit-keycloak-use">Keycloak 사용</Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {editProject.keycloakUse && (
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-keycloak-redirect-uris">Keycloak Redirect URIs</Label>
-                      <Input
-                        id="edit-keycloak-redirect-uris"
-                        placeholder="Redirect URIs 입력"
-                        value={editProject.keycloakRedirectUris || ''}
-                        onChange={(e) => setEditProject(prev => ({ ...prev, keycloakRedirectUris: e.target.value }))}
-                      />
-                    </div>
-                  )}
                 </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsProjectEditSheetOpen(false)}>
                     취소
-                  </Button>
-                  <Button size="sm" onClick={projectEditClick} disabled={isSubmitting}>
-                    저장
                   </Button>
                 </div>
               </div>
@@ -839,7 +690,7 @@ export default function ProjectManagementPage() {
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
                   <SheetTitle>
-                    카탈로그 버전
+                    프로젝트 사용자
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex justify-end gap-2 pb-4 border-t pt-4">
@@ -857,40 +708,80 @@ export default function ProjectManagementPage() {
                       <Button
                         size="sm">
                         <Plus className="mr-2 h-4 w-4" />
-                        <span>카탈로그 버전 추가</span>
+                        <span>사용자 추가</span>
                       </Button>
                     </SheetTrigger>
                     <SheetContent className="min-w-[650px] overflow-y-auto">
                       <div className="flex flex-col h-full">
                         <SheetHeader className='pb-4'>
-                          <SheetTitle>새 카탈로그 버전 추가</SheetTitle>
+                          <SheetTitle>새 사용자 추가</SheetTitle>
                         </SheetHeader>
                         <div className="grid gap-4 py-4 border-t">
                           <div className="space-y-2">
-                            <Label htmlFor="new-catalog-type">카탈로그 유형</Label>
+                            <Label htmlFor="new-catalog-type">프로젝트 <span className="text-red-500 ml-1">*</span></Label>
                             <div className="p-2 bg-muted rounded-md">
-                              <span className="text-sm">{selectedProject?.project}</span>
+                              <span className="text-sm">{selectedProject?.clusterProjectName}</span>
                             </div>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="new-catalog-version" className="flex items-center">
-                              카탈로그 버전 <span className="text-red-500 ml-1">*</span>
+                              사용자 <span className="text-red-500 ml-1">*</span>
                             </Label>
-                            <Input
-                              id="new-catalog-version"
-                              placeholder="카탈로그 버전 입력"
-                              value={newProjectUser.projectUser}
-                              onChange={(e) => {
-                                setNewProjectUser({ ...newProjectUser, projectUser: e.target.value });
+                            <Select
+                              value={newProjectUser.userId}
+                              onValueChange={(value) => {
+                                setNewProjectUser({ ...newProjectUser, userId: value });
                                 setFormErrorsProjectUser(prevErrors => ({
                                   ...prevErrors,
-                                  projectUser: undefined,
+                                  userId: undefined,
                                 }));
                               }}
-                              className={formErrorsProjectUser?.projectUser ? "border-red-500" : ""}
-                              required
-                            />
-                            {formErrorsProjectUser?.projectUser && <p className="text-red-500 text-sm">{formErrorsProjectUser.projectUser}</p>}
+                            >
+                              <SelectTrigger
+                                id="catalog-service-type"
+                                className={formErrorsProjectUser?.userId ? "border-red-500" : ""}
+                              >
+                                <SelectValue placeholder="사용자 선택" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {userOptions.map((item) => (
+                                  <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                                    {item.username}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {formErrorsProjectUser?.userId && <p className="text-red-500 text-sm">{formErrorsProjectUser.userId}</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-catalog-version" className="flex items-center">
+                              역할 <span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <Select
+                              value={newProjectUser.roleId}
+                              onValueChange={(value) => {
+                                setNewProjectUser({ ...newProjectUser, roleId: value });
+                                setFormErrorsProjectUser(prevErrors => ({
+                                  ...prevErrors,
+                                  roleId: undefined,
+                                }));
+                              }}
+                            >
+                              <SelectTrigger
+                                id="catalog-service-type"
+                                className={formErrorsProjectUser?.roleId ? "border-red-500" : ""}
+                              >
+                                <SelectValue placeholder="역할 선택" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {roleOptions.map((item) => (
+                                  <SelectItem key={item.name || ''} value={item.name || ''}>
+                                    {item.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {formErrorsProjectUser?.roleId && <p className="text-red-500 text-sm">{formErrorsProjectUser.roleId}</p>}
                           </div>
                         </div>
                         <div className="flex justify-end space-x-2 mt-6 pb-6">
@@ -917,53 +808,6 @@ export default function ProjectManagementPage() {
                     onPageChange={handlePageChangeProjectUser}
                     pageSize={pageSize}
                   />
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <Sheet open={isProjectUserEditSheetOpen} onOpenChange={setIsProjectUserEditSheetOpen}>
-            <SheetTrigger asChild>
-            </SheetTrigger>
-            <SheetContent className="min-w-[650px] overflow-y-auto">
-              <div className="flex flex-col h-full">
-                <SheetHeader className='pb-4'>
-                  <SheetTitle>카탈로그 버전 수정</SheetTitle>
-                </SheetHeader>
-                <div className="grid gap-4 py-4 border-t">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-type">카탈로그 유형</Label>
-                    <div className="p-2 bg-muted rounded-md">
-                      <span className="text-sm">{selectedProject?.project}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-catalog-version" className="flex items-center">
-                      카탈로그 버전 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Input
-                      id="edit-catalog-version"
-                      placeholder="카탈로그 버전 입력"
-                      value={editProjectUser.projectUser}
-                      onChange={(e) => {
-                        setEditProjectUser({ ...editProjectUser, projectUser: e.target.value });
-                        setFormErrorsProjectUser(prevErrors => ({
-                          ...prevErrors,
-                          projectUser: undefined,
-                        }));
-                      }}
-                      className={formErrorsProjectUser?.projectUser ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsProjectUser?.projectUser && <p className="text-red-500 text-sm">{formErrorsProjectUser.projectUser}</p>}
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-6 pb-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsProjectUserEditSheetOpen(false)}>
-                    취소
-                  </Button>
-                  <Button size="sm" onClick={editProjectUserClick} disabled={isSubmitting}>
-                    저장
-                  </Button>
                 </div>
               </div>
             </SheetContent>
