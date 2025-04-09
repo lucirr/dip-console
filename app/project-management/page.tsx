@@ -24,7 +24,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
-import type { Project, ProjectUser, Role, User } from "@/types/project"
+import type { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project"
 import { getProjects, insertProject, deleteProject, getProjectUser, deleteProjectUser, insertProjectUser, getClusters, updateProject, getUsers, getRoles } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
@@ -69,7 +69,7 @@ export default function ProjectManagementPage() {
   const [formErrorsProjectUser, setFormErrorsProjectUser] = useState<{
     projectId?: string;
     userId?: string;
-    roleId?: string;
+    roleName?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clusterData, setClusterData] = useState<Cluster[]>([]);
@@ -89,14 +89,14 @@ export default function ProjectManagementPage() {
     uid: '',
     projectId: '',
     userId: '',
-    roleId: '',
+    roleName: '',
   });
 
   const [editProjectUser, setEditProjectUser] = useState<ProjectUser>({
     uid: '',
     projectId: '',
     userId: '',
-    roleId: '',
+    roleName: '',
   });
 
   const [projectOptions, setProjectOptions] = useState<Project[]>([]);
@@ -111,7 +111,7 @@ export default function ProjectManagementPage() {
   const formSchemaProjectUser = z.object({
     projectId: z.string().min(1, { message: "프로젝트는 필수 입력 항목입니다." }),
     userId: z.string().min(1, { message: "사용자는 필수 입력 항목입니다." }),
-    roleId: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
+    roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
   });
 
   const paginatedData = projectData?.slice((pageProject - 1) * pageSize, pageProject * pageSize) || [];
@@ -185,8 +185,8 @@ export default function ProjectManagementPage() {
         );
       }
     },
-    { key: 'projectName', title: '프로젝트', align: 'left' },
-    { key: 'userNamne', title: '사용자', align: 'left' },
+    { key: 'clusterProjectName', title: '프로젝트', align: 'left' },
+    { key: 'userName', title: '사용자', align: 'left' },
     { key: 'roleName', title: '역할', align: 'left' },
     {
       key: 'actions',
@@ -342,7 +342,12 @@ export default function ProjectManagementPage() {
     setIsSubmitting(true);
 
     try {
-      await insertProject(newCode);
+      const clusterProject: ClusterProject = {
+        name: newCode.clusterProjectName,
+        clusterId: newCode.clusterId,
+      };
+
+      await insertProject(clusterProject);
       toast({
         title: "Success",
         description: "프로젝트가 성공적으로 추가되었습니다.",
@@ -376,7 +381,7 @@ export default function ProjectManagementPage() {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
         // 필수 입력 필드 검증
-        if (field === 'projectId' || field === 'userId' || field === 'roleId') {
+        if (field === 'projectId' || field === 'userId' || field === 'roleName') {
           acc[field] = error.message;
         }
         return acc;
@@ -396,7 +401,8 @@ export default function ProjectManagementPage() {
     try {
       if (selectedProjectUser?.uid) {
         newProjectUser.projectId = selectedProjectUser.projectId
-        newProjectUser.userId = selectedProjectUser.userId;
+        newProjectUser.projectUserId = newProjectUser.userId;
+        newProjectUser.username = newProjectUser.userName;
         await insertProjectUser(newProjectUser);
         toast({
           title: "Success",
@@ -406,7 +412,7 @@ export default function ProjectManagementPage() {
           uid: '',
           projectId: '',
           userId: '',
-          roleId: '',
+          roleName: '',
         });
         setIsProjectUserNewSheetOpen(false);
         fetchProjectUsers();
@@ -486,12 +492,12 @@ export default function ProjectManagementPage() {
   const projectDeleteClick = (row: Project) => {
     if (isSubmitting) return;
 
-    setConfirmAction(() => () => projectSubmit(row));
+    setConfirmAction(() => () => projectDeleteSubmit(row));
     setConfirmDescription("삭제하시겠습니까?");
     setIsConfirmOpen(true);
   };
 
-  const projectSubmit = async (row: Project) => {
+  const projectDeleteSubmit = async (row: Project) => {
     if (!row) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -758,18 +764,18 @@ export default function ProjectManagementPage() {
                               역할 <span className="text-red-500 ml-1">*</span>
                             </Label>
                             <Select
-                              value={newProjectUser.roleId}
+                              value={newProjectUser.roleName}
                               onValueChange={(value) => {
-                                setNewProjectUser({ ...newProjectUser, roleId: value });
+                                setNewProjectUser({ ...newProjectUser, roleName: value });
                                 setFormErrorsProjectUser(prevErrors => ({
                                   ...prevErrors,
-                                  roleId: undefined,
+                                  roleName: undefined,
                                 }));
                               }}
                             >
                               <SelectTrigger
                                 id="catalog-service-type"
-                                className={formErrorsProjectUser?.roleId ? "border-red-500" : ""}
+                                className={formErrorsProjectUser?.roleName ? "border-red-500" : ""}
                               >
                                 <SelectValue placeholder="역할 선택" />
                               </SelectTrigger>
@@ -781,7 +787,7 @@ export default function ProjectManagementPage() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            {formErrorsProjectUser?.roleId && <p className="text-red-500 text-sm">{formErrorsProjectUser.roleId}</p>}
+                            {formErrorsProjectUser?.roleName && <p className="text-red-500 text-sm">{formErrorsProjectUser.roleName}</p>}
                           </div>
                         </div>
                         <div className="flex justify-end space-x-2 mt-6 pb-6">

@@ -7,7 +7,7 @@ import { Dns } from "@/types/dns";
 import { SystemLink } from "@/types/systemlink";
 import { License } from "@/types/license";
 import { CatalogDeploy } from "@/types/catalogdeploy";
-import { Project, ProjectUser, Role, User } from "@/types/project";
+import { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -320,9 +320,9 @@ export async function getProjects(): Promise<Project[]> {
   return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects` });
 }
 
-export async function insertProject(data: Project) {
-  return fetchApi<Project>({
-    endpoint: `${apiAuth}/projects`,
+export async function insertProject(data: ClusterProject) {
+  return fetchApi<ClusterProject>({
+    endpoint: `${apiAuth}/projects/${data.clusterId}`,
     method: 'POST',
     body: data
   });
@@ -338,7 +338,7 @@ export async function updateProject(data: Project) {
 
 export async function deleteProject(data: Project) {
   return fetchApi<Project>({
-    endpoint: `${apiAuth}/projects/${data.uid}`,
+    endpoint: `${apiAuth}/projects/${data.clusterId}/${data.uid}`,
     method: 'DELETE',
   });
 }
@@ -357,7 +357,7 @@ export async function insertProjectUser(data: ProjectUser) {
 
 export async function deleteProjectUser(data: ProjectUser) {
   return fetchApi<ProjectUser>({
-    endpoint: `${apiAuth}/project/users/${data.uid}`,
+    endpoint: `${apiAuth}/users/${data.cl}/${data.uid}`,
     method: 'DELETE',
   });
 }

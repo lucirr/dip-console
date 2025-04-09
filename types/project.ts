@@ -47,11 +47,12 @@ export interface Project {
 
 export interface ProjectUser {
   uid?: string;
+  projectUserId?:string;
   userId: string;
   projectId: string;
-  roleId: string;
   userName?: string;
-  projectName?: string;
+  username?: string;
+  clusterProjectName?: string;
   roleName?: string;
   createdAt?: string;
 }
