@@ -538,13 +538,15 @@ export default function ProjectManagementPage() {
     setIsSubmitting(true);
 
     try {
-      row.clusterId = selectedProject?.clusterId
-      await deleteProjectUser(row);
-      toast({
-        title: "Success",
-        description: "사용자가 성공적으로 삭제되었습니다.",
-      })
-      fetchProjectUsers();
+      if (selectedProject?.clusterId) {
+        row.clusterId = selectedProject?.clusterId
+        await deleteProjectUser(row);
+        toast({
+          title: "Success",
+          description: "사용자가 성공적으로 삭제되었습니다.",
+        })
+        fetchProjectUsers();
+      }
     } catch (error) {
       toast({
         title: "Error",
