@@ -357,7 +357,7 @@ export async function insertProjectUser(data: ProjectUser) {
 
 export async function deleteProjectUser(data: ProjectUser) {
   return fetchApi<ProjectUser>({
-    endpoint: `${apiAuth}/users/${data.cl}/${data.uid}`,
+    endpoint: `${apiAuth}/users/${data.clusterId}/${data.uid}`,
     method: 'DELETE',
   });
 }

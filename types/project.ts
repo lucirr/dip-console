@@ -53,6 +53,7 @@ export interface ProjectUser {
   userName?: string;
   username?: string;
   clusterProjectName?: string;
+  clusterId?: string;
   roleName?: string;
   createdAt?: string;
 }

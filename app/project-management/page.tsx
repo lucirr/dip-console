@@ -538,6 +538,7 @@ export default function ProjectManagementPage() {
     setIsSubmitting(true);
 
     try {
+      row.clusterId = selectedProject?.clusterId
       await deleteProjectUser(row);
       toast({
         title: "Success",
