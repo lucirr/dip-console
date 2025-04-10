@@ -3,22 +3,35 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Server, Globe, Calendar, Users, RefreshCcw } from 'lucide-react';
+import { Server, Globe, Calendar, Users, RefreshCcw, Check } from 'lucide-react';
 import { Plus, Search, RotateCcw, Link as LinkIcon, Info, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
 import Image from 'next/image';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getClusterCatalogDeploy, getClusters, getCatalogType } from "@/lib/actions"
+import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy } from "@/lib/actions"
 import SystemCatalogLinkPage from '@/components/system-catalog-link';
-import { Label } from 'recharts';
+import { Label } from '@/components/ui/label';
+import { useToast } from "@/hooks/use-toast"
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { CommonCode } from '@/types/groupcode';
+import { getErrorMessage } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CatalogType } from '@/types/catalogtype';
 import { Cluster } from '@/types/cluster';
+import { StatusBadge, Status } from '@/components/ui/badgestatus';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 
 export default function ClusterCatalogPage() {
+  const { toast } = useToast()
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -40,6 +53,10 @@ export default function ClusterCatalogPage() {
     name: '',
     valuesYaml: '',
     catalogType: '',
+  });
+
+  const formSchemaCatalogDeploy = z.object({
+    valuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
   });
 
   const [selectedCluster, setSelectedCluster] = useState<string>('');
@@ -119,7 +136,8 @@ export default function ClusterCatalogPage() {
       errorMessage: row.errorMessage,
       catalogUrl: row.catalogUrl,
       catalogUser: row.catalogUser,
-      IsAdminDeploy: row.IsAdminDeploy,
+      isAdminDeploy: row.isAdminDeploy,
+      isTenant: row.isTenant,
       clusterId: row.clusterId,
       catalogDeployId: row.catalogDeployId,
       clientId: row.clientId,
@@ -136,6 +154,86 @@ export default function ClusterCatalogPage() {
   };
 
 
+  const catalogDeployDeleteClick = (row: CatalogDeploy) => {
+    if (isSubmitting) return;
+
+    setConfirmAction(() => () => catalogDeployDeleteSubmit(row));
+    setConfirmDescription("삭제하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const catalogDeployDeleteSubmit = async (row: CatalogDeploy) => {
+    if (!row) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await deleteProjectCatalogDeploy(row);
+      toast({
+        title: "Success",
+        description: "카탈로그가 성공적으로 삭제되었습니다.",
+      })
+      fetchCatalogDeploy();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+  const catalogDeployEditClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsCatalogDeploy(null);
+
+    const validationResult = formSchemaCatalogDeploy.safeParse(editCatalogDeploy);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        // 필수 입력 필드 검증
+        if (field === 'valuesYaml') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+      setFormErrorsCatalogDeploy(errors);
+      return;
+    }
+    setConfirmAction(() => catalogDeployEditSubmit);
+    setConfirmDescription("재배포 하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const catalogDeployEditSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await updateProjectCatalogDeploy(editCatalogDeploy);
+      toast({
+        title: "Success",
+        description: "재배포가 성공적으로 실행되었습니다.",
+      })
+      setIsCatalogDeployEditSheetOpen(false);
+      fetchCatalogDeploy();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
   // const handleRefresh = () => {
   //   fetchCatalogDeploy();
   // };
@@ -149,17 +247,20 @@ export default function ClusterCatalogPage() {
     setActiveTab(tab);
   };
 
-  const extractImageUrl = (htmlString: string) => {
+  const extractImageUrl = (htmlString?: string) => {
     try {
-      // 이스케이프된 문자열 디코딩
-      const decodedString = htmlString.replace(/\\u003c/g, '<')
-        .replace(/\\u003e/g, '>')
-        .replace(/\\"/g, '"');
+      if (htmlString) {
+        // 이스케이프된 문자열 디코딩
+        const decodedString = htmlString.replace(/\\u003c/g, '<')
+          .replace(/\\u003e/g, '>')
+          .replace(/\\"/g, '"');
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(decodedString, 'text/html');
-      const imgElement = doc.querySelector('img');
-      return imgElement?.getAttribute('src') || '';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(decodedString, 'text/html');
+        const imgElement = doc.querySelector('img');
+        return imgElement?.getAttribute('src') || '';
+      }
+      return '';
     } catch (error) {
       console.error('Error parsing HTML:', error);
       return '';
@@ -197,6 +298,152 @@ export default function ClusterCatalogPage() {
             <h2 className="text-3xl font-bold tracking-tight">클러스터 카탈로그</h2>
             <p className="mt-1 text-sm text-gray-500">클러스터 카탈로그를 조회하고 관리할 수 있습니다.</p>
           </div>
+          <Sheet open={isCatalogDeployEditSheetOpen} onOpenChange={setIsCatalogDeployEditSheetOpen}>
+            <SheetContent className="min-w-[750px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>카탈로그 상세정보</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>카탈로그 유형</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogType}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>카탈로그 버전</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogVersion}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>클러스터</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.clusterName}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>카탈로그 이름</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogName}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>배포 상태</Label>
+                        <div className="p-2 bg-background rounded-md">
+                          <span className="text-sm">
+                            <StatusBadge status={editCatalogDeploy.status as "install" | "deployed" | "healthy" | "error"} />
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>서비스 상태</Label>
+                        <div className="p-2 bg-background rounded-md">
+                          <span className="text-sm">
+                            <StatusBadge status={editCatalogDeploy.syncStatus as "install" | "deployed" | "healthy" | "error"} />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>네임스페이스</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.namespace}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>테넌트 여부</Label>
+                        <div className="mt-2">
+                          {/* {editCatalogDeploy.isTenant == false && <Check className="h-4 w-4 text-green-500" />} */}
+                          <Checkbox
+                            id="edit-enable"
+                            placeholder="테넌트 여부"
+                            checked={editCatalogDeploy.isTenant}
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>카탈로그 주소</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogUrl}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>카탈로그 내부 주소</Label>
+                        <div className="p-2 bg-muted rounded-md">
+                          <span className="text-sm">{editCatalogDeploy.catalogSvcUrl}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>설정값 (yaml) <span className="text-red-500 ml-1">*</span></Label>
+                      <div className="border rounded-md overflow-hidden">
+                        <CodeMirror
+                          value={editCatalogDeploy.valuesYaml}
+                          height="200px"
+                          extensions={[yaml(), javascript({ jsx: true })]}
+                          onChange={
+                            (value) => {
+                              setEditCatalogDeploy({ ...editCatalogDeploy, valuesYaml: value });
+                              setFormErrorsCatalogDeploy(prevErrors => ({
+                                ...prevErrors,
+                                valuesYaml: undefined,
+                              }));
+                            }}
+                          className="text-sm"
+                        />
+                      </div>
+                      {formErrorsCatalogDeploy?.valuesYaml && <p className="text-red-500 text-sm">{formErrorsCatalogDeploy.valuesYaml}</p>}
+                    </div>
+                  </div>
+                  {editCatalogDeploy.errorMessage !== ' ' && (
+                    <div className="space-y-2">
+                      <Label className="flex items-center">
+                        오류 메시지
+                      </Label>
+                      <div className="p-2 bg-background rounded-md">
+                        <span className="text-sm">{editCatalogDeploy.errorMessage}</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label className="flex items-center">
+                      등록 일자
+                    </Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">
+                        {editCatalogDeploy.createdAt && !isNaN(new Date(editCatalogDeploy.createdAt).getTime())
+                          ? format(new Date(editCatalogDeploy.createdAt), 'yyyy-MM-dd HH:mm:ss')
+                          : '-'
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 mt-6 pb-6">
+                    <Button variant="outline" size="sm" onClick={() => setIsCatalogDeployEditSheetOpen(false)}>
+                      취소
+                    </Button>
+                    <Button size="sm" onClick={catalogDeployEditClick} disabled={isSubmitting}>
+                      재배포
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
         </div>
       </div>
 
@@ -257,7 +504,7 @@ export default function ClusterCatalogPage() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {catalogDeployData.map((item, index) => (
+              {(catalogDeployData || []).map((item, index) => (
                 <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative h-48 w-full flex items-center justify-center bg-gray-50">
                     <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
@@ -302,15 +549,23 @@ export default function ClusterCatalogPage() {
                           <p className="text-sm text-muted-foreground">카탈로그 이름</p>
                           <p className="text-sm font-medium">{item.catalogName}</p>
                         </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">배포 상태</p>
+                          <p className="text-sm font-medium"><StatusBadge status={item.status as Status} /></p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">서비스 상태</p>
+                          <p className="text-sm font-medium"><StatusBadge status={item.syncStatus as Status} /></p>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+                      {/* <div className="flex gap-2">
                         <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
                           {item.status}
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.syncStatus)}`}>
                           {item.syncStatus}
                         </span>
-                      </div>
+                      </div> */}
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2 p-4">
@@ -333,8 +588,51 @@ export default function ClusterCatalogPage() {
           </TabsContent>
 
           <TabsContent value="create">
-            <div>
-
+            <div className="flex items-center justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                새로고침
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+              {catalogTypeOptions.map((item, index) => (
+                <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative h-48 w-full flex items-center justify-center bg-gray-100">
+                    <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
+                      {extractImageUrl(item.catalogImage) && !(item.uid && imageErrors[item.uid]) ? (
+                        <Image
+                          src={extractImageUrl(item.catalogImage)}
+                          alt={item.catalogType}
+                          className="object-contain"
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          onError={() => handleImageError(item.uid)}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                          <Server className="h-12 w-12" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <CardHeader className="p-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl">{item.catalogType}</CardTitle>
+                    </div>
+                    <CardDescription>{item.catalogDesc}</CardDescription>
+                  </CardHeader>
+                  <CardFooter className="flex justify-end gap-2 p-4">
+                    <Button variant="outline" size="sm" onClick={() => handleClick(item.uid)}>
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      생성
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
           </TabsContent>
         </Tabs>

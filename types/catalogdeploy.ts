@@ -13,7 +13,7 @@ export interface CatalogDeploy {
   errorMessage?: string;
   catalogUrl?: string;
   catalogUser?: string;
-  IsAdminDeploy?: string;
+  isAdminDeploy?: string;
   clusterId?: string;
   catalogDeployId?: string;
   clientId?: string;
@@ -25,5 +25,7 @@ export interface CatalogDeploy {
   clusterName?: string;
   username?: string;
   isTenant?: boolean;
+  catalogImage?: string;
+  catalogDesc?: string;
 }
 

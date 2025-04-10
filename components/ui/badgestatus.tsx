@@ -27,3 +27,4 @@ function StatusBadge({ status }: { status?: Status }) {
 }
 
 export { StatusBadge };
+export type { Status };
