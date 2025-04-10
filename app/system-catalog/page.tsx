@@ -10,6 +10,7 @@ import { DataTable } from '@/components/ui/data-table';
 import Image from 'next/image';
 import { SystemLink } from '@/types/systemlink';
 import { getSystemLink, insertSystemLink, updateSystemLink, deleteSystemLink } from "@/lib/actions"
+import SystemCatalogLinkPage from '@/components/system-catalog-link';
 
 
 
@@ -80,14 +81,13 @@ export default function SystemCatalogPage() {
       <div className="bg-white border-b shadow-sm -mx-4">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">클러스터 카탈로그</h2>
-            <p className="mt-1 text-sm text-gray-500">클러스터 카탈로그를 조회하고 관리할 수 있습니다.</p>
+            <h2 className="text-3xl font-bold tracking-tight">시스템 카탈로그</h2>
+            <p className="mt-1 text-sm text-gray-500">시스템 카탈로그를 조회하고 관리할 수 있습니다.</p>
           </div>
         </div>
       </div>
 
       <div className="flex items-center justify-between mb-4">
-
         <Tabs defaultValue="view" className="w-full" onValueChange={setActiveTab}>
           <div className="flex items-center justify-between">
 
@@ -95,7 +95,10 @@ export default function SystemCatalogPage() {
               <TabsTrigger value="view">조회</TabsTrigger>
               <TabsTrigger value="create">생성</TabsTrigger>
             </TabsList>
-            {activeTab === "view" && (
+          </div>
+
+          <TabsContent value="view" className="space-y-4 mt-4">
+            <div className="flex items-center justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -104,10 +107,7 @@ export default function SystemCatalogPage() {
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 새로고침
               </Button>
-            )}
-          </div>
-
-          <TabsContent value="view" className="space-y-4 mt-4">
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {systemLinkData.map((item, index) => (
                 <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -147,21 +147,14 @@ export default function SystemCatalogPage() {
           </TabsContent>
 
           <TabsContent value="create">
-            <Card>
-              <CardHeader>
-                <CardTitle>클러스터 생성</CardTitle>
-                <CardDescription>
-                  새로운 클러스터를 생성하기 위한 정보를 입력하세요.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* <DataTable
-                columns={columns}
-                data={tableData}
-                onRefresh={handleRefresh}
-              /> */}
-              </CardContent>
-            </Card>
+            <div>
+              <SystemCatalogLinkPage 
+                title={null} description={null} 
+                containerClassName="flex-1 space-y-4" 
+                headerClassName = "bg-white -mx-4" 
+                contentClassName = "flex items-center justify-between px-6"
+                />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
