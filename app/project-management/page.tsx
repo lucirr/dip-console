@@ -25,7 +25,19 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project"
-import { getProjects, insertProject, deleteProject, getProjectUser, deleteProjectUser, insertProjectUser, getClusters, updateProject, getUsers, getRoles } from "@/lib/actions"
+import {
+  getProjects,
+  insertProject,
+  deleteProject,
+  getProjectUser,
+  deleteProjectUser,
+  insertProjectUser,
+  getClusters,
+  updateProject,
+  getUsers,
+  getRoles,
+  getCommonCodeByGroupCode
+} from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -73,6 +85,7 @@ export default function ProjectManagementPage() {
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clusterData, setClusterData] = useState<Cluster[]>([]);
+  const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
   const [newCode, setNewCode] = useState<Project>({
     clusterProjectName: '',
@@ -90,6 +103,7 @@ export default function ProjectManagementPage() {
     projectId: '',
     userId: '',
     roleName: '',
+    userName: '',
   });
 
   const [editProjectUser, setEditProjectUser] = useState<ProjectUser>({
@@ -210,11 +224,25 @@ export default function ProjectManagementPage() {
     },
   ];
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (currentClusters: Cluster[]) => {
     setIsLoading(true);
     try {
-      const response = await getProjects()
-      setProjectData(response);
+      const response = await getProjects();
+
+      const clustersMap = currentClusters.reduce((acc, cluster) => {
+        if (cluster.uid !== undefined) {
+          acc[cluster.uid] = cluster.clusterName ?? '';
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+
+      const enhancedResponse = response.map(item => ({
+        ...item,
+        clusterName: clustersMap[item.clusterId ?? ''],
+      }));
+
+      setProjectData(enhancedResponse);
     } catch (error) {
       setProjectData([]);
     } finally {
@@ -228,6 +256,7 @@ export default function ProjectManagementPage() {
     try {
       if (selectedProject?.uid) {
         const response = await getProjectUser(selectedProject.uid);
+        
         setProjectUserData(response);
       } else {
         setProjectUserData([]);
@@ -240,11 +269,23 @@ export default function ProjectManagementPage() {
     }
   };
 
-  const fetchClusters = async () => {
+  const fetchClusters = async (currentCodeType: CommonCode[]) => {
     setIsLoading(true);
     try {
-      const response = await getClusters()
-      setClusterData(response);
+      const response = await getClusters();
+
+      const codeTypeMap = currentCodeType.reduce((acc, code) => {
+        if (code.uid !== undefined && code.code == 'common') {
+          acc[code.uid] = code.uid;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      const filteredData = response.filter(item =>
+        item.clusterTypeId != codeTypeMap[item.clusterTypeId ?? '']
+      );
+
+      setClusterData(filteredData);
       return response;
     } catch (error) {
       setClusterData([]);
@@ -257,12 +298,21 @@ export default function ProjectManagementPage() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const response = await getUsers()
-      setUserOptions(response);
-      return response;
+      const response = await getUsers();
+      if (projectUserData) {
+        const projectUsers = new Set(projectUserData.map(pu => pu.userName));
+        const filteredData = response.filter(item =>
+          item.uid !== undefined && !projectUsers.has(item.username)
+        );
+        setUserOptions(filteredData);
+      } else {
+        setUserOptions(response);
+      }
+
     } catch (error) {
+      console.log(error)
       setUserOptions([]);
-      return [];
+
     } finally {
       setIsLoading(false);
     }
@@ -271,8 +321,11 @@ export default function ProjectManagementPage() {
   const fetchRoles = async () => {
     setIsLoading(true);
     try {
-      const response = await getRoles()
-      setRoleOptions(response);
+      const response = await getRoles();
+      const filteredData = response.filter(item =>
+        item.name != 'root'
+      );
+      setRoleOptions(filteredData);
       return response;
     } catch (error) {
       setRoleOptions([]);
@@ -282,11 +335,31 @@ export default function ProjectManagementPage() {
     }
   };
 
+  const fetchCommonCode = async (groupCode: string) => {
+    setIsLoading(true);
+    try {
+      const response = await getCommonCodeByGroupCode(groupCode)
+      setCodeType(response);
+      return response;
+    } catch (error) {
+      setCodeType([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchProjects();
-    fetchClusters();
-    fetchUsers();
+    // fetchProjects();
     fetchRoles();
+
+    const fetchProjectData = async () => {
+      const codeTypeData = await fetchCommonCode('cluster_type');
+      const clusterData = await fetchClusters(codeTypeData);
+      fetchProjects(clusterData);
+    };
+
+    fetchProjectData();
   }, []);
 
 
@@ -304,8 +377,14 @@ export default function ProjectManagementPage() {
     setFormErrorsProjectUser(null);
   }, [isProjectUserNewSheetOpen]);
 
+  useEffect(() => {
+    if (selectedProject && isProjectUserNewSheetOpen) {
+      fetchUsers();
+    }
+  }, [selectedProject, isProjectUserNewSheetOpen]);
+
   const handleRefresh = () => {
-    fetchProjects();
+    fetchProjects(clusterData);
   };
 
   const handleRefreshProjectUser = () => {
@@ -357,7 +436,7 @@ export default function ProjectManagementPage() {
         clusterId: '',
       });
       setIsProjectNewSheetOpen(false);
-      fetchProjects();
+      fetchProjects(clusterData);
     } catch (error) {
       toast({
         title: "Error",
@@ -375,23 +454,27 @@ export default function ProjectManagementPage() {
 
     setFormErrorsProjectUser(null);
 
-    const validationResult = formSchemaProjectUser.safeParse(newProjectUser);
+    if (selectedProject?.uid) {
+      newProjectUser.projectId = selectedProject?.uid;
 
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors.reduce((acc, error) => {
-        const field = error.path[0] as string;
-        // 필수 입력 필드 검증
-        if (field === 'projectId' || field === 'userId' || field === 'roleName') {
-          acc[field] = error.message;
-        }
-        return acc;
-      }, {} as { [key: string]: string });
-      setFormErrorsProjectUser(errors);
-      return;
+      const validationResult = formSchemaProjectUser.safeParse(newProjectUser);
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.reduce((acc, error) => {
+          const field = error.path[0] as string;
+          // 필수 입력 필드 검증
+          if (field === 'projectId' || field === 'userId' || field === 'roleName') {
+            acc[field] = error.message;
+          }
+          return acc;
+        }, {} as { [key: string]: string });
+        setFormErrorsProjectUser(errors);
+        return;
+      }
+      setConfirmAction(() => newProjectUserSubmit);
+      setConfirmDescription("저장하시겠습니까?");
+      setIsConfirmOpen(true);
     }
-    setConfirmAction(() => newProjectUserSubmit);
-    setConfirmDescription("저장하시겠습니까?");
-    setIsConfirmOpen(true);
   };
 
   const newProjectUserSubmit = async () => {
@@ -399,24 +482,24 @@ export default function ProjectManagementPage() {
     setIsSubmitting(true);
 
     try {
-      if (selectedProjectUser?.uid) {
-        newProjectUser.projectId = selectedProjectUser.projectId
-        newProjectUser.projectUserId = newProjectUser.userId;
-        newProjectUser.username = newProjectUser.userName;
-        await insertProjectUser(newProjectUser);
-        toast({
-          title: "Success",
-          description: "사용자가 성공적으로 추가되었습니다.",
-        })
-        setNewProjectUser({
-          uid: '',
-          projectId: '',
-          userId: '',
-          roleName: '',
-        });
-        setIsProjectUserNewSheetOpen(false);
-        fetchProjectUsers();
-      }
+      newProjectUser.clusterId = selectedProject?.clusterId;
+      newProjectUser.projectUserId = newProjectUser.userId;
+      newProjectUser.username = newProjectUser.userName;
+      await insertProjectUser(newProjectUser);
+
+      toast({
+        title: "Success",
+        description: "사용자가 성공적으로 추가되었습니다.",
+      })
+      setNewProjectUser({
+        uid: '',
+        projectId: '',
+        userId: '',
+        roleName: '',
+      });
+      setIsProjectUserNewSheetOpen(false);
+      fetchProjectUsers();
+
     } catch (error) {
       toast({
         title: "Error",
@@ -476,7 +559,7 @@ export default function ProjectManagementPage() {
         description: "카탈로그 유형이 성공적으로 수정되었습니다.",
       })
       setIsProjectEditSheetOpen(false);
-      fetchProjects();
+      fetchProjects(clusterData);
     } catch (error) {
       toast({
         title: "Error",
@@ -508,7 +591,7 @@ export default function ProjectManagementPage() {
         title: "Success",
         description: "프로젝트가 성공적으로 삭제되었습니다.",
       })
-      fetchProjects();
+      fetchProjects(clusterData);
     } catch (error) {
       toast({
         title: "Error",
@@ -540,6 +623,7 @@ export default function ProjectManagementPage() {
     try {
       if (selectedProject?.clusterId) {
         row.clusterId = selectedProject?.clusterId
+        
         await deleteProjectUser(row);
         toast({
           title: "Success",
@@ -739,7 +823,13 @@ export default function ProjectManagementPage() {
                             <Select
                               value={newProjectUser.userId}
                               onValueChange={(value) => {
-                                setNewProjectUser({ ...newProjectUser, userId: value });
+                                //setNewProjectUser({ ...newProjectUser, userId: value });
+                                const selectedUser = userOptions.find(user => user.uid === value);
+                                setNewProjectUser({
+                                  ...newProjectUser,
+                                  userId: value,
+                                  userName: selectedUser?.username,
+                                });
                                 setFormErrorsProjectUser(prevErrors => ({
                                   ...prevErrors,
                                   userId: undefined,

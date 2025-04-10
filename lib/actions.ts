@@ -349,7 +349,7 @@ export async function getProjectUser(projectId: string): Promise<ProjectUser[]> 
 
 export async function insertProjectUser(data: ProjectUser) {
   return fetchApi<ProjectUser>({
-    endpoint: `${apiAuth}/project/users`,
+    endpoint: `${apiAuth}/users/${data.clusterId}`,
     method: 'POST',
     body: data
   });
