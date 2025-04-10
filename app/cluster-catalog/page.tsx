@@ -13,7 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy } from "@/lib/actions"
+import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
 import SystemCatalogLinkPage from '@/components/system-catalog-link';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
@@ -23,20 +23,24 @@ import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CatalogType } from '@/types/catalogtype';
+import { CatalogType, CatalogVersion } from '@/types/catalogtype';
 import { Cluster } from '@/types/cluster';
 import { StatusBadge, Status } from '@/components/ui/badgestatus';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from 'next/navigation';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 
 
 export default function ClusterCatalogPage() {
   const { toast } = useToast()
+  const router = useRouter();
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
+  const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState("view");
-
+  const [isCatalogNewSheetOpen, setIsCatalogNewSheetOpen] = useState(false);
   const [isCatalogDeployNewSheetOpen, setIsCatalogDeployNewSheetOpen] = useState(false);
   const [isCatalogDeployEditSheetOpen, setIsCatalogDeployEditSheetOpen] = useState(false);
   const [selectedCatalogDeploy, setSelectedCatalogDeploy] = useState<CatalogDeploy | null>(null);
@@ -45,6 +49,11 @@ export default function ClusterCatalogPage() {
   const [confirmDescription, setConfirmDescription] = useState<string>("");
   const [formErrorsCatalogDeploy, setFormErrorsCatalogDeploy] = useState<{
     valuesYaml?: string;
+  } | null>(null);
+  const [formErrorsCatalog, setFormErrorsCatalog] = useState<{
+    catalogTypeId?: string;
+    catalogVersionId?: string;
+    clusterId?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -55,8 +64,24 @@ export default function ClusterCatalogPage() {
     catalogType: '',
   });
 
+  const [newCatalogDeploy, setNewCatalogDeploy] = useState<CatalogDeploy>({
+    clusterId: '',
+    projectId: '',
+    catalogType: '',
+    catalogTypeId: '',
+    catalogVersionId: '',
+    name: '',
+    valuesYaml: '',
+  });
+
   const formSchemaCatalogDeploy = z.object({
     valuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
+  });
+
+  const formSchemaCatalog = z.object({
+    catalogTypeId: z.string().min(1, { message: "카탈로그 유형은 필수 입력 항목입니다." }),
+    catalogVersionId: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
+    clusterId: z.string().min(1, { message: "클러스터는 필수 입력 항목입니다." }),
   });
 
   const [selectedCluster, setSelectedCluster] = useState<string>('');
@@ -64,6 +89,7 @@ export default function ClusterCatalogPage() {
 
   const [clusterOptions, setClusterOptions] = useState<Cluster[]>([]);
   const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
+  const [catalogTypeCreate, setCatalogTypeCreate] = useState<CatalogType[]>([]);
 
 
   const fetchCatalogDeploy = async () => {
@@ -113,11 +139,41 @@ export default function ClusterCatalogPage() {
     }
   };
 
+  const fetchCatalogVersions = async (catalogTypeId: string) => {
+    setIsLoading(true);
+    try {
+      if (catalogTypeId) {
+        const response = await getCatalogVersion(catalogTypeId);
+        setCatalogVersionData(response);
+      } else {
+        setCatalogVersionData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching common codes:', error);
+      setCatalogVersionData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchClusters();
     fetchCatalogType();
     fetchCatalogDeploy();
   }, []);
+
+  useEffect(() => {
+    if (activeTab == 'create') {
+      const filteredData = catalogTypeOptions.filter(item =>
+        item.enable && item.isAdmin
+      );
+      setCatalogTypeCreate(filteredData);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    setFormErrorsCatalog(null);
+  }, [isCatalogNewSheetOpen]);
 
   const catalogDeployEditSheetClick = (row: CatalogDeploy) => {
     setSelectedCatalogDeploy(row);
@@ -234,9 +290,94 @@ export default function ClusterCatalogPage() {
     }
   };
 
+  const catalogNewSheetClick = (row: CatalogType) => {
+    setNewCatalogDeploy({
+      catalogTypeId: row.uid,
+      catalogType: row.catalogType,
+      name: '',
+      valuesYaml: row.valuesYaml,
+    });
+    fetchCatalogVersions(row.uid ?? '')
+    setIsCatalogNewSheetOpen(true);
+  };
+
+  const catalogNewClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsCatalog(null);
+
+    const validationResult = formSchemaCatalog.safeParse(newCatalogDeploy);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        console.log(field, error.message)
+        // 필수 입력 필드 검증
+        if (field === 'catalogTypeId' || field === 'catalogVersionId' || field === 'clusterId') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+
+      setFormErrorsCatalog(errors);
+      return;
+    }
+    setConfirmAction(() => newCatalogSubmit);
+    setConfirmDescription("생성하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const newCatalogSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const catalogDeploy: CatalogDeploy = {
+        clusterId: newCatalogDeploy.clusterId,
+        projectId: newCatalogDeploy.projectId,
+        catalogTypeId: newCatalogDeploy.catalogTypeId,
+        catalogType: newCatalogDeploy.catalogType,
+        catalogVersionId: newCatalogDeploy.catalogVersionId,
+        name: newCatalogDeploy.catalogType,
+        valuesYaml: newCatalogDeploy.valuesYaml,
+      };
+
+      await insertClusterCatalog(catalogDeploy);
+      toast({
+        title: "Success",
+        description: "카탈로그가 성공적으로 생성되었습니다.",
+      })
+      setNewCatalogDeploy({
+        clusterId: '',
+        projectId: '',
+        catalogType: '',
+        catalogTypeId: '',
+        catalogVersionId: '',
+        name: '',
+        valuesYaml: '',
+      });
+      setIsCatalogNewSheetOpen(false);
+      fetchCatalogDeploy();
+      setActiveTab('view');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
   // const handleRefresh = () => {
   //   fetchCatalogDeploy();
   // };
+
+  const handleNavigateToDetail = (detailPath: string) => {
+    router.push(detailPath);
+  };
 
   const handleReset = () => {
     setSelectedCluster('');
@@ -339,7 +480,7 @@ export default function ClusterCatalogPage() {
                         <Label>배포 상태</Label>
                         <div className="p-2 bg-background rounded-md">
                           <span className="text-sm">
-                            <StatusBadge status={editCatalogDeploy.status as "install" | "deployed" | "healthy" | "error"} />
+                            <StatusBadge status={editCatalogDeploy.status as Status} />
                           </span>
                         </div>
                       </div>
@@ -347,7 +488,7 @@ export default function ClusterCatalogPage() {
                         <Label>서비스 상태</Label>
                         <div className="p-2 bg-background rounded-md">
                           <span className="text-sm">
-                            <StatusBadge status={editCatalogDeploy.syncStatus as "install" | "deployed" | "healthy" | "error"} />
+                            <StatusBadge status={editCatalogDeploy.syncStatus as Status} />
                           </span>
                         </div>
                       </div>
@@ -440,6 +581,95 @@ export default function ClusterCatalogPage() {
                     </Button>
                   </div>
                 </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isCatalogNewSheetOpen} onOpenChange={setIsCatalogNewSheetOpen}>
+            <SheetTrigger asChild>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>새 카탈로그 추가</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-code">카탈로그 유형</Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{newCatalogDeploy.catalogType}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-service-type" className="flex items-center">
+                      카탈로그 버전 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCatalogDeploy.catalogVersionId}
+                      onValueChange={(value) => {
+                        setNewCatalogDeploy({ ...newCatalogDeploy, catalogVersionId: value });
+                        setFormErrorsCatalog(prevErrors => ({
+                          ...prevErrors,
+                          catalogVersionId: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="catalog-service-type"
+                        className={formErrorsCatalog?.catalogVersionId ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="버전 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {catalogVersionData.map((item) => (
+                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                            {item.catalogVersion}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalog?.catalogVersionId && <p className="text-red-500 text-sm">{formErrorsCatalog.catalogVersionId}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-service-type" className="flex items-center">
+                      클러스터 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCatalogDeploy.clusterId}
+                      onValueChange={(value) => {
+                        setNewCatalogDeploy({ ...newCatalogDeploy, clusterId: value });
+                        setFormErrorsCatalog(prevErrors => ({
+                          ...prevErrors,
+                          clusterId: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="catalog-service-type"
+                        className={formErrorsCatalog?.clusterId ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="클러스터 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clusterOptions.map((item) => (
+                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                            {item.clusterName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalog?.clusterId && <p className="text-red-500 text-sm">{formErrorsCatalog.clusterId}</p>}
+                  </div>
+
+                </div>
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsCatalogNewSheetOpen(false)}>
+                    취소
+                  </Button>
+                  <Button size="sm" onClick={catalogNewClick} disabled={isSubmitting}>
+                    생성
+                  </Button>
+                </div>
+
               </div>
             </SheetContent>
           </Sheet>
@@ -551,11 +781,11 @@ export default function ClusterCatalogPage() {
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">배포 상태</p>
-                          <p className="text-sm font-medium"><StatusBadge status={item.status as Status} /></p>
+                          <span className="text-sm font-medium"><StatusBadge status={item.status as Status} /></span>
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">서비스 상태</p>
-                          <p className="text-sm font-medium"><StatusBadge status={item.syncStatus as Status} /></p>
+                          <span className="text-sm font-medium"><StatusBadge status={item.syncStatus as Status} /></span>
                         </div>
                       </div>
                       {/* <div className="flex gap-2">
@@ -599,7 +829,7 @@ export default function ClusterCatalogPage() {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-              {catalogTypeOptions.map((item, index) => (
+              {catalogTypeCreate.map((item, index) => (
                 <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative h-48 w-full flex items-center justify-center bg-gray-100">
                     <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
@@ -626,7 +856,7 @@ export default function ClusterCatalogPage() {
                     <CardDescription>{item.catalogDesc}</CardDescription>
                   </CardHeader>
                   <CardFooter className="flex justify-end gap-2 p-4">
-                    <Button variant="outline" size="sm" onClick={() => handleClick(item.uid)}>
+                    <Button variant="outline" size="sm" onClick={() => catalogNewSheetClick(item)}>
                       <LinkIcon className="h-4 w-4 mr-2" />
                       생성
                     </Button>
@@ -636,6 +866,12 @@ export default function ClusterCatalogPage() {
             </div>
           </TabsContent>
         </Tabs>
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          onOpenChange={setIsConfirmOpen}
+          onConfirm={confirmAction}
+          description={confirmDescription}
+        />
       </div>
     </div>
   );

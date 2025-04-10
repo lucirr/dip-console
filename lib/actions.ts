@@ -398,3 +398,13 @@ export async function deleteUser(data: User) {
     method: 'DELETE',
   });
 }
+
+// --------------------------------------------------------------------------------
+
+export async function insertClusterCatalog(data: CatalogDeploy) {
+  return fetchApi<User>({
+    endpoint: `${apiAuth}/catalog/${data.clusterId}`,
+    method: 'POST',
+    body: data
+  });
+}
