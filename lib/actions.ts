@@ -329,7 +329,7 @@ export async function insertProject(data: ClusterProject) {
 }
 
 export async function updateProject(data: Project) {
-  return fetchApi<CatalogDeploy>({
+  return fetchApi<Project>({
     endpoint: `${apiAuth}/projects/${data.uid}`,
     method: 'PUT',
     body: data
@@ -362,10 +362,35 @@ export async function deleteProjectUser(data: ProjectUser) {
   });
 }
 
+// --------------------------------------------------------------------------------
+
 export async function getUsers(): Promise<User[]> {
   return fetchApi<User[]>({ endpoint: `${apiAuth}/users` });
 }
 
 export async function getRoles(): Promise<Role[]> {
   return fetchApi<Role[]>({ endpoint: `${apiAuth}/roles` });
+}
+
+export async function insertUser(data: User) {
+  return fetchApi<User>({
+    endpoint: `${apiNonAuth}/kclusers`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function updateUser(data: User) {
+  return fetchApi<User>({
+    endpoint: `${apiNonAuth}/kclusers/${data.uid}`,
+    method: 'PUT',
+    body: data
+  });
+}
+
+export async function deleteUser(data: User) {
+  return fetchApi<User>({
+    endpoint: `${apiNonAuth}/kclusers/${data.uid}`,
+    method: 'DELETE',
+  });
 }

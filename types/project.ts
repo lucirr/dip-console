@@ -65,7 +65,21 @@ export interface User {
   email?: string;
   phone?: string;
   password?: string;
+  roleName?: string;
   createdAt?: string;
+}
+
+export interface UserRegData {
+  data: UserReg;
+}
+
+export interface UserReg {
+  username: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+  roles?: Role;
 }
 
 export interface Role {

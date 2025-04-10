@@ -1,139 +1,371 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import TablePagination from "@/components/ui/table-pagination";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
-import { createTheme } from '@uiw/codemirror-themes';
-import { tags as t } from '@lezer/highlight';
+import { yaml } from '@codemirror/lang-yaml';
+import type { ReactNode } from 'react';
+import type { Role, User } from "@/types/project"
+import { getUsers, insertUser, updateUser, deleteUser, getRoles } from "@/lib/actions"
+import { useToast } from "@/hooks/use-toast"
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { CommonCode } from '@/types/groupcode';
+import { getErrorMessage } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
-const lightTheme = createTheme({
-  theme: 'light',
-  settings: {
-    background: '#ffffff',
-    foreground: '#24292e',
-    selection: '#b3d7ff',
-    selectionMatch: '#b3d7ff',
-    gutterBackground: '#ffffff',
-    gutterForeground: '#6e7781',
-  },
-  styles: [
-    { tag: t.comment, color: '#6a737d' },
-    { tag: t.variableName, color: '#24292e' },
-    { tag: t.definition(t.variableName), color: '#22863a' },
-    { tag: t.keyword, color: '#d73a49' },
-    { tag: t.string, color: '#032f62' },
-    { tag: t.number, color: '#005cc5' },
-    { tag: t.bool, color: '#005cc5' },
-    { tag: t.null, color: '#005cc5' },
-    { tag: t.propertyName, color: '#005cc5' },
-    { tag: t.typeName, color: '#6f42c1' },
-    { tag: t.className, color: '#6f42c1' },
-    { tag: t.function(t.variableName), color: '#6f42c1' },
-    { tag: t.definition(t.typeName), color: '#6f42c1' },
-    { tag: t.bracket, color: '#24292e' },
-    { tag: t.punctuation, color: '#24292e' },
-    { tag: t.operator, color: '#d73a49' },
-  ],
-});
+interface Column {
+  key: string;
+  title: string;
+  width?: string;
+  align?: string;
+  cell?: (row: any, index?: number) => ReactNode;
+}
 
-const mockData = [
-  {
-    id: 'USR001',
-    name: '김철수',
-    email: 'kim@example.com',
-    role: '개발자',
-    department: '개발팀',
-    status: '활성',
-    lastLogin: '2024-03-20',
-  },
-  {
-    id: 'USR002',
-    name: '이영희',
-    email: 'lee@example.com',
-    role: '개발자',
-    department: '개발팀',
-    status: '활성',
-    lastLogin: '2024-03-20',
-  },
-];
 
-const columns = [
-  { key: 'name', title: '이름', width: 'w-[100px]' },
-  { key: 'email', title: '이메일' },
-  { key: 'role', title: '역할', width: 'w-[80px]' },
-  { key: 'department', title: '부서', width: 'w-[100px]' },
-  { key: 'status', title: '상태', width: 'w-[80px]' },
-  { key: 'lastLogin', title: '최근접속일', width: 'w-[120px]' },
-];
 
 export default function UserManagementPage() {
-  const [data, setData] = useState(mockData);
-  const [searchName, setSearchName] = useState('');
-  const [searchEmail, setSearchEmail] = useState('');
-  const [searchRole, setSearchRole] = useState('');
-  const [searchDepartment, setSearchDepartment] = useState('');
-  const [searchStatus, setSearchStatus] = useState('');
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { toast } = useToast()
+  const [userData, setUserData] = useState<User[]>([]);
+  const [isUserNewSheetOpen, setIsUserNewSheetOpen] = useState(false);
+  const [isUserEditSheetOpen, setIsUserEditSheetOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageUser, setPageUser] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
+  const [confirmDescription, setConfirmDescription] = useState<string>("");
+  const [formErrorsUser, setFormErrorsUser] = useState<{
+    username?: string;
+    nickname?: string;
+    password?: string;
+    email?: string;
+    roleName?: string;
+  } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [newUser, setNewUser] = useState({
-    name: '',
+  const [newCode, setNewCode] = useState<User>({
+    username: '',
+    nickname: '',
+    password: '',
     email: '',
-    department: '개발팀',
-    role: '개발자',
-    description: '',
-    status: '활성'
+    roleName: '',
   });
 
+  const [editUser, setEditUser] = useState<User>({
+    uid: '',
+    username: '',
+    nickname: '',
+    password: '',
+    email: '',
+    roleName: '',
+  });
+
+  const [roleOptions, setRoleOptions] = useState<Role[]>([]);
+
+
+
+  const formSchemaUser = z.object({
+    username: z.string().min(1, { message: "이름은 필수 입력 항목입니다." }),
+    nickname: z.string().min(1, { message: "닉네임은 필수 입력 항목입니다." }),
+    email: z.string().min(1, { message: "이메일은 필수 입력 항목입니다." }),
+    roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
+    password: z
+      .string()
+      .min(8, { message: "비밀번호는 최소 8자 이상이어야 합니다." })
+      .max(50, { message: "비밀번호는 50자를 초과할 수 없습니다." })
+      .refine((value) => {
+        const hasUpperCase = /[A-Z]/.test(value);
+        const hasLowerCase = /[a-z]/.test(value);
+        const hasNumber = /[0-9]/.test(value);
+        const hasSpecialChar = /[@$!%*?&]/.test(value);
+        return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+      }, {
+        message: "비밀번호는 대소문자, 숫자, 특수문자(@$!%*?&)를 각각 하나 이상 포함해야 합니다."
+      }),
+  });
+
+
+
+  const paginatedData = userData?.slice((pageUser - 1) * pageSize, pageUser * pageSize) || [];
+  const totalPages = Math.ceil((userData?.length || 0) / pageSize);
+
+
+  const columns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        const rowIndex = paginatedData.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(pageUser - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'username', title: '이름', align: 'left' },
+    { key: 'nickname', title: '닉네임', align: 'left' },
+    { key: 'roleName', title: '역할', align: 'left' },
+    {
+      key: 'createdAt', title: '등록일자', align: 'left',
+      cell: (row: User) => {
+        if (!row.createdAt) return '-';
+        return format(new Date(row.createdAt), 'yyyy-MM-dd');
+      }
+    },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: User) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => userEditSheetClick(row)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              편집
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => userDeleteClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+
+
+  const fetchUser = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getUsers();
+      setUserData(response);
+    } catch (error) {
+      setUserData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getRoles();
+      const filteredData = response.filter(item =>
+        item.name != 'root'
+      );
+      setRoleOptions(filteredData);
+      return response;
+    } catch (error) {
+      setRoleOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    setFormErrorsUser(null);
+  }, [isUserNewSheetOpen]);
+
   const handleRefresh = () => {
-    console.log('Refreshing data...');
+    fetchUser();
   };
 
-  const handleSearch = () => {
-    const filteredData = mockData.filter(item => {
-      const nameMatch = !searchName || item.name.toLowerCase().includes(searchName.toLowerCase());
-      const emailMatch = !searchEmail || item.email.toLowerCase().includes(searchEmail.toLowerCase());
-      const roleMatch = !searchRole || item.role.toLowerCase() === searchRole.toLowerCase();
-      const departmentMatch = !searchDepartment || item.department.toLowerCase().includes(searchDepartment.toLowerCase());
-      const statusMatch = !searchStatus || item.status.toLowerCase() === searchStatus.toLowerCase();
-      return nameMatch && emailMatch && roleMatch && departmentMatch && statusMatch;
+  const userNewClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsUser(null);
+
+    const validationResult = formSchemaUser.safeParse(newCode);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        // 필수 입력 필드 검증
+        if (field === 'username' || field === 'nickname' || field === 'password' || field === 'email' || field === 'roleName') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+
+      setFormErrorsUser(errors);
+      return;
+    }
+    setConfirmAction(() => newUserSubmit);
+    setConfirmDescription("저장하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const newUserSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await insertUser(newCode);
+      toast({
+        title: "Success",
+        description: "사용자가 성공적으로 추가되었습니다.",
+      })
+      setNewCode({
+        username: '',
+        nickname: '',
+        password: '',
+        email: '',
+        roleName: '',
+      });
+      setIsUserNewSheetOpen(false);
+      fetchUser();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+
+
+  const userEditSheetClick = (row: User) => {
+    setSelectedUser(row);
+    setEditUser({
+      uid: row.uid,
+      username: row.username,
+      nickname: row.nickname,
+      password: row.password,
+      email: row.email,
+      roleName: row.roleName,
     });
-    setData(filteredData);
+    setFormErrorsUser(null);
+    setIsUserEditSheetOpen(true);
   };
 
-  const handleReset = () => {
-    setSearchName('');
-    setSearchEmail('');
-    setSearchRole('');
-    setSearchDepartment('');
-    setSearchStatus('');
-    setData(mockData);
+  const userEditClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsUser(null);
+
+    const validationResult = formSchemaUser.safeParse(editUser);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        // 필수 입력 필드 검증
+        if (field === 'nickname' || field === 'email' || field === 'roleName') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+      setFormErrorsUser(errors);
+      return;
+    }
+    setConfirmAction(() => userEditSubmit);
+    setConfirmDescription("수정하시겠습니까?");
+    setIsConfirmOpen(true);
   };
 
-  const handleNewUserSubmit = () => {
-    const newUserData = {
-      ...newUser,
-      id: `USR${String(data.length + 1).padStart(3, '0')}`,
-      lastLogin: new Date().toISOString().split('T')[0]
-    };
+  const userEditSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-    setData([...data, newUserData]);
-    setNewUser({
-      name: '',
-      email: '',
-      department: '개발팀',
-      role: '개발자',
-      description: '',
-      status: '활성'
-    });
-    setIsSheetOpen(false);
+    try {
+      await updateUser(editUser);
+      toast({
+        title: "Success",
+        description: "사용자가 성공적으로 수정되었습니다.",
+      })
+      setIsUserEditSheetOpen(false);
+      fetchUser();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
   };
+
+  const userDeleteClick = (row: User) => {
+    if (isSubmitting) return;
+
+    setConfirmAction(() => () => userDeleteSubmit(row));
+    setConfirmDescription("삭제하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const userDeleteSubmit = async (row: User) => {
+    if (!row) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await deleteUser(row);
+      toast({
+        title: "Success",
+        description: "사용자가 성공적으로 삭제되었습니다.",
+      })
+      fetchUser();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+
+
+  const handlePageChange = (newPage: number) => {
+    setPageUser(newPage);
+  };
+
+
+
 
   return (
     <div className="flex-1 space-y-4 py-4">
@@ -143,146 +375,265 @@ export default function UserManagementPage() {
             <h2 className="text-3xl font-bold tracking-tight">사용자 관리</h2>
             <p className="mt-1 text-sm text-gray-500">사용자를 생성하고 관리할 수 있습니다.</p>
           </div>
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <Sheet open={isUserNewSheetOpen} onOpenChange={setIsUserNewSheetOpen}>
             <SheetTrigger asChild>
-              <Button>
+              <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 사용자 추가
               </Button>
             </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
-                <SheetHeader className="flex-shrink-0">
+                <SheetHeader className='pb-4'>
                   <SheetTitle>새 사용자 추가</SheetTitle>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto py-4">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>이름</Label>
-                        <Input
-                          placeholder="이름 입력"
-                          value={newUser.name}
-                          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>이메일</Label>
-                        <Input
-                          type="email"
-                          placeholder="이메일 입력"
-                          value={newUser.email}
-                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>부서</Label>
-                        <div className="p-2 bg-muted rounded-md">
-                          <span className="text-sm">개발팀</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>역할</Label>
-                        <div className="p-2 bg-muted rounded-md">
-                          <span className="text-sm">개발자</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>설명</Label>
-                      <div className="border rounded-md overflow-hidden">
-                        <CodeMirror
-                          value={newUser.description}
-                          height="200px"
-                          theme={lightTheme}
-                          extensions={[javascript({ jsx: true })]}
-                          onChange={(value) => setNewUser({ ...newUser, description: value })}
-                          className="text-sm"
-                        />
-                      </div>
-                    </div>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="user-name" className="flex items-center">
+                      이름 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="user-name"
+                      placeholder="이름 입력"
+                      value={newCode.username}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, username: e.target.value });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          username: undefined,
+                        }));
+                      }}
+                      className={formErrorsUser?.username ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsUser?.username && <p className="text-red-500 text-sm">{formErrorsUser.username}</p>}
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="user-name" className="flex items-center">
+                      비밀번호 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="user-name"
+                      placeholder="비밀번호 입력"
+                      value={newCode.password}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, password: e.target.value });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          password: undefined,
+                        }));
+                      }}
+                      className={formErrorsUser?.password ? "border-red-500" : ""}
+                      type="password"
+                      required
+                    />
+                    {formErrorsUser?.password && <p className="text-red-500 text-sm">{formErrorsUser.password}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="user-name" className="flex items-center">
+                      닉네임 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="user-name"
+                      placeholder="닉네임 입력"
+                      value={newCode.nickname}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, nickname: e.target.value });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          nickname: undefined,
+                        }));
+                      }}
+                      className={formErrorsUser?.nickname ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsUser?.nickname && <p className="text-red-500 text-sm">{formErrorsUser.nickname}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="user-name" className="flex items-center">
+                      이메일 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="user-name"
+                      placeholder="이메일 입력"
+                      value={newCode.email}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, email: e.target.value });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          email: undefined,
+                        }));
+                      }}
+                      className={formErrorsUser?.email ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsUser?.email && <p className="text-red-500 text-sm">{formErrorsUser.email}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="new-catalog-version" className="flex items-center">
+                      역할 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCode.roleName}
+                      onValueChange={(value) => {
+                        setNewCode({ ...newCode, roleName: value });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          roleName: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="catalog-service-type"
+                        className={formErrorsUser?.roleName ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="역할 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roleOptions.map((item) => (
+                          <SelectItem key={item.name || ''} value={item.name || ''}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsUser?.roleName && <p className="text-red-500 text-sm">{formErrorsUser.roleName}</p>}
+                  </div>
+
                 </div>
-                <div className="flex justify-end space-x-2 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setIsSheetOpen(false)}>
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsUserNewSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button onClick={handleNewUserSubmit}>
+                  <Button size="sm" onClick={userNewClick} disabled={isSubmitting}>
                     저장
                   </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
+          <Sheet open={isUserEditSheetOpen} onOpenChange={setIsUserEditSheetOpen}>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>사용자 수정</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-catalog-type" className="flex items-center">
+                        이름
+                      </Label>
+                      <div className="p-2 bg-muted rounded-md">
+                        <span className="text-sm">{editUser.nickname}</span>
+                      </div>
+                    </div>
+                    <Label htmlFor="edit-user-name" className="flex items-center">
+                      닉네임 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="edit-user-name"
+                      placeholder="닉네임 입력"
+                      value={editUser.nickname}
+                      onChange={(e) => {
+                        setEditUser({ ...editUser, nickname: e.target.value });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          nickname: undefined,
+                        }));
+                      }}
+                      className={formErrorsUser?.nickname ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsUser?.nickname && <p className="text-red-500 text-sm">{formErrorsUser.nickname}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-catalog-type" className="flex items-center">
+                      이메일
+                    </Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{editUser.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-user-type" className="flex items-center">
+                      역할 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={editUser.roleName}
+                      onValueChange={(value) => {
+                        setEditUser({
+                          ...editUser,
+                          roleName: value,
+                        });
+                        setFormErrorsUser(prevErrors => ({
+                          ...prevErrors,
+                          roleName: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="edit-user-type"
+                        className={formErrorsUser?.roleName ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="타입 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roleOptions.map((item) => (
+                          <SelectItem key={item.name || ''} value={item.name || ''}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsUser?.roleName && <p className="text-red-500 text-sm">{formErrorsUser.roleName}</p>}
+                  </div>
+
+                  <div className="flex justify-end space-x-2 mt-6 pb-6">
+                    <Button variant="outline" size="sm" onClick={() => setIsUserEditSheetOpen(false)}>
+                      취소
+                    </Button>
+                    <Button size="sm" onClick={userEditClick} disabled={isSubmitting}>
+                      저장
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+
         </div>
       </div>
-      <div className="grid gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              <div className="space-y-2">
-                <Label>이름</Label>
-                <Input
-                  placeholder="이름으로 검색"
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>이메일</Label>
-                <Input
-                  placeholder="이메일로 검색"
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>역할</Label>
-                <Input
-                  placeholder="역할로 검색"
-                  value={searchRole}
-                  onChange={(e) => setSearchRole(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>부서</Label>
-                <Input
-                  placeholder="부서로 검색"
-                  value={searchDepartment}
-                  onChange={(e) => setSearchDepartment(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>상태</Label>
-                <Input
-                  placeholder="상태로 검색"
-                  value={searchStatus}
-                  onChange={(e) => setSearchStatus(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="outline" onClick={handleReset}>
-                초기화
-              </Button>
-              <Button onClick={handleSearch}>
-                검색
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <DataTable
-              columns={columns}
-              data={data}
-              onRefresh={handleRefresh}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardContent className="p-2">
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+          <TablePagination
+            currentPage={pageUser}
+            totalPages={totalPages}
+            dataLength={(userData?.length || 0)}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+          />
+        </CardContent>
+      </Card>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        onConfirm={confirmAction}
+        description={confirmDescription}
+      />
+
     </div>
   );
 }

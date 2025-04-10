@@ -350,7 +350,6 @@ export default function ProjectManagementPage() {
   };
 
   useEffect(() => {
-    // fetchProjects();
     fetchRoles();
 
     const fetchProjectData = async () => {
