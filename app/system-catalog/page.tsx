@@ -1,46 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Server, Globe, Calendar, Users, RefreshCcw } from 'lucide-react';
+import { Plus, Search, RotateCcw, Link as LinkIcon, Info, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
+import Image from 'next/image';
+import { SystemLink } from '@/types/systemlink';
+import { getSystemLink, insertSystemLink, updateSystemLink, deleteSystemLink } from "@/lib/actions"
 
-const mockData = [
-  {
-    id: 'SYS001',
-    name: '기본 시스템',
-    type: '운영체제',
-    version: '1.0.0',
-    status: '활성',
-    maintainer: '시스템팀',
-    createdAt: '2024-03-20',
-  },
-  {
-    id: 'SYS002',
-    name: '모니터링 시스템',
-    type: '모니터링',
-    version: '2.1.0',
-    status: '활성',
-    maintainer: '운영팀',
-    createdAt: '2024-03-20',
-  },
-];
 
-const columns = [
-  { key: 'name', title: '시스템명' },
-  { key: 'type', title: '유형', width: 'w-[100px]' },
-  { key: 'version', title: '버전', width: 'w-[80px]' },
-  { key: 'status', title: '상태', width: 'w-[80px]' },
-  { key: 'maintainer', title: '담당팀', width: 'w-[100px]' },
-  { key: 'createdAt', title: '생성일자', width: 'w-[120px]' },
-];
 
-export default function SystemCatalogPage() {
-  const [data, setData] = useState(mockData);
+export default function ClusterCatalogPage() {
+  const [systemLinkData, setSystemLinkData] = useState<SystemLink[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchSystemLink = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getSystemLink();
+
+      const filteredData = response.filter(item =>
+        item.enable
+      );
+
+      setSystemLinkData(filteredData);
+    } catch (error) {
+      setSystemLinkData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  useEffect(() => {
+    fetchSystemLink();
+  }, []);
+
+  const extractImageUrl = (htmlString: string) => {
+    try {
+      // 이스케이프된 문자열 디코딩
+      const decodedString = htmlString.replace(/\\u003c/g, '<')
+        .replace(/\\u003e/g, '>')
+        .replace(/\\"/g, '"');
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(decodedString, 'text/html');
+      const imgElement = doc.querySelector('img');
+      return imgElement?.getAttribute('src') || '';
+    } catch (error) {
+      console.error('Error parsing HTML:', error);
+      return '';
+    }
+  };
 
   const handleRefresh = () => {
-    console.log('Refreshing data...');
+    fetchSystemLink();
   };
 
   return (
@@ -48,26 +68,75 @@ export default function SystemCatalogPage() {
       <div className="bg-white border-b shadow-sm -mx-4">
         <div className="flex items-center justify-between px-6 py-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">시스템 카탈로그</h2>
-            <p className="mt-1 text-sm text-gray-500">시스템 카탈로그를 조회하고 관리할 수 있습니다.</p>
+            <h2 className="text-3xl font-bold tracking-tight">클러스터 카탈로그</h2>
+            <p className="mt-1 text-sm text-gray-500">클러스터 카탈로그를 조회하고 관리할 수 있습니다.</p>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            시스템 추가
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+          >
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            새로고침
           </Button>
         </div>
       </div>
-      <div className="grid gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <DataTable
-              columns={columns}
-              data={data}
-              onRefresh={handleRefresh}
-            />
-          </CardContent>
-        </Card>
-      </div>
+
+      <Tabs defaultValue="view" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="view">조회</TabsTrigger>
+          <TabsTrigger value="create">생성</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="view" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {systemLinkData.map((item, index) => (
+              <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative h-48 w-full flex items-center justify-center bg-gray-50">
+                  <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-full h-48'}`}>
+                    <Image
+                      src={extractImageUrl(item.image)}
+                      alt={item.systemName}
+                      className="object-contain"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  </div>
+                </div>
+                <CardHeader className="p-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl">{item.systemName}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardFooter className="flex justify-end gap-2 p-4">
+                  <Button variant="outline" size="sm" onClick={() => handleClick(item.linkUrl)}>
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    링크
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="create">
+          <Card>
+            <CardHeader>
+              <CardTitle>클러스터 생성</CardTitle>
+              <CardDescription>
+                새로운 클러스터를 생성하기 위한 정보를 입력하세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* <DataTable
+                columns={columns}
+                data={tableData}
+                onRefresh={handleRefresh}
+              /> */}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
