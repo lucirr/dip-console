@@ -48,10 +48,10 @@ export function Header() {
     // 시스템 메뉴의 하위 경로들
     const systemPaths = [
       '/common-code',
-      '/catalog-types',
+      '/sys-catalog-types',
       '/cluster',
       '/argocd',
-      '/dns-lookup',
+      '/sys-dns-lookup',
       '/system-link'
     ];
 
@@ -256,7 +256,7 @@ export function Header() {
                   <li>
                     <NavigationMenuLink asChild>
                       <Link 
-                        href="/catalog-types"
+                        href="/sys-catalog-types"
                         className="flex items-center gap-2 select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground whitespace-nowrap"
                       >
                         <FileType className="h-4 w-4" />
@@ -289,7 +289,7 @@ export function Header() {
                   <li>
                     <NavigationMenuLink asChild>
                       <Link 
-                        href="/dns-lookup"
+                        href="/sys-dns-lookup"
                         className="flex items-center gap-2 select-none rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground whitespace-nowrap"
                       >
                         <Globe className="h-4 w-4" />

@@ -49,7 +49,7 @@ const menuItems: Record<MenuKey, MenuItem[]> = {
   ],
   '시스템': [
     { name: '공통코드', href: '/common-code', icon: Code },
-    { name: '카탈로그 유형', href: '/catalog-types', icon: FileType },
+    { name: '카탈로그 유형', href: '/sys-catalog-types', icon: FileType },
     { name: '클러스터', href: '/cluster', icon: Server },
     {
       name: 'ArgoCD',
@@ -60,7 +60,7 @@ const menuItems: Record<MenuKey, MenuItem[]> = {
         { name: 'Repo 등록', href: '/argocd/repo-registration', icon: GitFork },
       ]
     },
-    { name: 'DNS 조회', href: '/dns-lookup', icon: Globe },
+    { name: 'DNS 조회', href: '/sys-dns-lookup', icon: Globe },
     { name: '시스템 카탈로그', href: '/system-link', icon: HardDrive },
   ],
 };
