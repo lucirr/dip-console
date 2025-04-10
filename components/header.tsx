@@ -71,13 +71,13 @@ export function Header() {
     ];
 
     // 현재 경로가 어느 메뉴에 속하는지 확인
-    if (systemPaths.some(path => pathname.startsWith(path))) {
+    if (systemPaths.some(path => pathname == path)) {
       setActiveMenu('시스템');
       setActiveSubMenu(pathname);
-    } else if (dataPaths.some(path => pathname.startsWith(path))) {
+    } else if (dataPaths.some(path => pathname == path)) {
       setActiveMenu('데이터관리');
       setActiveSubMenu(pathname);
-    } else if (systemManagementPaths.some(path => pathname.startsWith(path))) {
+    } else if (systemManagementPaths.some(path => pathname == path)) {
       setActiveMenu('시스템관리');
       setActiveSubMenu(pathname);
     }
