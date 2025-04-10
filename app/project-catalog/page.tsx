@@ -69,6 +69,7 @@ export default function ProjectCatalogPage() {
     uid: '',
     name: '',
     valuesYaml: '',
+    catalogType: '',
   });
 
   const [selectedCluster, setSelectedCluster] = useState<string>('');
@@ -523,8 +524,6 @@ export default function ProjectCatalogPage() {
               </div>
             </SheetContent>
           </Sheet>
-
-
         </div>
       </div>
       <div className="grid gap-4 px-4">

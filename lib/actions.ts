@@ -299,6 +299,10 @@ export async function getProjectCatalogDeploy(selectedCluster: string, selectedP
   return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?cluster=${selectedCluster}&project=${selectedProject}&catalogtype=${selectedCatalogType}` });
 }
 
+export async function getClusterCatalogDeploy(selectedCluster: string, selectedCatalogType: string): Promise<CatalogDeploy[]> {
+  return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/cluster?cluster=${selectedCluster}catalogtype=${selectedCatalogType}` });
+}
+
 export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
   return fetchApi<CatalogDeploy>({
     endpoint: `${apiAuth}/tenant/${data.clusterId}/${data.uid}`,

@@ -20,7 +20,7 @@ export interface CatalogDeploy {
   catalogSvcUrl?: string;
   createdAt?: string;
   clusterProjectName?: string;
-  catalogType?: string;
+  catalogType: string;
   catalogVersion?: string;
   clusterName?: string;
   username?: string;
