@@ -13,9 +13,12 @@ import { getSystemLink, insertSystemLink, updateSystemLink, deleteSystemLink } f
 
 
 
-export default function ClusterCatalogPage() {
+export default function SystemCatalogPage() {
   const [systemLinkData, setSystemLinkData] = useState<SystemLink[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState("view");
+
 
   const fetchSystemLink = async () => {
     setIsLoading(true);
@@ -42,6 +45,10 @@ export default function ClusterCatalogPage() {
     fetchSystemLink();
   }, []);
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
+
   const extractImageUrl = (htmlString: string) => {
     try {
       // 이스케이프된 문자열 디코딩
@@ -59,6 +66,11 @@ export default function ClusterCatalogPage() {
     }
   };
 
+  const handleImageError = (itemId: string | undefined) => {
+    if (!itemId) return; // Skip if itemId is undefined
+    setImageErrors(prev => ({ ...prev, [itemId]: true }));
+  };
+
   const handleRefresh = () => {
     fetchSystemLink();
   };
@@ -71,72 +83,88 @@ export default function ClusterCatalogPage() {
             <h2 className="text-3xl font-bold tracking-tight">클러스터 카탈로그</h2>
             <p className="mt-1 text-sm text-gray-500">클러스터 카탈로그를 조회하고 관리할 수 있습니다.</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            새로고침
-          </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="view" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="view">조회</TabsTrigger>
-          <TabsTrigger value="create">생성</TabsTrigger>
-        </TabsList>
+      <div className="flex items-center justify-between mb-4">
 
-        <TabsContent value="view" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {systemLinkData.map((item, index) => (
-              <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative h-48 w-full flex items-center justify-center bg-gray-50">
-                  <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-full h-48'}`}>
-                    <Image
-                      src={extractImageUrl(item.image)}
-                      alt={item.systemName}
-                      className="object-contain"
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                  </div>
-                </div>
-                <CardHeader className="p-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">{item.systemName}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardFooter className="flex justify-end gap-2 p-4">
-                  <Button variant="outline" size="sm" onClick={() => handleClick(item.linkUrl)}>
-                    <LinkIcon className="h-4 w-4 mr-2" />
-                    링크
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+        <Tabs defaultValue="view" className="w-full" onValueChange={setActiveTab}>
+          <div className="flex items-center justify-between">
+
+            <TabsList>
+              <TabsTrigger value="view">조회</TabsTrigger>
+              <TabsTrigger value="create">생성</TabsTrigger>
+            </TabsList>
+            {activeTab === "view" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                새로고침
+              </Button>
+            )}
           </div>
-        </TabsContent>
 
-        <TabsContent value="create">
-          <Card>
-            <CardHeader>
-              <CardTitle>클러스터 생성</CardTitle>
-              <CardDescription>
-                새로운 클러스터를 생성하기 위한 정보를 입력하세요.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* <DataTable
+          <TabsContent value="view" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {systemLinkData.map((item, index) => (
+                <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="relative h-48 w-full flex items-center justify-center bg-gray-100">
+                    <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
+                      {extractImageUrl(item.image) && !(item.uid && imageErrors[item.uid]) ? (
+                        <Image
+                          src={extractImageUrl(item.image)}
+                          alt={item.systemName}
+                          className="object-contain"
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          onError={() => handleImageError(item.uid)}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                          <Server className="h-12 w-12" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <CardHeader className="p-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xl">{item.systemName}</CardTitle>
+                    </div>
+                    <CardDescription>{item.linkUrl}</CardDescription>
+                  </CardHeader>
+                  <CardFooter className="flex justify-end gap-2 p-4">
+                    <Button variant="outline" size="sm" onClick={() => handleClick(item.linkUrl)}>
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      링크
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="create">
+            <Card>
+              <CardHeader>
+                <CardTitle>클러스터 생성</CardTitle>
+                <CardDescription>
+                  새로운 클러스터를 생성하기 위한 정보를 입력하세요.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* <DataTable
                 columns={columns}
                 data={tableData}
                 onRefresh={handleRefresh}
               /> */}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
