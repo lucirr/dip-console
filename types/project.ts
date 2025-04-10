@@ -84,7 +84,7 @@ export interface UserReg {
 
 export interface Role {
   uid?: string;
-  name: string;
+  name?: string;
   title?: string;
   createdAt?: string;
 }

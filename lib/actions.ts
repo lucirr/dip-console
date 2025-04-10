@@ -7,7 +7,7 @@ import { Dns } from "@/types/dns";
 import { SystemLink } from "@/types/systemlink";
 import { License } from "@/types/license";
 import { CatalogDeploy } from "@/types/catalogdeploy";
-import { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project";
+import { ClusterProject, Project, ProjectUser, Role, User, UserRegData } from "@/types/project";
 
 
 const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
@@ -372,7 +372,7 @@ export async function getRoles(): Promise<Role[]> {
   return fetchApi<Role[]>({ endpoint: `${apiAuth}/roles` });
 }
 
-export async function insertUser(data: User) {
+export async function insertUser(data: UserRegData) {
   return fetchApi<User>({
     endpoint: `${apiNonAuth}/kclusers`,
     method: 'POST',

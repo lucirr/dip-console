@@ -25,7 +25,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
-import type { Role, User } from "@/types/project"
+import type { Role, User, UserReg, UserRegData } from "@/types/project"
 import { getUsers, insertUser, updateUser, deleteUser, getRoles } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
@@ -88,7 +88,9 @@ export default function UserManagementPage() {
 
 
   const formSchemaUser = z.object({
-    username: z.string().min(1, { message: "이름은 필수 입력 항목입니다." }),
+    username: z.string().min(1, { message: "이름은 필수 입력 항목입니다." })
+      .regex(/^[a-zA-Z0-9]+$/, { message: "이름은 영문자와 숫자만 입력 가능합니다." })
+      .max(20, { message: "이름은 20자를 초과할 수 없습니다." }),
     nickname: z.string().min(1, { message: "닉네임은 필수 입력 항목입니다." }),
     email: z.string().min(1, { message: "이메일은 필수 입력 항목입니다." }),
     roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
@@ -103,7 +105,7 @@ export default function UserManagementPage() {
         const hasSpecialChar = /[@$!%*?&]/.test(value);
         return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
       }, {
-        message: "비밀번호는 대소문자, 숫자, 특수문자(@$!%*?&)를 각각 하나 이상 포함해야 합니다."
+        message: "8글자 ~ 50글자 이내 대소문자, 숫자, 특수문자(@$!%*?&)를 각각 하나 이상 포함해야 합니다."
       }),
   });
 
@@ -236,7 +238,21 @@ export default function UserManagementPage() {
     setIsSubmitting(true);
 
     try {
-      await insertUser(newCode);
+      const role: Role = {
+        name: newCode.roleName,
+      };
+      const userReg: UserReg = {
+        username: newCode.username,
+        nickname: newCode.nickname,
+        email: newCode.email,
+        password: newCode.password,
+        roles: role,
+      };
+      const userRegData: UserRegData = {
+        data: userReg,
+      };
+
+      await insertUser(userRegData);
       toast({
         title: "Success",
         description: "사용자가 성공적으로 추가되었습니다.",
@@ -266,6 +282,7 @@ export default function UserManagementPage() {
 
   const userEditSheetClick = (row: User) => {
     setSelectedUser(row);
+
     setEditUser({
       uid: row.uid,
       username: row.username,
@@ -283,7 +300,7 @@ export default function UserManagementPage() {
 
     setFormErrorsUser(null);
 
-    const validationResult = formSchemaUser.safeParse(editUser);
+    const validationResult = formSchemaUser.omit({ password: true }).safeParse(editUser);
 
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
@@ -581,7 +598,7 @@ export default function UserManagementPage() {
                         id="edit-user-type"
                         className={formErrorsUser?.roleName ? "border-red-500" : ""}
                       >
-                        <SelectValue placeholder="타입 선택" />
+                        <SelectValue placeholder="역할 선택" />
                       </SelectTrigger>
                       <SelectContent>
                         {roleOptions.map((item) => (
