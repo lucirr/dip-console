@@ -201,7 +201,7 @@ export default function ArgoClusterRegistrationPage() {
   return (
     <div className="flex-1 space-y-4 py-4">
       <div className="bg-white border-b shadow-sm -mx-4">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-6 py-4 pt-0">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">클러스터 등록</h2>
             <p className="mt-1 text-sm text-gray-500">ArgoCD에 클러스터를 등록할 수 있습니다.</p>

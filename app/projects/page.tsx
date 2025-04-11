@@ -1,324 +1,892 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, RotateCcw, Search, UserPlus } from 'lucide-react';
+import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import TablePagination from "@/components/ui/table-pagination";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { yaml } from '@codemirror/lang-yaml';
+import type { ReactNode } from 'react';
+import type { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project"
+import {
+  getProjects,
+  insertProject,
+  deleteProject,
+  getProjectUser,
+  deleteProjectUser,
+  insertProjectUser,
+  getClusters,
+  updateProject,
+  getUsers,
+  getRoles,
+  getCommonCodeByGroupCode
+} from "@/lib/actions"
+import { useToast } from "@/hooks/use-toast"
+import { z } from 'zod';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { CommonCode } from '@/types/groupcode';
+import { getErrorMessage } from '@/lib/utils';
+import { Cluster } from '@/types/cluster';
 
-const departmentOptions = [
-  { value: '개발팀', label: '개발팀' },
-  { value: '기획팀', label: '기획팀' },
-  { value: '운영팀', label: '운영팀' },
-  { value: '디자인팀', label: '디자인팀' },
-  { value: '보안팀', label: '보안팀' }
-];
+interface Column {
+  key: string;
+  title: string;
+  width?: string;
+  align?: string;
+  cell?: (row: any, index?: number) => ReactNode;
+}
 
-const roleOptions = [
-  { value: '개발자', label: '개발자' },
-  { value: '기획자', label: '기획자' },
-  { value: '운영자', label: '운영자' },
-  { value: '디자이너', label: '디자이너' },
-  { value: '보안담당자', label: '보안담당자' }
-];
 
-const mockUsers = [
-  { id: 'USR001', name: '김철수', email: 'kim@example.com', department: '개발팀', role: '개발자', description: '백엔드 개발자' },
-  { id: 'USR002', name: '이영희', email: 'lee@example.com', department: '기획팀', role: '기획자', description: '서비스 기획자' },
-  { id: 'USR003', name: '박지훈', email: 'park@example.com', department: '개발팀', role: '개발자', description: '프론트엔드 개발자' },
-];
-
-const userColumns = [
-  { key: 'name', title: '이름' },
-  { key: 'email', title: '이메일' },
-  { key: 'department', title: '부서' },
-  { key: 'role', title: '역할' },
-];
-
-const mockData = [
-  {
-    id: 'PRJ001',
-    name: '클라우드 플랫폼',
-    type: '개발',
-    manager: '김철수',
-    status: '진행중',
-    startDate: '2024-01-01',
-    endDate: '2024-12-31',
-  },
-  {
-    id: 'PRJ002',
-    name: '마이크로서비스 구축',
-    type: '운영',
-    manager: '이영희',
-    status: '계획',
-    startDate: '2024-04-01',
-    endDate: '2024-09-30',
-  },
-];
-
-const columns = [
-  { key: 'name', title: '프로젝트명' },
-  { key: 'type', title: '유형', width: 'w-[80px]' },
-  { key: 'manager', title: '담당자', width: 'w-[100px]' },
-  { key: 'status', title: '상태', width: 'w-[80px]' },
-  { key: 'startDate', title: '시작일', width: 'w-[100px]' },
-  { key: 'endDate', title: '종료일', width: 'w-[100px]' },
-];
 
 export default function ProjectsPage() {
-  const [data, setData] = useState(mockData);
-  const [users, setUsers] = useState(mockUsers);
-  const [searchName, setSearchName] = useState('');
-  const [searchType, setSearchType] = useState('');
-  const [searchManager, setSearchManager] = useState('');
-  const [searchStatus, setSearchStatus] = useState('');
-  const [isProjectSheetOpen, setIsProjectSheetOpen] = useState(false);
-  const [isUserSheetOpen, setIsUserSheetOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const { toast } = useToast()
+  const [projectData, setProjectData] = useState<Project[]>([]);
+  const [projectUserData, setProjectUserData] = useState<ProjectUser[]>([]);
+  const [isProjectNewSheetOpen, setIsProjectNewSheetOpen] = useState(false);
+  const [isProjectEditSheetOpen, setIsProjectEditSheetOpen] = useState(false);
+  const [isProjectUserSheetOpen, setIsProjectUserSheetOpen] = useState(false);
+  const [isProjectUserNewSheetOpen, setIsProjectUserNewSheetOpen] = useState(false);
+  const [isProjectUserEditSheetOpen, setIsProjectUserEditSheetOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageProject, setPageProject] = useState(1);
+  const [pageProjectUser, setPageProjectUser] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProjectUser, setSelectedProjectUser] = useState<ProjectUser | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
+  const [confirmDescription, setConfirmDescription] = useState<string>("");
+  const [formErrorsProject, setFormErrorsProject] = useState<{
+    clusterId?: string;
+    clusterProjectName?: string;
+  } | null>(null);
+  const [formErrorsProjectUser, setFormErrorsProjectUser] = useState<{
+    projectId?: string;
+    userId?: string;
+    roleName?: string;
+  } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clusterData, setClusterData] = useState<Cluster[]>([]);
+  const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
-  const [newProject, setNewProject] = useState({
-    name: '',
-    type: '',
-    manager: '',
-    status: '계획',
-    startDate: '',
-    endDate: ''
+  const [newCode, setNewCode] = useState<Project>({
+    clusterProjectName: '',
+    clusterId: '',
   });
 
-  const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
-    department: '',
-    role: '',
-    description: ''
+  const [editProject, setEditProject] = useState<Project>({
+    uid: '',
+    clusterProjectName: '',
+    clusterId: '',
   });
 
-  const handleRefresh = () => {
-    console.log('Refreshing data...');
-  };
+  const [newProjectUser, setNewProjectUser] = useState<ProjectUser>({
+    uid: '',
+    projectId: '',
+    userId: '',
+    roleName: '',
+    userName: '',
+  });
 
-  const handleSearch = () => {
-    const filteredData = mockData.filter(item => {
-      const nameMatch = item.name.toLowerCase().includes(searchName.toLowerCase());
-      const typeMatch = !searchType || item.type.toLowerCase() === searchType.toLowerCase();
-      const managerMatch = !searchManager || item.manager.toLowerCase().includes(searchManager.toLowerCase());
-      const statusMatch = !searchStatus || item.status.toLowerCase() === searchStatus.toLowerCase();
-      return nameMatch && typeMatch && managerMatch && statusMatch;
-    });
-    setData(filteredData);
-  };
+  const [editProjectUser, setEditProjectUser] = useState<ProjectUser>({
+    uid: '',
+    projectId: '',
+    userId: '',
+    roleName: '',
+  });
 
-  const handleReset = () => {
-    setSearchName('');
-    setSearchType('');
-    setSearchManager('');
-    setSearchStatus('');
-    setData(mockData);
-  };
+  const [projectOptions, setProjectOptions] = useState<Project[]>([]);
+  const [userOptions, setUserOptions] = useState<User[]>([]);
+  const [roleOptions, setRoleOptions] = useState<Role[]>([]);
 
-  const handleNewProjectSubmit = () => {
-    const selectedUserData = users.find(user => user.id === selectedUser);
-    const newProjectData = {
-      ...newProject,
-      id: `PRJ${String(data.length + 1).padStart(3, '0')}`,
-      manager: selectedUserData ? selectedUserData.name : newProject.manager
-    };
+  const formSchemaProject = z.object({
+    clusterId: z.string().min(1, { message: "클러스터는 필수 입력 항목입니다." }),
+    clusterProjectName: z.string().min(1, { message: "프로젝트 이름은 필수 입력 항목입니다." }),
+  });
 
-    setData([...data, newProjectData]);
-    setNewProject({
-      name: '',
-      type: '',
-      manager: '',
-      status: '계획',
-      startDate: '',
-      endDate: ''
-    });
-    setSelectedUser(null);
-    setIsProjectSheetOpen(false);
-  };
+  const formSchemaProjectUser = z.object({
+    projectId: z.string().min(1, { message: "프로젝트는 필수 입력 항목입니다." }),
+    userId: z.string().min(1, { message: "사용자는 필수 입력 항목입니다." }),
+    roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
+  });
 
-  const handleNewUserSubmit = () => {
-    const newUserData = {
-      ...newUser,
-      id: `USR${String(users.length + 1).padStart(3, '0')}`,
-    };
+  const paginatedData = projectData?.slice((pageProject - 1) * pageSize, pageProject * pageSize) || [];
+  const totalPages = Math.ceil((projectData?.length || 0) / pageSize);
 
-    setUsers([...users, newUserData]);
-    setNewUser({
-      name: '',
-      email: '',
-      department: '',
-      role: '',
-      description: ''
-    });
-    setIsUserSheetOpen(false);
-  };
+  const paginatedProjectUser = projectUserData?.slice((pageProjectUser - 1) * pageSize, pageProjectUser * pageSize) || [];
+  const totalPagesProjectUser = Math.ceil((projectUserData?.length || 0) / pageSize);
 
-  const handleUserSelect = (userId: string) => {
-    setSelectedUser(userId);
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setNewProject(prev => ({
-        ...prev,
-        manager: user.name
+  const columns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        const rowIndex = paginatedData.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(pageProject - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'clusterName', title: '클러스터', align: 'left' },
+    { key: 'clusterProjectName', title: '프로젝트', align: 'left' },
+    {
+      key: 'createdAt', title: '등록일자', align: 'left',
+      cell: (row: Project) => {
+        if (!row.createdAt) return '-';
+        return format(new Date(row.createdAt), 'yyyy-MM-dd');
+      }
+    },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: Project) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => projectEditSheetClick(row)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              보기
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => projectUserSheetClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              사용자
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => projectDeleteClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const projectUserColumns: Column[] = [
+    {
+      key: 'sequence',
+      title: '번호',
+      width: 'w-[80px]',
+      align: 'center',
+      cell: (row: any, index?: number) => {
+        const rowIndex = paginatedProjectUser.findIndex(item => item === row);
+        return (
+          <div className="text-center">{(pageProjectUser - 1) * pageSize + rowIndex + 1}</div>
+        );
+      }
+    },
+    { key: 'clusterProjectName', title: '프로젝트', align: 'left' },
+    { key: 'userName', title: '사용자', align: 'left' },
+    { key: 'roleName', title: '역할', align: 'left' },
+    {
+      key: 'actions',
+      title: '',
+      width: 'w-[40px]',
+      cell: (row: ProjectUser) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => projectUserDeleteClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  const fetchProjects = async (currentClusters: Cluster[]) => {
+    setIsLoading(true);
+    try {
+      const response = await getProjects();
+
+      const clustersMap = currentClusters.reduce((acc, cluster) => {
+        if (cluster.uid !== undefined) {
+          acc[cluster.uid] = cluster.clusterName ?? '';
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+
+      const enhancedResponse = response.map(item => ({
+        ...item,
+        clusterName: clustersMap[item.clusterId ?? ''],
       }));
+
+      setProjectData(enhancedResponse);
+    } catch (error) {
+      setProjectData([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+
+  const fetchProjectUsers = async () => {
+    setIsLoading(true);
+    try {
+      if (selectedProject?.uid) {
+        const response = await getProjectUser(selectedProject.uid);
+        
+        setProjectUserData(response);
+      } else {
+        setProjectUserData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching common codes:', error);
+      setProjectUserData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchClusters = async (currentCodeType: CommonCode[]) => {
+    setIsLoading(true);
+    try {
+      const response = await getClusters();
+
+      const codeTypeMap = currentCodeType.reduce((acc, code) => {
+        if (code.uid !== undefined && code.code == 'common') {
+          acc[code.uid] = code.uid;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      const filteredData = response.filter(item =>
+        item.clusterTypeId != codeTypeMap[item.clusterTypeId ?? '']
+      );
+
+      setClusterData(filteredData);
+      return response;
+    } catch (error) {
+      setClusterData([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getUsers();
+      if (projectUserData) {
+        const projectUsers = new Set(projectUserData.map(pu => pu.userName));
+        const filteredData = response.filter(item =>
+          item.uid !== undefined && !projectUsers.has(item.username)
+        );
+        setUserOptions(filteredData);
+      } else {
+        setUserOptions(response);
+      }
+
+    } catch (error) {
+      console.log(error)
+      setUserOptions([]);
+
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getRoles();
+      const filteredData = response.filter(item =>
+        item.name != 'root'
+      );
+      setRoleOptions(filteredData);
+      return response;
+    } catch (error) {
+      setRoleOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCommonCode = async (groupCode: string) => {
+    setIsLoading(true);
+    try {
+      const response = await getCommonCodeByGroupCode(groupCode)
+      setCodeType(response);
+      return response;
+    } catch (error) {
+      setCodeType([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRoles();
+
+    const fetchProjectData = async () => {
+      const codeTypeData = await fetchCommonCode('cluster_type');
+      const clusterData = await fetchClusters(codeTypeData);
+      fetchProjects(clusterData);
+    };
+
+    fetchProjectData();
+  }, []);
+
+
+  useEffect(() => {
+    if (selectedProject && isProjectUserSheetOpen) {
+      fetchProjectUsers();
+    }
+  }, [selectedProject, isProjectUserSheetOpen]);
+
+  useEffect(() => {
+    setFormErrorsProject(null);
+  }, [isProjectNewSheetOpen]);
+
+  useEffect(() => {
+    setFormErrorsProjectUser(null);
+  }, [isProjectUserNewSheetOpen]);
+
+  useEffect(() => {
+    if (selectedProject && isProjectUserNewSheetOpen) {
+      fetchUsers();
+    }
+  }, [selectedProject, isProjectUserNewSheetOpen]);
+
+  const handleRefresh = () => {
+    fetchProjects(clusterData);
+  };
+
+  const handleRefreshProjectUser = () => {
+    fetchProjectUsers();
+  };
+
+  const projectNewClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsProject(null);
+
+    const validationResult = formSchemaProject.safeParse(newCode);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        // 필수 입력 필드 검증
+        if (field === 'clusterId' || field === 'clusterProjectName') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+
+      setFormErrorsProject(errors);
+      return;
+    }
+    setConfirmAction(() => newProjectSubmit);
+    setConfirmDescription("저장하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const newProjectSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const clusterProject: ClusterProject = {
+        name: newCode.clusterProjectName,
+        clusterId: newCode.clusterId,
+      };
+
+      await insertProject(clusterProject);
+      toast({
+        title: "Success",
+        description: "프로젝트가 성공적으로 추가되었습니다.",
+      })
+      setNewCode({
+        clusterProjectName: '',
+        clusterId: '',
+      });
+      setIsProjectNewSheetOpen(false);
+      fetchProjects(clusterData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+  const projectUserNewClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsProjectUser(null);
+
+    if (selectedProject?.uid) {
+      newProjectUser.projectId = selectedProject?.uid;
+
+      const validationResult = formSchemaProjectUser.safeParse(newProjectUser);
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.reduce((acc, error) => {
+          const field = error.path[0] as string;
+          // 필수 입력 필드 검증
+          if (field === 'projectId' || field === 'userId' || field === 'roleName') {
+            acc[field] = error.message;
+          }
+          return acc;
+        }, {} as { [key: string]: string });
+        setFormErrorsProjectUser(errors);
+        return;
+      }
+      setConfirmAction(() => newProjectUserSubmit);
+      setConfirmDescription("저장하시겠습니까?");
+      setIsConfirmOpen(true);
+    }
+  };
+
+  const newProjectUserSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      newProjectUser.clusterId = selectedProject?.clusterId;
+      newProjectUser.projectUserId = newProjectUser.userId;
+      newProjectUser.username = newProjectUser.userName;
+      await insertProjectUser(newProjectUser);
+
+      toast({
+        title: "Success",
+        description: "사용자가 성공적으로 추가되었습니다.",
+      })
+      setNewProjectUser({
+        uid: '',
+        projectId: '',
+        userId: '',
+        roleName: '',
+      });
+      setIsProjectUserNewSheetOpen(false);
+      fetchProjectUsers();
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+  const projectEditSheetClick = (row: Project) => {
+    setSelectedProject(row);
+    setEditProject({
+      uid: row.uid,
+      clusterProjectName: row.clusterProjectName,
+      clusterId: row.clusterId,
+      clusterName: row.clusterName
+    });
+    setFormErrorsProject(null);
+    setIsProjectEditSheetOpen(true);
+  };
+
+  const projectEditClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsProject(null);
+
+    const validationResult = formSchemaProject.safeParse(editProject);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        // 필수 입력 필드 검증
+        if (field === 'clusterProjectName' || field === 'clusterId') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+      setFormErrorsProject(errors);
+      return;
+    }
+    setConfirmAction(() => projectEditSubmit);
+    setConfirmDescription("수정하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const projectEditSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await updateProject(editProject);
+      toast({
+        title: "Success",
+        description: "카탈로그 유형이 성공적으로 수정되었습니다.",
+      })
+      setIsProjectEditSheetOpen(false);
+      fetchProjects(clusterData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+  const projectDeleteClick = (row: Project) => {
+    if (isSubmitting) return;
+
+    setConfirmAction(() => () => projectDeleteSubmit(row));
+    setConfirmDescription("삭제하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const projectDeleteSubmit = async (row: Project) => {
+    if (!row) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await deleteProject(row);
+      toast({
+        title: "Success",
+        description: "프로젝트가 성공적으로 삭제되었습니다.",
+      })
+      fetchProjects(clusterData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+
+
+
+  const projectUserDeleteClick = (row: ProjectUser) => {
+    if (isSubmitting) return;
+
+    setConfirmAction(() => () => projectUserDeleteSubmit(row));
+    setConfirmDescription("삭제하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const projectUserDeleteSubmit = async (row: ProjectUser) => {
+    if (!row) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      if (selectedProject?.clusterId) {
+        row.clusterId = selectedProject?.clusterId
+        
+        await deleteProjectUser(row);
+        toast({
+          title: "Success",
+          description: "사용자가 성공적으로 삭제되었습니다.",
+        })
+        fetchProjectUsers();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+  const projectUserSheetClick = (row: Project) => {
+    setSelectedProject(row);
+    setIsProjectUserSheetOpen(true);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPageProject(newPage);
+  };
+
+  const handlePageChangeProjectUser = (newPage: number) => {
+    setPageProjectUser(newPage);
+  };
+
+
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">프로젝트 관리</h2>
-        <Sheet open={isProjectSheetOpen} onOpenChange={setIsProjectSheetOpen}>
-          <SheetTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              프로젝트 추가
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="min-w-[650px] overflow-y-auto">
-            <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>새 프로젝트 추가</SheetTitle>
-              </SheetHeader>
-              <div className="grid grid-cols-2 gap-6 py-4">
-                <div className="space-y-2">
-                  <Label>프로젝트명</Label>
-                  <Input
-                    placeholder="프로젝트명 입력"
-                    value={newProject.name}
-                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  />
+    <div className="flex-1 space-y-4 py-4">
+      <div className="bg-white border-b shadow-sm -mx-4">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">프로젝트 관리</h2>
+            <p className="mt-1 text-sm text-gray-500">프로젝트를 생성하고 관리할 수 있습니다.</p>
+          </div>
+          <Sheet open={isProjectNewSheetOpen} onOpenChange={setIsProjectNewSheetOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                프로젝트 추가
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>새 프로젝트 추가</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-service-type" className="flex items-center">
+                      클러스터 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCode.clusterId}
+                      onValueChange={(value) => {
+                        setNewCode({ ...newCode, clusterId: value });
+                        setFormErrorsProject(prevErrors => ({
+                          ...prevErrors,
+                          clusterId: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="catalog-service-type"
+                        className={formErrorsProject?.clusterId ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="클러스터 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clusterData.map((item) => (
+                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                            {item.clusterName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsProject?.clusterId && <p className="text-red-500 text-sm">{formErrorsProject.clusterId}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="project-name">프로젝트 이름 <span className="text-red-500 ml-1">*</span></Label>
+                    <Input
+                      id="project-name"
+                      placeholder="프로젝트 이름 입력"
+                      value={newCode.clusterProjectName || ''}
+                      onChange={(e) => {
+                        setNewCode({ ...newCode, clusterProjectName: e.target.value });
+                        setFormErrorsProject(prevErrors => ({
+                          ...prevErrors,
+                          clusterProjectName: undefined,
+                        }));
+                      }}
+                      className={formErrorsProject?.clusterProjectName ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsProject?.clusterProjectName && <p className="text-red-500 text-sm">{formErrorsProject.clusterProjectName}</p>}
+                  </div>
+
                 </div>
-                <div className="space-y-2">
-                  <Label>유형</Label>
-                  <Input
-                    placeholder="유형 입력"
-                    value={newProject.type}
-                    onChange={(e) => setNewProject({ ...newProject, type: e.target.value })}
-                  />
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsProjectNewSheetOpen(false)}>
+                    취소
+                  </Button>
+                  <Button size="sm" onClick={projectNewClick} disabled={isSubmitting}>
+                    저장
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label>상태</Label>
-                  <Input
-                    placeholder="상태 입력"
-                    value={newProject.status}
-                    onChange={(e) => setNewProject({ ...newProject, status: e.target.value })}
-                  />
+
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isProjectEditSheetOpen} onOpenChange={setIsProjectEditSheetOpen}>
+            <SheetTrigger asChild>
+            </SheetTrigger>
+            <SheetContent className="min-w-[650px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>프로젝트 상세 정보</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-catalog-type" className="flex items-center">
+                      클러스터
+                    </Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{editProject.clusterName}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-catalog-service-type" className="flex items-center">
+                      프로젝트
+                    </Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{editProject.clusterProjectName}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>시작일</Label>
-                  <Input
-                    type="date"
-                    value={newProject.startDate}
-                    onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>종료일</Label>
-                  <Input
-                    type="date"
-                    value={newProject.endDate}
-                    onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
-                  />
+                <div className="flex justify-end space-x-2 mt-6 pb-6">
+                  <Button variant="outline" size="sm" onClick={() => setIsProjectEditSheetOpen(false)}>
+                    취소
+                  </Button>
                 </div>
               </div>
-
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Label>담당자 선택</Label>
-                  <Sheet open={isUserSheetOpen} onOpenChange={setIsUserSheetOpen}>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isProjectUserSheetOpen} onOpenChange={setIsProjectUserSheetOpen}>
+            <SheetTrigger asChild>
+            </SheetTrigger>
+            <SheetContent className="min-w-[850px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>
+                    프로젝트 사용자
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex justify-end gap-2 pb-4 border-t pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshProjectUser}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    새로고침
+                  </Button>
+                  <Sheet open={isProjectUserNewSheetOpen} onOpenChange={setIsProjectUserNewSheetOpen}>
                     <SheetTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        사용자 추가
+                      <Button
+                        size="sm">
+                        <Plus className="mr-2 h-4 w-4" />
+                        <span>사용자 추가</span>
                       </Button>
                     </SheetTrigger>
                     <SheetContent className="min-w-[650px] overflow-y-auto">
-                      <div className="max-h-[calc(100vh-8rem)] overflow-y-auto">
-                        <SheetHeader>
+                      <div className="flex flex-col h-full">
+                        <SheetHeader className='pb-4'>
                           <SheetTitle>새 사용자 추가</SheetTitle>
                         </SheetHeader>
-                        <div className="grid grid-cols-2 gap-6 py-4">
+                        <div className="grid gap-4 py-4 border-t">
                           <div className="space-y-2">
-                            <Label>이름</Label>
-                            <Input
-                              placeholder="이름 입력"
-                              value={newUser.name}
-                              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                            />
+                            <Label htmlFor="new-catalog-type">프로젝트 <span className="text-red-500 ml-1">*</span></Label>
+                            <div className="p-2 bg-muted rounded-md">
+                              <span className="text-sm">{selectedProject?.clusterProjectName}</span>
+                            </div>
                           </div>
                           <div className="space-y-2">
-                            <Label>이메일</Label>
-                            <Input
-                              type="email"
-                              placeholder="이메일 입력"
-                              value={newUser.email}
-                              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>부서</Label>
-                            <Select 
-                              value={newUser.department} 
-                              onValueChange={(value) => setNewUser({ ...newUser, department: value })}
+                            <Label htmlFor="new-catalog-version" className="flex items-center">
+                              사용자 <span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <Select
+                              value={newProjectUser.userId}
+                              onValueChange={(value) => {
+                                //setNewProjectUser({ ...newProjectUser, userId: value });
+                                const selectedUser = userOptions.find(user => user.uid === value);
+                                setNewProjectUser({
+                                  ...newProjectUser,
+                                  userId: value,
+                                  userName: selectedUser?.username,
+                                });
+                                setFormErrorsProjectUser(prevErrors => ({
+                                  ...prevErrors,
+                                  userId: undefined,
+                                }));
+                              }}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="부서 선택" />
+                              <SelectTrigger
+                                id="catalog-service-type"
+                                className={formErrorsProjectUser?.userId ? "border-red-500" : ""}
+                              >
+                                <SelectValue placeholder="사용자 선택" />
                               </SelectTrigger>
                               <SelectContent>
-                                {departmentOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
+                                {userOptions.map((item) => (
+                                  <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                                    {item.username}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            {formErrorsProjectUser?.userId && <p className="text-red-500 text-sm">{formErrorsProjectUser.userId}</p>}
                           </div>
                           <div className="space-y-2">
-                            <Label>역할</Label>
-                            <Select 
-                              value={newUser.role} 
-                              onValueChange={(value) => setNewUser({ ...newUser, role: value })}
+                            <Label htmlFor="new-catalog-version" className="flex items-center">
+                              역할 <span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <Select
+                              value={newProjectUser.roleName}
+                              onValueChange={(value) => {
+                                setNewProjectUser({ ...newProjectUser, roleName: value });
+                                setFormErrorsProjectUser(prevErrors => ({
+                                  ...prevErrors,
+                                  roleName: undefined,
+                                }));
+                              }}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger
+                                id="catalog-service-type"
+                                className={formErrorsProjectUser?.roleName ? "border-red-500" : ""}
+                              >
                                 <SelectValue placeholder="역할 선택" />
                               </SelectTrigger>
                               <SelectContent>
-                                {roleOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
+                                {roleOptions.map((item) => (
+                                  <SelectItem key={item.name || ''} value={item.name || ''}>
+                                    {item.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
-                          </div>
-                          <div className="col-span-2 space-y-2">
-                            <Label>설명</Label>
-                            <div className="border rounded-md overflow-hidden">
-                              <CodeMirror
-                                value={newUser.description}
-                                height="200px"
-                                theme={oneDark}
-                                extensions={[javascript({ jsx: true })]}
-                                onChange={(value) => setNewUser({ ...newUser, description: value })}
-                                className="text-sm"
-                              />
-                            </div>
+                            {formErrorsProjectUser?.roleName && <p className="text-red-500 text-sm">{formErrorsProjectUser.roleName}</p>}
                           </div>
                         </div>
-                        <div className="flex justify-end space-x-2 mt-6">
-                          <Button variant="outline" onClick={() => setIsUserSheetOpen(false)}>
+                        <div className="flex justify-end space-x-2 mt-6 pb-6">
+                          <Button variant="outline" size="sm" onClick={() => setIsProjectUserNewSheetOpen(false)}>
                             취소
                           </Button>
-                          <Button onClick={handleNewUserSubmit}>
+                          <Button size="sm" onClick={projectUserNewClick} disabled={isSubmitting}>
                             저장
                           </Button>
                         </div>
@@ -326,118 +894,48 @@ export default function ProjectsPage() {
                     </SheetContent>
                   </Sheet>
                 </div>
-
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="p-2 text-left">선택</th>
-                        {userColumns.map((column) => (
-                          <th key={column.key} className="p-2 text-left">{column.title}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr 
-                          key={user.id} 
-                          className={`border-t hover:bg-muted/50 ${selectedUser === user.id ? 'bg-muted/50' : ''}`}
-                          onClick={() => handleUserSelect(user.id)}
-                        >
-                          <td className="p-2">
-                            <input
-                              type="radio"
-                              checked={selectedUser === user.id}
-                              onChange={() => handleUserSelect(user.id)}
-                              className="rounded-full"
-                            />
-                          </td>
-                          <td className="p-2">{user.name}</td>
-                          <td className="p-2">{user.email}</td>
-                          <td className="p-2">{user.department}</td>
-                          <td className="p-2">{user.role}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="">
+                  <DataTable
+                    columns={projectUserColumns}
+                    data={paginatedProjectUser}
+                  />
+                  <TablePagination
+                    currentPage={pageProjectUser}
+                    totalPages={totalPagesProjectUser}
+                    dataLength={(projectUserData?.length || 0)}
+                    onPageChange={handlePageChangeProjectUser}
+                    pageSize={pageSize}
+                  />
                 </div>
               </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+      <Card>
+        <CardContent className="p-2">
+          <DataTable
+            columns={columns}
+            data={paginatedData}
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+          />
+          <TablePagination
+            currentPage={pageProject}
+            totalPages={totalPages}
+            dataLength={(projectData?.length || 0)}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+          />
+        </CardContent>
+      </Card>
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        onConfirm={confirmAction}
+        description={confirmDescription}
+      />
 
-              <div className="flex justify-end space-x-2 mt-6">
-                <Button variant="outline" onClick={() => setIsProjectSheetOpen(false)}>
-                  취소
-                </Button>
-                <Button onClick={handleNewProjectSubmit}>
-                  저장
-                </Button>
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-      <div className="grid gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>검색 조건</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>프로젝트명</Label>
-                <Input
-                  placeholder="프로젝트명으로 검색"
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>유형</Label>
-                <Input
-                  placeholder="유형으로 검색"
-                  value={searchType}
-                  onChange={(e) => setSearchType(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>담당자</Label>
-                <Input
-                  placeholder="담당자로 검색"
-                  value={searchManager}
-                  onChange={(e) => setSearchManager(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>상태</Label>
-                <Input
-                  placeholder="상태로 검색"
-                  value={searchStatus}
-                  onChange={(e) => setSearchStatus(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="outline" onClick={handleReset}>
-                초기화
-              </Button>
-              <Button onClick={handleSearch}>
-                검색
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>프로젝트 목록</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              columns={columns}
-              data={data}
-              onRefresh={handleRefresh}
-            />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

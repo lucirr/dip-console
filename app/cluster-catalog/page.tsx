@@ -434,7 +434,7 @@ export default function ClusterCatalogPage() {
   return (
     <div className="flex-1 space-y-4 py-4">
       <div className="bg-white border-b shadow-sm -mx-4">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-6 py-4 pt-0">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">클러스터 카탈로그</h2>
             <p className="mt-1 text-sm text-gray-500">클러스터 카탈로그를 조회하고 관리할 수 있습니다.</p>
@@ -522,9 +522,11 @@ export default function ClusterCatalogPage() {
                       </div>
                       <div className="space-y-2">
                         <Label>카탈로그 내부 주소</Label>
-                        <div className="p-2 bg-muted rounded-md">
-                          <span className="text-sm">{editCatalogDeploy.catalogSvcUrl}</span>
-                        </div>
+                        {editCatalogDeploy.catalogSvcUrl && (
+                          <div className="p-2 bg-muted rounded-md">
+                            <span className="text-sm">{editCatalogDeploy.catalogSvcUrl}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
