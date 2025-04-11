@@ -660,7 +660,6 @@ export default function ClusterCatalogPage() {
                     </Select>
                     {formErrorsCatalog?.clusterId && <p className="text-red-500 text-sm">{formErrorsCatalog.clusterId}</p>}
                   </div>
-
                 </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCatalogNewSheetOpen(false)}>
