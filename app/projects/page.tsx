@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Code, MoreVertical, Check, RefreshCw, RefreshCcw, Server, LinkIcon } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import TablePagination from "@/components/ui/table-pagination";
@@ -36,6 +37,8 @@ import {
   updateProject,
   getUsers,
   getRoles,
+  getCatalogType,
+  getProjectCatalogDeploy,
   getCommonCodeByGroupCode
 } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
@@ -45,6 +48,8 @@ import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 import { Cluster } from '@/types/cluster';
+import { CatalogType } from '@/types/catalogtype';
+import { CatalogDeploy } from '@/types/catalogdeploy';
 
 interface Column {
   key: string;
@@ -60,11 +65,12 @@ export default function ProjectsPage() {
   const { toast } = useToast()
   const [projectData, setProjectData] = useState<Project[]>([]);
   const [projectUserData, setProjectUserData] = useState<ProjectUser[]>([]);
-  const [isProjectNewSheetOpen, setIsProjectNewSheetOpen] = useState(false);
+  const [isCatalogDeployNewSheetOpen, setIsCatalogDeployNewSheetOpen] = useState(false);
   const [isProjectEditSheetOpen, setIsProjectEditSheetOpen] = useState(false);
   const [isProjectUserSheetOpen, setIsProjectUserSheetOpen] = useState(false);
   const [isProjectUserNewSheetOpen, setIsProjectUserNewSheetOpen] = useState(false);
   const [isProjectUserEditSheetOpen, setIsProjectUserEditSheetOpen] = useState(false);
+  const [isCatalogNewSheetOpen, setIsCatalogNewSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pageProject, setPageProject] = useState(1);
   const [pageProjectUser, setPageProjectUser] = useState(1);
@@ -86,6 +92,7 @@ export default function ProjectsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clusterData, setClusterData] = useState<Cluster[]>([]);
   const [codeType, setCodeType] = useState<CommonCode[]>([]);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const [newCode, setNewCode] = useState<Project>({
     clusterProjectName: '',
@@ -113,9 +120,23 @@ export default function ProjectsPage() {
     roleName: '',
   });
 
+  const [newCatalogDeploy, setNewCatalogDeploy] = useState<CatalogDeploy>({
+    clusterId: '',
+    projectId: '',
+    catalogType: '',
+    catalogTypeId: '',
+    catalogVersionId: '',
+    name: '',
+    valuesYaml: '',
+  });
+
   const [projectOptions, setProjectOptions] = useState<Project[]>([]);
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [roleOptions, setRoleOptions] = useState<Role[]>([]);
+  // const [catalogTypeCreate, setCatalogTypeCreate] = useState<CatalogType[]>([]);
+  const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
+  const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
+
 
   const formSchemaProject = z.object({
     clusterId: z.string().min(1, { message: "클러스터는 필수 입력 항목입니다." }),
@@ -147,7 +168,6 @@ export default function ProjectsPage() {
         );
       }
     },
-    { key: 'clusterName', title: '클러스터', align: 'left' },
     { key: 'clusterProjectName', title: '프로젝트', align: 'left' },
     {
       key: 'createdAt', title: '등록일자', align: 'left',
@@ -176,7 +196,7 @@ export default function ProjectsPage() {
               <Code className="h-4 w-4 mr-2" />
               사용자
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => projectUserSheetClick(row)}>
+            <DropdownMenuItem onClick={() => catalogDeploySheetClick(row)}>
               <Code className="h-4 w-4 mr-2" />
               카탈로그 생성
             </DropdownMenuItem>
@@ -260,7 +280,7 @@ export default function ProjectsPage() {
     try {
       if (selectedProject?.uid) {
         const response = await getProjectUser(selectedProject.uid);
-        
+
         setProjectUserData(response);
       } else {
         setProjectUserData([]);
@@ -353,6 +373,37 @@ export default function ProjectsPage() {
     }
   };
 
+  const fetchCatalogType = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getCatalogType();
+      const filteredData = response.filter(item =>
+        item.enable && item.isAdmin == false && item.isTenant == false
+      );
+      setCatalogTypeOptions(filteredData);
+      return response;
+    } catch (error) {
+      setCatalogTypeOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCatalogDeploy = async () => {
+    setIsLoading(true);
+    try {
+      if (selectedProject?.uid) {
+        const response = await getProjectCatalogDeploy(selectedProject?.uid, "");
+        setCatalogDeployData(response);
+      }
+    } catch (error) {
+      setCatalogDeployData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
 
@@ -363,6 +414,8 @@ export default function ProjectsPage() {
     };
 
     fetchProjectData();
+    fetchCatalogType();
+    fetchCatalogDeploy();
   }, []);
 
 
@@ -374,7 +427,7 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     setFormErrorsProject(null);
-  }, [isProjectNewSheetOpen]);
+  }, [isCatalogDeployNewSheetOpen]);
 
   useEffect(() => {
     setFormErrorsProjectUser(null);
@@ -386,12 +439,18 @@ export default function ProjectsPage() {
     }
   }, [selectedProject, isProjectUserNewSheetOpen]);
 
+
+
   const handleRefresh = () => {
     fetchProjects(clusterData);
   };
 
   const handleRefreshProjectUser = () => {
     fetchProjectUsers();
+  };
+
+  const handleRefreshCatalogDeploy = () => {
+    fetchCatalogType();
   };
 
   const projectNewClick = () => {
@@ -438,7 +497,7 @@ export default function ProjectsPage() {
         clusterProjectName: '',
         clusterId: '',
       });
-      setIsProjectNewSheetOpen(false);
+      setIsCatalogDeployNewSheetOpen(false);
       fetchProjects(clusterData);
     } catch (error) {
       toast({
@@ -626,7 +685,7 @@ export default function ProjectsPage() {
     try {
       if (selectedProject?.clusterId) {
         row.clusterId = selectedProject?.clusterId
-        
+
         await deleteProjectUser(row);
         toast({
           title: "Success",
@@ -651,6 +710,47 @@ export default function ProjectsPage() {
     setIsProjectUserSheetOpen(true);
   };
 
+  const catalogDeploySheetClick = (row: Project) => {
+    setSelectedProject(row);
+    setIsCatalogDeployNewSheetOpen(true);
+  };
+
+  const catalogNewSheetClick = (row: CatalogType) => {
+    setNewCatalogDeploy({
+      catalogTypeId: row.uid,
+      catalogType: row.catalogType,
+      name: '',
+      valuesYaml: row.valuesYaml,
+    });
+    // fetchCatalogVersions(row.uid ?? '')
+    setIsCatalogNewSheetOpen(true);
+  };
+
+  const extractImageUrl = (htmlString?: string) => {
+    try {
+      if (htmlString) {
+        // 이스케이프된 문자열 디코딩
+        const decodedString = htmlString.replace(/\\u003c/g, '<')
+          .replace(/\\u003e/g, '>')
+          .replace(/\\"/g, '"');
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(decodedString, 'text/html');
+        const imgElement = doc.querySelector('img');
+        return imgElement?.getAttribute('src') || '';
+      }
+      return '';
+    } catch (error) {
+      console.error('Error parsing HTML:', error);
+      return '';
+    }
+  };
+
+  const handleImageError = (itemId: string | undefined) => {
+    if (!itemId) return; // Skip if itemId is undefined
+    setImageErrors(prev => ({ ...prev, [itemId]: true }));
+  };
+
   const handlePageChange = (newPage: number) => {
     setPageProject(newPage);
   };
@@ -666,84 +766,88 @@ export default function ProjectsPage() {
         <div className="flex items-center justify-between px-6 py-4 pt-0">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">프로젝트 관리</h2>
-            <p className="mt-1 text-sm text-gray-500">프로젝트를 생성하고 관리할 수 있습니다.</p>
+            <p className="mt-1 text-sm text-gray-500">프로젝트를 관리할 수 있습니다.</p>
           </div>
-          <Sheet open={isProjectNewSheetOpen} onOpenChange={setIsProjectNewSheetOpen}>
+          <Sheet open={isCatalogDeployNewSheetOpen} onOpenChange={setIsCatalogDeployNewSheetOpen}>
+            <SheetContent className="min-w-[950px] overflow-y-auto">
+              <div className="flex flex-col h-full">
+                <SheetHeader className='pb-4'>
+                  <SheetTitle>카탈로그</SheetTitle>
+                </SheetHeader>
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="flex items-center justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefreshCatalogDeploy}
+                    >
+                      <RefreshCcw className="mr-2 h-4 w-4" />
+                      새로고침
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                    {catalogTypeOptions.map((item, index) => (
+                      <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        <div className="relative h-48 w-full flex items-center justify-center bg-gray-100">
+                          <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
+                            {extractImageUrl(item.catalogImage) && !(item.uid && imageErrors[item.uid]) ? (
+                              <Image
+                                src={extractImageUrl(item.catalogImage)}
+                                alt={item.catalogType}
+                                className="object-contain"
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                onError={() => handleImageError(item.uid)}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                <Server className="h-12 w-12" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-xl">{item.catalogType}</CardTitle>
+                          </div>
+                          <CardDescription>{item.catalogDesc}</CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex justify-end gap-2 p-4">
+                          <Button variant="outline" size="sm" onClick={() => catalogNewSheetClick(item)}>
+                            <LinkIcon className="h-4 w-4 mr-2" />
+                            생성
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet open={isCatalogNewSheetOpen} onOpenChange={setIsCatalogNewSheetOpen}>
             <SheetTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                프로젝트 추가
-              </Button>
             </SheetTrigger>
             <SheetContent className="min-w-[650px] overflow-y-auto">
               <div className="flex flex-col h-full">
                 <SheetHeader className='pb-4'>
-                  <SheetTitle>새 프로젝트 추가</SheetTitle>
+                  <SheetTitle>새 카탈로그 추가</SheetTitle>
                 </SheetHeader>
-                <div className="grid gap-4 py-4 border-t">
-                  <div className="space-y-2">
-                    <Label htmlFor="catalog-service-type" className="flex items-center">
-                      클러스터 <span className="text-red-500 ml-1">*</span>
-                    </Label>
-                    <Select
-                      value={newCode.clusterId}
-                      onValueChange={(value) => {
-                        setNewCode({ ...newCode, clusterId: value });
-                        setFormErrorsProject(prevErrors => ({
-                          ...prevErrors,
-                          clusterId: undefined,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        id="catalog-service-type"
-                        className={formErrorsProject?.clusterId ? "border-red-500" : ""}
-                      >
-                        <SelectValue placeholder="클러스터 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clusterData.map((item) => (
-                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
-                            {item.clusterName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {formErrorsProject?.clusterId && <p className="text-red-500 text-sm">{formErrorsProject.clusterId}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="project-name">프로젝트 이름 <span className="text-red-500 ml-1">*</span></Label>
-                    <Input
-                      id="project-name"
-                      placeholder="프로젝트 이름 입력"
-                      value={newCode.clusterProjectName || ''}
-                      onChange={(e) => {
-                        setNewCode({ ...newCode, clusterProjectName: e.target.value });
-                        setFormErrorsProject(prevErrors => ({
-                          ...prevErrors,
-                          clusterProjectName: undefined,
-                        }));
-                      }}
-                      className={formErrorsProject?.clusterProjectName ? "border-red-500" : ""}
-                      required
-                    />
-                    {formErrorsProject?.clusterProjectName && <p className="text-red-500 text-sm">{formErrorsProject.clusterProjectName}</p>}
-                  </div>
-
-                </div>
+                
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
-                  <Button variant="outline" size="sm" onClick={() => setIsProjectNewSheetOpen(false)}>
+                  <Button variant="outline" size="sm" onClick={() => setIsCatalogNewSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm" onClick={projectNewClick} disabled={isSubmitting}>
-                    저장
+                  <Button size="sm"   disabled={isSubmitting}>
+                    생성
                   </Button>
                 </div>
 
               </div>
             </SheetContent>
           </Sheet>
+
           <Sheet open={isProjectEditSheetOpen} onOpenChange={setIsProjectEditSheetOpen}>
             <SheetTrigger asChild>
             </SheetTrigger>
