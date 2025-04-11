@@ -39,6 +39,8 @@ import {
   getRoles,
   getCatalogType,
   getProjectCatalogDeploy,
+  getCatalogVersion,
+  insertClusterCatalog,
   getCommonCodeByGroupCode
 } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
@@ -48,7 +50,7 @@ import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 import { Cluster } from '@/types/cluster';
-import { CatalogType } from '@/types/catalogtype';
+import { CatalogType, CatalogVersion } from '@/types/catalogtype';
 import { CatalogDeploy } from '@/types/catalogdeploy';
 
 interface Column {
@@ -80,6 +82,8 @@ export default function ProjectsPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(data: any) => Promise<void>>(async () => { });
   const [confirmDescription, setConfirmDescription] = useState<string>("");
+  const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
+
   const [formErrorsProject, setFormErrorsProject] = useState<{
     clusterId?: string;
     clusterProjectName?: string;
@@ -88,6 +92,12 @@ export default function ProjectsPage() {
     projectId?: string;
     userId?: string;
     roleName?: string;
+  } | null>(null);
+  const [formErrorsCatalog, setFormErrorsCatalog] = useState<{
+    catalogTypeId?: string;
+    catalogVersionId?: string;
+    clusterId?: string;
+    name?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clusterData, setClusterData] = useState<Cluster[]>([]);
@@ -148,6 +158,13 @@ export default function ProjectsPage() {
     userId: z.string().min(1, { message: "사용자는 필수 입력 항목입니다." }),
     roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
   });
+
+   const formSchemaCatalog = z.object({
+      catalogTypeId: z.string().min(1, { message: "카탈로그 유형은 필수 입력 항목입니다." }),
+      catalogVersionId: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
+      projectId: z.string().min(1, { message: "프로젝트는 필수 입력 항목입니다." }),
+      name: z.string().min(1, { message: "이름은 필수 입력 항목입니다." }),
+    });
 
   const paginatedData = projectData?.slice((pageProject - 1) * pageSize, pageProject * pageSize) || [];
   const totalPages = Math.ceil((projectData?.length || 0) / pageSize);
@@ -705,6 +722,92 @@ export default function ProjectsPage() {
     }
   };
 
+  const catalogNewClick = () => {
+    if (isSubmitting) return;
+
+    setFormErrorsCatalog(null);
+
+    const validationResult = formSchemaCatalog.safeParse(newCatalogDeploy);
+
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.reduce((acc, error) => {
+        const field = error.path[0] as string;
+        console.log(field, error.message)
+        // 필수 입력 필드 검증
+        if (field === 'catalogTypeId' || field === 'catalogVersionId' || field === 'projectId' || field == 'name') {
+          acc[field] = error.message;
+        }
+        return acc;
+      }, {} as { [key: string]: string });
+
+      setFormErrorsCatalog(errors);
+      return;
+    }
+    setConfirmAction(() => newCatalogSubmit);
+    setConfirmDescription("생성하시겠습니까?");
+    setIsConfirmOpen(true);
+  };
+
+  const newCatalogSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const catalogDeploy: CatalogDeploy = {
+        clusterId: newCatalogDeploy.clusterId,
+        projectId: newCatalogDeploy.projectId,
+        catalogTypeId: newCatalogDeploy.catalogTypeId,
+        catalogType: newCatalogDeploy.catalogType,
+        catalogVersionId: newCatalogDeploy.catalogVersionId,
+        name: newCatalogDeploy.catalogType,
+        valuesYaml: newCatalogDeploy.valuesYaml,
+      };
+
+      await insertClusterCatalog(catalogDeploy);
+      toast({
+        title: "Success",
+        description: "카탈로그가 성공적으로 생성되었습니다.",
+      })
+      setNewCatalogDeploy({
+        clusterId: '',
+        projectId: '',
+        catalogType: '',
+        catalogTypeId: '',
+        catalogVersionId: '',
+        name: '',
+        valuesYaml: '',
+      });
+      setIsCatalogNewSheetOpen(false);
+      fetchCatalogDeploy();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: getErrorMessage(error),
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
+  const fetchCatalogVersions = async (catalogTypeId: string) => {
+    setIsLoading(true);
+    try {
+      if (catalogTypeId) {
+        const response = await getCatalogVersion(catalogTypeId);
+        setCatalogVersionData(response);
+      } else {
+        setCatalogVersionData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching common codes:', error);
+      setCatalogVersionData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const projectUserSheetClick = (row: Project) => {
     setSelectedProject(row);
     setIsProjectUserSheetOpen(true);
@@ -722,7 +825,7 @@ export default function ProjectsPage() {
       name: '',
       valuesYaml: row.valuesYaml,
     });
-    // fetchCatalogVersions(row.uid ?? '')
+    fetchCatalogVersions(row.uid ?? '')
     setIsCatalogNewSheetOpen(true);
   };
 
@@ -834,12 +937,74 @@ export default function ProjectsPage() {
                 <SheetHeader className='pb-4'>
                   <SheetTitle>새 카탈로그 추가</SheetTitle>
                 </SheetHeader>
-                
+                <div className="grid gap-4 py-4 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-code">프로젝트</Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{newCatalogDeploy.clusterProjectName}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-code">카탈로그 유형</Label>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-sm">{newCatalogDeploy.catalogType}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog-service-type" className="flex items-center">
+                      카탈로그 버전 <span className="text-red-500 ml-1">*</span>
+                    </Label>
+                    <Select
+                      value={newCatalogDeploy.catalogVersionId}
+                      onValueChange={(value) => {
+                        setNewCatalogDeploy({ ...newCatalogDeploy, catalogVersionId: value });
+                        setFormErrorsCatalog(prevErrors => ({
+                          ...prevErrors,
+                          catalogVersionId: undefined,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger
+                        id="catalog-service-type"
+                        className={formErrorsCatalog?.catalogVersionId ? "border-red-500" : ""}
+                      >
+                        <SelectValue placeholder="버전 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {catalogVersionData.map((item) => (
+                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                            {item.catalogVersion}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrorsCatalog?.catalogVersionId && <p className="text-red-500 text-sm">{formErrorsCatalog.catalogVersionId}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-desc">이름 <span className="text-red-500 ml-1">*</span></Label>
+                    <Input
+                      id="new-desc"
+                      placeholder="이름 입력"
+                      value={newCatalogDeploy.name}
+                      onChange={(e) => {
+                        setNewCatalogDeploy({ ...newCatalogDeploy, name: e.target.value });
+                        setFormErrorsCatalog(prevErrors => ({
+                          ...prevErrors,
+                          name: undefined,
+                        }));
+                      }}
+                      className={formErrorsCatalog?.name ? "border-red-500" : ""}
+                      required
+                    />
+                    {formErrorsCatalog?.name && <p className="text-red-500 text-sm">{formErrorsCatalog.name}</p>}
+                  </div>
+
+                </div>
                 <div className="flex justify-end space-x-2 mt-6 pb-6">
                   <Button variant="outline" size="sm" onClick={() => setIsCatalogNewSheetOpen(false)}>
                     취소
                   </Button>
-                  <Button size="sm"   disabled={isSubmitting}>
+                  <Button size="sm" onClick={catalogNewClick} disabled={isSubmitting}>
                     생성
                   </Button>
                 </div>
