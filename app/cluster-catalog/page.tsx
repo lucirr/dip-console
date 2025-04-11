@@ -310,7 +310,7 @@ export default function ClusterCatalogPage() {
     if (!validationResult.success) {
       const errors = validationResult.error.errors.reduce((acc, error) => {
         const field = error.path[0] as string;
-        console.log(field, error.message)
+        console.log(field, error)
         // 필수 입력 필드 검증
         if (field === 'catalogTypeId' || field === 'catalogVersionId' || field === 'clusterId') {
           acc[field] = error.message;
