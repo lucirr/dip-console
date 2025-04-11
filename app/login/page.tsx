@@ -9,15 +9,19 @@ export default function LoginPage() {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
-  // useEffect(() => {
-  //   if (!loading && isAuthenticated) {
-  //     router.replace('/');
-  //   }
-  // }, [isAuthenticated, loading, router]);
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace('/catalog');
+    }
+  }, [isAuthenticated, loading, router]);
 
-  // if (loading) {
-  //   return <div>Loading...</div>;
-  // }
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent border-gray-800" />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-muted">
