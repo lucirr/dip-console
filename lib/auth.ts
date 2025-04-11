@@ -27,8 +27,6 @@ export const initKeycloak = async () => {
 
   try {
     const authenticated = await keycloak.init({
-      // onLoad: 'check-sso',
-      // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
       onLoad: 'login-required',
       checkLoginIframe: false,
       pkceMethod: 'S256',
