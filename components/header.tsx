@@ -1,9 +1,9 @@
 'use client';
 
-import { 
-  Bell, 
-  User, 
-  Database, 
+import {
+  Bell,
+  User,
+  Database,
   FolderKanban,
   Users,
   Globe,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebarStore } from '@/lib/store';
+import { logout } from '@/lib/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,6 +86,10 @@ export function Header() {
     router.push(defaultPath);
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
   const isMenuActive = (menu: string) => activeMenu === menu;
 
   return (
@@ -96,7 +101,7 @@ export function Header() {
         <NavigationMenu className="hidden md:flex">
           <NavigationMenuList>
             <NavigationMenuItem>
-              <NavigationMenuTrigger 
+              <NavigationMenuTrigger
                 onClick={() => handleMenuClick('데이터관리', '/catalog')}
                 className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('데이터관리') ? 'bg-gray-800' : 'bg-black'}`}
               >
@@ -105,7 +110,7 @@ export function Header() {
               <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
                 <div className="w-[500px] p-4">
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/catalog"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -114,7 +119,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/projects"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -127,7 +132,7 @@ export function Header() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <NavigationMenuTrigger 
+              <NavigationMenuTrigger
                 onClick={() => handleMenuClick('시스템관리', '/cluster-catalog')}
                 className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('시스템관리') ? 'bg-gray-800' : 'bg-black'}`}
               >
@@ -136,7 +141,7 @@ export function Header() {
               <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
                 <div className="w-[500px] p-4 grid grid-cols-2">
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/cluster-catalog"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -145,7 +150,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/project-catalog"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -154,7 +159,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/system-catalog"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -163,7 +168,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/project-management"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -172,7 +177,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/user-management"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -181,7 +186,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/dns-lookup"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -190,7 +195,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/catalog-types"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -199,7 +204,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/license-management"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -212,7 +217,7 @@ export function Header() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <NavigationMenuTrigger 
+              <NavigationMenuTrigger
                 onClick={() => handleMenuClick('시스템', '/common-code')}
                 className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('시스템') ? 'bg-gray-800' : 'bg-black'}`}
               >
@@ -221,7 +226,7 @@ export function Header() {
               <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
                 <div className="w-[500px] p-4 grid grid-cols-2">
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/common-code"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -230,7 +235,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/sys-catalog-types"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -239,7 +244,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/cluster"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -248,7 +253,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/argocd"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -257,7 +262,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/sys-dns-lookup"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -266,7 +271,7 @@ export function Header() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link 
+                    <Link
                       href="/system-link"
                       className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                     >
@@ -293,7 +298,9 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
+              Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -12,7 +12,7 @@ export const getKeycloak = () => {
 
   if (!keycloakInstance) {
     keycloakInstance = new Keycloak({
-      url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'https://keycloak.stg.paasup.io/auth',
+      url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'https://keycloak.inopt.paasup.io/auth',
       realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM || 'paasup',
       clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'dip-portal',
     });
@@ -29,8 +29,8 @@ export const initKeycloak = async () => {
     const authenticated = await keycloak.init({
       // onLoad: 'check-sso',
       // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-      // onLoad: 'login-required',
-      // checkLoginIframe: false,
+      onLoad: 'login-required',
+      checkLoginIframe: false,
       pkceMethod: 'S256',
     });
 
