@@ -149,11 +149,6 @@ export default function ProjectsPage() {
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
 
 
-  const formSchemaProject = z.object({
-    clusterId: z.string().min(1, { message: "클러스터는 필수 입력 항목입니다." }),
-    clusterProjectName: z.string().min(1, { message: "프로젝트 이름은 필수 입력 항목입니다." }),
-  });
-
   const formSchemaProjectUser = z.object({
     projectId: z.string().min(1, { message: "프로젝트는 필수 입력 항목입니다." }),
     userId: z.string().min(1, { message: "사용자는 필수 입력 항목입니다." }),
@@ -438,7 +433,6 @@ export default function ProjectsPage() {
 
     fetchProjectData();
     fetchCatalogType();
-    //fetchCatalogDeploy();
   }, []);
 
 
@@ -479,63 +473,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const projectNewClick = () => {
-    if (isSubmitting) return;
 
-    setFormErrorsProject(null);
-
-    const validationResult = formSchemaProject.safeParse(newCode);
-
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors.reduce((acc, error) => {
-        const field = error.path[0] as string;
-        // 필수 입력 필드 검증
-        if (field === 'clusterId' || field === 'clusterProjectName') {
-          acc[field] = error.message;
-        }
-        return acc;
-      }, {} as { [key: string]: string });
-
-      setFormErrorsProject(errors);
-      return;
-    }
-    setConfirmAction(() => newProjectSubmit);
-    setConfirmDescription("저장하시겠습니까?");
-    setIsConfirmOpen(true);
-  };
-
-  const newProjectSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    try {
-      const clusterProject: ClusterProject = {
-        name: newCode.clusterProjectName,
-        clusterId: newCode.clusterId,
-      };
-
-      await insertProject(clusterProject);
-      toast({
-        title: "Success",
-        description: "프로젝트가 성공적으로 추가되었습니다.",
-      })
-      setNewCode({
-        clusterProjectName: '',
-        clusterId: '',
-      });
-      setIsCatalogDeployNewSheetOpen(false);
-      fetchProjects(clusterData);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: getErrorMessage(error),
-        variant: "destructive"
-      })
-    } finally {
-      setIsSubmitting(false);
-      setIsConfirmOpen(false);
-    }
-  };
 
   const projectUserNewClick = () => {
     if (isSubmitting) return;
@@ -612,53 +550,7 @@ export default function ProjectsPage() {
     setIsProjectEditSheetOpen(true);
   };
 
-  const projectEditClick = () => {
-    if (isSubmitting) return;
 
-    setFormErrorsProject(null);
-
-    const validationResult = formSchemaProject.safeParse(editProject);
-
-    if (!validationResult.success) {
-      const errors = validationResult.error.errors.reduce((acc, error) => {
-        const field = error.path[0] as string;
-        // 필수 입력 필드 검증
-        if (field === 'clusterProjectName' || field === 'clusterId') {
-          acc[field] = error.message;
-        }
-        return acc;
-      }, {} as { [key: string]: string });
-      setFormErrorsProject(errors);
-      return;
-    }
-    setConfirmAction(() => projectEditSubmit);
-    setConfirmDescription("수정하시겠습니까?");
-    setIsConfirmOpen(true);
-  };
-
-  const projectEditSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    try {
-      await updateProject(editProject);
-      toast({
-        title: "Success",
-        description: "카탈로그 유형이 성공적으로 수정되었습니다.",
-      })
-      setIsProjectEditSheetOpen(false);
-      fetchProjects(clusterData);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: getErrorMessage(error),
-        variant: "destructive"
-      })
-    } finally {
-      setIsSubmitting(false);
-      setIsConfirmOpen(false);
-    }
-  };
 
   const projectDeleteClick = (row: Project) => {
     if (isSubmitting) return;
@@ -736,6 +628,7 @@ export default function ProjectsPage() {
 
     setFormErrorsCatalog(null);
 
+    console.log(newCatalogDeploy)
     const validationResult = formSchemaCatalog.safeParse(newCatalogDeploy);
 
     if (!validationResult.success) {
@@ -772,6 +665,8 @@ export default function ProjectsPage() {
         valuesYaml: newCatalogDeploy.valuesYaml,
         catalogDeployId: newCatalogDeploy.catalogDeployId,
       };
+
+      console.log(catalogDeploy.catalogDeployId)
 
       if (catalogDeploy.catalogDeployId == '0') {
         await insertClusterCatalog(catalogDeploy);
@@ -848,17 +743,18 @@ export default function ProjectsPage() {
   };
 
   const catalogDeployNewSheetClick = (row: CatalogDeploy) => {
+    console.log('>>>>>>>>>>>', row)
     setNewCatalogDeploy({
       clusterId: row.clusterId,
-      catalogTypeId: row.uid,
+      catalogTypeId: String(row.catalogTypeId),
       catalogType: row.catalogType,
       name: '',
       valuesYaml: row.valuesYaml,
       clusterProjectName: selectedProject?.clusterName,
       projectId: selectedProject?.uid,
-      catalogDeployId: row.catalogDeployId,
+      catalogDeployId: String(row.uid),
       catalogVersion: row.catalogVersion,
-      catalogVersionId: row.catalogVersionId,
+      catalogVersionId: String(row.catalogVersionId),
     });
     //fetchCatalogVersions(row.uid ?? '')
     setCatalogVersionData([]);
