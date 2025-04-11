@@ -295,6 +295,10 @@ export async function deleteLicense(data: License) {
 
 // --------------------------------------------------------------------------------
 
+export async function getProjectClusterCatalogDeploy(selectedCluster: string, selectedProject: string, selectedCatalogType: string): Promise<CatalogDeploy[]> {
+  return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?cluster=${selectedCluster}&project=${selectedProject}&catalogtype=${selectedCatalogType}` });
+}
+
 export async function getProjectCatalogDeploy(selectedProject: string, selectedCatalogType: string): Promise<CatalogDeploy[]> {
   return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?project=${selectedProject}&catalogtype=${selectedCatalogType}` });
 }

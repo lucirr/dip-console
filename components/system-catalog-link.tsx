@@ -63,7 +63,7 @@ export default function SystemCatalogLinkPage({
   description = "시스템 카탈로그를 생성하고 관리할 수 있습니다.",
   containerClassName = "flex-1 space-y-4 py-4",
   headerClassName = "bg-white border-b shadow-sm -mx-4",
-  contentClassName = "flex items-center justify-between px-6 py-4"
+  contentClassName = "flex items-center justify-between px-6 py-4 pt-0"
 }: SystemCatalogLinkPageProps = {}) {
   const { toast } = useToast()
   const [systemLinkData, setSystemLinkData] = useState<SystemLink[]>([]);

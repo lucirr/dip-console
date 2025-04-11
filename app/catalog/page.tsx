@@ -14,7 +14,6 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
 import { getProjectCatalogDeploy, getProjects, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
-import SystemCatalogLinkPage from '@/components/system-catalog-link';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';

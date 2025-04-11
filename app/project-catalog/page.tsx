@@ -26,7 +26,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { CatalogDeploy } from "@/types/catalogdeploy"
-import { getProjectCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy, getClusters, getCatalogType, getProjects } from "@/lib/actions"
+import { getProjectClusterCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy, getClusters, getCatalogType, getProjects } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -167,7 +167,7 @@ export default function ProjectCatalogPage() {
   const fetchCatalogDeploy = async () => {
     setIsLoading(true);
     try {
-      const response = await getProjectCatalogDeploy(selectedCluster, selectedProject, selectedCatalogType)
+      const response = await getProjectClusterCatalogDeploy(selectedCluster, selectedProject, selectedCatalogType)
       setCatalogDeployData(response);
     } catch (error) {
       setCatalogDeployData([]);
@@ -374,7 +374,7 @@ export default function ProjectCatalogPage() {
   return (
     <div className="flex-1 space-y-4 py-4">
       <div className="bg-white border-b shadow-sm -mx-4">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-6 py-4 pt-0">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">프로젝트 카탈로그</h2>
             <p className="mt-1 text-sm text-gray-500">프로젝트에 배포한 카탈로그를 관리할 수 있습니다.</p>

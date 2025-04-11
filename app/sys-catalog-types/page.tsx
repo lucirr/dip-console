@@ -649,7 +649,7 @@ export default function SysCatalogTypesPage() {
   return (
     <div className="flex-1 space-y-4 py-4">
       <div className="bg-white border-b shadow-sm -mx-4">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-6 py-4 pt-0">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">카탈로그 유형</h2>
             <p className="mt-1 text-sm text-gray-500">카탈로그 유형을 생성하고 관리할 수 있습니다.</p>
