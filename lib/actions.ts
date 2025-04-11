@@ -307,6 +307,10 @@ export async function getClusterCatalogDeploy(selectedCluster: string, selectedC
   return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/cluster?cluster=${selectedCluster}&catalogtype=${selectedCatalogType}` });
 }
 
+export async function getClusterCatalogDeployAll(selectedCluster: string, selectedProject: string): Promise<CatalogDeploy[]> {
+  return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/cluster?cluster=${selectedCluster}&project=${selectedProject}` });
+}
+
 export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
   return fetchApi<CatalogDeploy>({
     endpoint: `${apiAuth}/tenant/${data.clusterId}/${data.uid}`,
@@ -408,6 +412,14 @@ export async function deleteUser(data: User) {
 export async function insertClusterCatalog(data: CatalogDeploy) {
   return fetchApi<User>({
     endpoint: `${apiAuth}/catalog/${data.clusterId}`,
+    method: 'POST',
+    body: data
+  });
+}
+
+export async function insertTenantCatalog(data: CatalogDeploy) {
+  return fetchApi<User>({
+    endpoint: `${apiAuth}/tenant/${data.clusterId}`,
     method: 'POST',
     body: data
   });

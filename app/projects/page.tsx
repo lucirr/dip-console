@@ -38,9 +38,10 @@ import {
   getUsers,
   getRoles,
   getCatalogType,
-  getProjectCatalogDeploy,
+  getClusterCatalogDeployAll,
   getCatalogVersion,
   insertClusterCatalog,
+  insertTenantCatalog,
   getCommonCodeByGroupCode
 } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
@@ -159,12 +160,12 @@ export default function ProjectsPage() {
     roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
   });
 
-   const formSchemaCatalog = z.object({
-      catalogTypeId: z.string().min(1, { message: "카탈로그 유형은 필수 입력 항목입니다." }),
-      catalogVersionId: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
-      projectId: z.string().min(1, { message: "프로젝트는 필수 입력 항목입니다." }),
-      name: z.string().min(1, { message: "이름은 필수 입력 항목입니다." }),
-    });
+  const formSchemaCatalog = z.object({
+    catalogTypeId: z.string().min(1, { message: "카탈로그 유형은 필수 입력 항목입니다." }),
+    catalogVersionId: z.string().min(1, { message: "카탈로그 버전은 필수 입력 항목입니다." }),
+    projectId: z.string().min(1, { message: "프로젝트는 필수 입력 항목입니다." }),
+    name: z.string().min(1, { message: "이름은 필수 입력 항목입니다." }),
+  });
 
   const paginatedData = projectData?.slice((pageProject - 1) * pageSize, pageProject * pageSize) || [];
   const totalPages = Math.ceil((projectData?.length || 0) / pageSize);
@@ -407,12 +408,17 @@ export default function ProjectsPage() {
     }
   };
 
-  const fetchCatalogDeploy = async () => {
+  const fetchCatalogDeploy = async (project: Project) => {
     setIsLoading(true);
     try {
-      if (selectedProject?.uid) {
-        const response = await getProjectCatalogDeploy(selectedProject?.uid, "");
-        setCatalogDeployData(response);
+      if (project?.uid) {
+        const response = await getClusterCatalogDeployAll(project.clusterId, project?.uid);
+
+        const filteredData = response.filter(item =>
+          item.isAdminDeploy && item.isTenant
+        );
+
+        setCatalogDeployData(filteredData);
       }
     } catch (error) {
       setCatalogDeployData([]);
@@ -432,7 +438,7 @@ export default function ProjectsPage() {
 
     fetchProjectData();
     fetchCatalogType();
-    fetchCatalogDeploy();
+    //fetchCatalogDeploy();
   }, []);
 
 
@@ -468,6 +474,9 @@ export default function ProjectsPage() {
 
   const handleRefreshCatalogDeploy = () => {
     fetchCatalogType();
+    if (selectedProject) {
+      fetchCatalogDeploy(selectedProject);
+    }
   };
 
   const projectNewClick = () => {
@@ -761,10 +770,14 @@ export default function ProjectsPage() {
         catalogVersionId: newCatalogDeploy.catalogVersionId,
         name: newCatalogDeploy.catalogType,
         valuesYaml: newCatalogDeploy.valuesYaml,
-        catalogDeployId: "0",
+        catalogDeployId: newCatalogDeploy.catalogDeployId,
       };
 
-      await insertClusterCatalog(catalogDeploy);
+      if (catalogDeploy.catalogDeployId == '0') {
+        await insertClusterCatalog(catalogDeploy);
+      } else {
+        await insertTenantCatalog(catalogDeploy);
+      }
       toast({
         title: "Success",
         description: "카탈로그가 성공적으로 생성되었습니다.",
@@ -779,7 +792,7 @@ export default function ProjectsPage() {
         valuesYaml: '',
       });
       setIsCatalogNewSheetOpen(false);
-      fetchCatalogDeploy();
+      setCatalogDeployData([]);
     } catch (error) {
       toast({
         title: "Error",
@@ -817,6 +830,7 @@ export default function ProjectsPage() {
   const catalogDeploySheetClick = (row: Project) => {
     setSelectedProject(row);
     setIsCatalogDeployNewSheetOpen(true);
+    fetchCatalogDeploy(row);
   };
 
   const catalogNewSheetClick = (row: CatalogType) => {
@@ -827,9 +841,27 @@ export default function ProjectsPage() {
       valuesYaml: row.valuesYaml,
       clusterProjectName: selectedProject?.clusterName,
       projectId: selectedProject?.uid,
-
+      catalogDeployId: '0',
     });
     fetchCatalogVersions(row.uid ?? '')
+    setIsCatalogNewSheetOpen(true);
+  };
+
+  const catalogDeployNewSheetClick = (row: CatalogDeploy) => {
+    setNewCatalogDeploy({
+      clusterId: row.clusterId,
+      catalogTypeId: row.uid,
+      catalogType: row.catalogType,
+      name: '',
+      valuesYaml: row.valuesYaml,
+      clusterProjectName: selectedProject?.clusterName,
+      projectId: selectedProject?.uid,
+      catalogDeployId: row.catalogDeployId,
+      catalogVersion: row.catalogVersion,
+      catalogVersionId: row.catalogVersionId,
+    });
+    //fetchCatalogVersions(row.uid ?? '')
+    setCatalogVersionData([]);
     setIsCatalogNewSheetOpen(true);
   };
 
@@ -893,6 +925,40 @@ export default function ProjectsPage() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                    {catalogDeployData.map((item, index) => (
+                      <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
+                        <div className="relative h-48 w-full flex items-center justify-center bg-border">
+                          <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
+                            {extractImageUrl(item.catalogImage) && !(item.uid && imageErrors[item.uid]) ? (
+                              <Image
+                                src={extractImageUrl(item.catalogImage)}
+                                alt={item.catalogType}
+                                className="object-contain"
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                onError={() => handleImageError(item.uid)}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                <Server className="h-12 w-12" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <CardHeader className="p-4">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-xl">{item.catalogType}</CardTitle>
+                          </div>
+                          <CardDescription>{item.catalogDesc}</CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex justify-end gap-2 p-4">
+                          <Button variant="outline" size="sm" onClick={() => catalogDeployNewSheetClick(item)}>
+                            <LinkIcon className="h-4 w-4 mr-2" />
+                            생성
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
                     {catalogTypeOptions.map((item, index) => (
                       <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="relative h-48 w-full flex items-center justify-center bg-gray-100">
@@ -958,30 +1024,37 @@ export default function ProjectsPage() {
                     <Label htmlFor="catalog-service-type" className="flex items-center">
                       카탈로그 버전 <span className="text-red-500 ml-1">*</span>
                     </Label>
-                    <Select
-                      value={newCatalogDeploy.catalogVersionId}
-                      onValueChange={(value) => {
-                        setNewCatalogDeploy({ ...newCatalogDeploy, catalogVersionId: value });
-                        setFormErrorsCatalog(prevErrors => ({
-                          ...prevErrors,
-                          catalogVersionId: undefined,
-                        }));
-                      }}
-                    >
-                      <SelectTrigger
-                        id="catalog-service-type"
-                        className={formErrorsCatalog?.catalogVersionId ? "border-red-500" : ""}
+                    {newCatalogDeploy.catalogDeployId != '0' && (
+                      <div className="p-2 bg-muted rounded-md">
+                        <span className="text-sm">{newCatalogDeploy.catalogVersion}</span>
+                      </div>
+                    )}
+                    {newCatalogDeploy.catalogDeployId == '0' && (
+                      <Select
+                        value={newCatalogDeploy.catalogVersionId}
+                        onValueChange={(value) => {
+                          setNewCatalogDeploy({ ...newCatalogDeploy, catalogVersionId: value });
+                          setFormErrorsCatalog(prevErrors => ({
+                            ...prevErrors,
+                            catalogVersionId: undefined,
+                          }));
+                        }}
                       >
-                        <SelectValue placeholder="버전 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {catalogVersionData.map((item) => (
-                          <SelectItem key={item.uid || ''} value={item.uid || ''}>
-                            {item.catalogVersion}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        <SelectTrigger
+                          id="catalog-service-type"
+                          className={formErrorsCatalog?.catalogVersionId ? "border-red-500" : ""}
+                        >
+                          <SelectValue placeholder="버전 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {catalogVersionData.map((item) => (
+                            <SelectItem key={item.uid || ''} value={item.uid || ''}>
+                              {item.catalogVersion}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     {formErrorsCatalog?.catalogVersionId && <p className="text-red-500 text-sm">{formErrorsCatalog.catalogVersionId}</p>}
                   </div>
                   <div className="space-y-2">
