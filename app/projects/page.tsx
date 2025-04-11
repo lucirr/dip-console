@@ -46,7 +46,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ko, se } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 import { Cluster } from '@/types/cluster';
@@ -824,6 +824,9 @@ export default function ProjectsPage() {
       catalogType: row.catalogType,
       name: '',
       valuesYaml: row.valuesYaml,
+      clusterProjectName: selectedProject?.clusterName,
+      projectId: selectedProject?.uid,
+
     });
     fetchCatalogVersions(row.uid ?? '')
     setIsCatalogNewSheetOpen(true);
