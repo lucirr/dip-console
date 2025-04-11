@@ -761,6 +761,7 @@ export default function ProjectsPage() {
         catalogVersionId: newCatalogDeploy.catalogVersionId,
         name: newCatalogDeploy.catalogType,
         valuesYaml: newCatalogDeploy.valuesYaml,
+        catalogDeployId: "0",
       };
 
       await insertClusterCatalog(catalogDeploy);
