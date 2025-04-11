@@ -1,12 +1,15 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+'use client';
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
+import { getKeycloak } from "@/lib/auth";
 
 export function LoginForm({
   className,
@@ -22,11 +25,14 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            getKeycloak()?.login();
+          }}>
             <div className="grid gap-6">
               <div className="grid gap-6">
-                <Button type="submit"  className="w-full">
-                  Login
+                <Button type="submit" className="w-full">
+                  Login with Keycloak
                 </Button>
               </div>
               <div className="text-center text-sm">

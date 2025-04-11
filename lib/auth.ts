@@ -14,7 +14,7 @@ export const getKeycloak = () => {
     keycloakInstance = new Keycloak({
       url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'https://keycloak.inopt.paasup.io/auth',
       realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM || 'paasup',
-      clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'dip-console',
+      clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'dip-portal',
     });
   }
 
@@ -24,25 +24,17 @@ export const getKeycloak = () => {
 export const initKeycloak = async () => {
   const keycloak = getKeycloak();
   if (!keycloak) return false;
-
+  console.log('11111111111111111')
   try {
-    // Check if Keycloak is already initialized to prevent multiple initializations
-    if (keycloak.authenticated !== undefined) {
-      console.log('Keycloak already initialized, returning current authentication state');
-      return keycloak.authenticated;
-    }
-
     const authenticated = await keycloak.init({
-      onLoad: 'check-sso',  // Changed from 'login-required' to 'check-sso'
-      checkLoginIframe: false,
+      onLoad: 'check-sso',
+      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+      // onLoad: 'login-required',
+      // checkLoginIframe: false,
       pkceMethod: 'S256',
-      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
     });
 
-    // Store token in cookie for middleware authentication
-    if (authenticated && keycloak.token) {
-      document.cookie = `keycloak-token=${keycloak.token}; path=/; max-age=${keycloak.tokenParsed?.exp - Math.floor(Date.now() / 1000)}`;
-    } else if (!authenticated) {
+    if (!authenticated) {
       await keycloak.login();
     }
 

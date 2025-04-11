@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     };
-
+console.log('00000000000000000')
     initialize();
 
     return () => {
