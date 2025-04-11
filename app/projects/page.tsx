@@ -176,6 +176,10 @@ export default function ProjectsPage() {
               <Code className="h-4 w-4 mr-2" />
               사용자
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => projectUserSheetClick(row)}>
+              <Code className="h-4 w-4 mr-2" />
+              카탈로그 생성
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => projectDeleteClick(row)}>
               <Code className="h-4 w-4 mr-2" />
               삭제
