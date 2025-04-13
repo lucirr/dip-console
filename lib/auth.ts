@@ -24,7 +24,7 @@ export const getKeycloak = () => {
 export const initKeycloak = async () => {
   const keycloak = getKeycloak();
   if (!keycloak) return false;
-  console.log('11111111111111111')
+
   try {
     const authenticated = await keycloak.init({
       onLoad: 'check-sso',
