@@ -4,6 +4,7 @@ import Keycloak from 'keycloak-js';
 import { jwtVerify } from 'jose';
 
 let keycloakInstance: Keycloak | null = null;
+let isInitialized = false;
 
 export const getKeycloak = () => {
   if (typeof window === 'undefined') {
@@ -23,7 +24,8 @@ export const getKeycloak = () => {
 
 export const initKeycloak = async () => {
   const keycloak = getKeycloak();
-  if (!keycloak) return false;
+//   if (!keycloak) return false;
+if (!keycloak || isInitialized) return false;
 
   try {
     const authenticated = await keycloak.init({
@@ -37,6 +39,8 @@ export const initKeycloak = async () => {
     if (!authenticated) {
       await keycloak.login();
     }
+
+    isInitialized = true;
 
     return authenticated;
   } catch (error) {

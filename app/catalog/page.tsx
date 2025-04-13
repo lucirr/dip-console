@@ -33,8 +33,8 @@ import { Project } from '@/types/project';
 
 
 export default function CatalogPage() {
-  const { toast } = useToast()
   const router = useRouter();
+  const { toast } = useToast()
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
