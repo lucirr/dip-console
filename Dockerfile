@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:23-slime AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY .env.production .env
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS runner
+FROM node:23-slim AS runner
 
 WORKDIR /app
 
