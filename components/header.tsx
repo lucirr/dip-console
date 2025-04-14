@@ -40,12 +40,16 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { getRuntimeConfig } from '../utils/runtime-config';
 
 export function Header() {
   const { activeMenu, setActiveMenu, setActiveSubMenu } = useSidebarStore();
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
+  const config = getRuntimeConfig();
+  console.log(config.NEXT_PUBLIC_KEYCLOAK_ISSUER)
+  const keycloakIssuer = config.NEXT_PUBLIC_KEYCLOAK_ISSUER
 
   useEffect(() => {
     const systemPaths = [
@@ -94,11 +98,11 @@ export function Header() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    //window.location.href = process.env.NEXT_PUBLIC_KEYCLOAK_URL + "/realms/" + process.env.NEXT_PUBLIC_KEYCLOAK_REALM +'/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
+    window.location.href = keycloakIssuer + '/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
 
-    const response = await fetch('/api/auth/logout');
-    const data = await response.json();
-    window.location.href = data.url + window.location.origin;
+    // const response = await fetch('/api/auth/logout');
+    // const data = await response.json();
+    // window.location.href = data.url + window.location.origin;
 
   };
 

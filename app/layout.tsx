@@ -22,6 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head><script src="/runtime-env.js" /></head>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
