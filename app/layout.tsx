@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth-provider';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { Toaster } from '@/components/ui/toaster';
+import { ClientLayoutWrapper } from '@/components/client-layout-wrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,19 +30,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="flex h-screen overflow-hidden">
-              <div className="flex flex-col flex-1">
-                <Header />
-                <div className="flex flex-1 overflow-hidden pt-12">
-                  <Sidebar />
-                  <main className="flex-1 overflow-y-auto bg-background">
-                    <div className="container mx-auto max-w-7xl px-4">
-                      {children}
-                    </div>
-                  </main>
-                </div>
-              </div>
-            </div>
+            <ClientLayoutWrapper>
+              {children}
+            </ClientLayoutWrapper>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>
@@ -49,3 +40,20 @@ export default function RootLayout({
     </html>
   );
 }
+
+
+// <AuthProvider>
+//   <div className="flex h-screen overflow-hidden">
+//     <div className="flex flex-col flex-1">
+//       <Header />
+//       <div className="flex flex-1 overflow-hidden pt-12">
+//         <Sidebar />
+//         <main className="flex-1 overflow-y-auto bg-background">
+//           <div className="container mx-auto max-w-7xl px-4">
+//             {children}
+//           </div>
+//         </main>
+//       </div>
+//     </div>
+//   </div>
+// </AuthProvider>

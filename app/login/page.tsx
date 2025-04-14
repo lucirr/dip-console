@@ -19,12 +19,12 @@ export default function LoginPage() {
   }, [status, router]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-muted backdrop-blur-sm flex-col gap-6">
       <Card className="w-full max-w-md p-8">
         <div className="flex flex-col items-center space-y-6">
-          <div className="bg-primary rounded-full p-3">
+          {/* <div className="bg-primary rounded-full p-3">
             <KeyRound className="w-6 h-6 text-primary-foreground" />
-          </div>
+          </div> */}
           <h1 className="text-2xl font-bold text-center">DIP</h1>
           <p className="text-muted-foreground text-center">
             Please sign in to access DIP
@@ -37,13 +37,19 @@ export default function LoginPage() {
             Sign in
           </Button>
         </div>
-        <div className="mt-4 text-center text-sm">
-              By{" "}
-              <a href="https://www.paasup.io" target="_blank" className="underline underline-offset-4">
-                PAASUP
-              </a>
-            </div>
+        {/* <div className="mt-4 text-center text-sm">
+          By{" "}
+          <a href="https://www.paasup.io" target="_blank" className="underline underline-offset-4">
+            PAASUP
+          </a>
+        </div> */}
       </Card>
+      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary  ">
+        By{" "}
+        <a href="https://www.paasup.io" target="_blank" className="underline underline-offset-4">
+          PAASUP
+        </a>.
+      </div>
     </div>
   );
 }

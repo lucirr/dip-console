@@ -5,6 +5,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
+  experimental: {
+    serverActions: true,
+  },
   async rewrites() {
     if (process.env.NODE_ENV === "production") {
       return [
