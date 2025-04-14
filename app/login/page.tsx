@@ -25,9 +25,9 @@ export default function LoginPage() {
           <div className="bg-primary rounded-full p-3">
             <KeyRound className="w-6 h-6 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-center">Welcome Back</h1>
+          <h1 className="text-2xl font-bold text-center">DIP</h1>
           <p className="text-muted-foreground text-center">
-            Please sign in to access the catalog
+            Please sign in to access DIP
           </p>
           <Button
             className="w-full"

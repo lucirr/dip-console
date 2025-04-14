@@ -73,7 +73,7 @@ export function Sidebar() {
   const { data: session } = useSession();
 
   return (
-    <div>
+    <>
       {session?.user && (
         <div className="hidden md:flex w-56 flex-shrink-0 bg-white border-r overflow-y-auto">
           <nav className="flex-1 space-y-1 p-4">
@@ -131,6 +131,6 @@ export function Sidebar() {
           </nav>
         </div>
       )}
-    </div>
+    </>
   );
 }
