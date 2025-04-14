@@ -11,7 +11,7 @@ const handler = NextAuth({
         KeycloakProvider({
             clientId: process.env.KEYCLOAK_CLIENT_ID ?? "",
             clientSecret: process.env.KEYCLOAK_CLIENT_SECRET ?? "",
-            issuer: process.env.KEYCLOAK_URL + "/realms/" + process.env.KEYCLOAK_REALM,
+            issuer: process.env.NEXT_PUBLIC_KEYCLOAK_URL + "/realms/" + process.env.NEXT_PUBLIC_KEYCLOAK_REALM,
             httpOptions: { agent: httpsAgent }
         }),
     ],

@@ -25,9 +25,6 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
 
     if (!isLayoutReady) {
         return (
-            //   <div className="fixed inset-0 flex items-center justify-center bg-background">
-            //     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            //   </div>
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent border-gray-800" />
             </div>

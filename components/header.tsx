@@ -94,7 +94,7 @@ export function Header() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    window.location.href = process.env.KEYCLOAK_URL + "/realms/" + process.env.KEYCLOAK_REALM +'/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
+    window.location.href = process.env.NEXT_PUBLIC_KEYCLOAK_URL + "/realms/" + process.env.NEXT_PUBLIC_KEYCLOAK_REALM +'/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
     // router.replace('/login');
   };
 
