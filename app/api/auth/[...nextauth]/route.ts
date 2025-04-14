@@ -7,9 +7,9 @@ const httpsAgent = new https.Agent({
 });
 
 
-if (!process.env.KEYCLOAK_CLIENT_ID || !process.env.KEYCLOAK_CLIENT_SECRET || !process.env.KEYCLOAK_ISSUER) {
-    throw new Error('Missing required Keycloak environment variables');
-}
+// if (!process.env.KEYCLOAK_CLIENT_ID || !process.env.KEYCLOAK_CLIENT_SECRET || !process.env.KEYCLOAK_ISSUER) {
+//     throw new Error('Missing required Keycloak environment variables');
+// }
 
 const handler = NextAuth({
     providers: [
