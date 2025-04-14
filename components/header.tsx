@@ -40,29 +40,29 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-// import { getRuntimeConfig } from '../utils/runtime-config';
+import { getRuntimeConfig } from '../utils/runtime-config';
 
-interface AuthConfig {
-  keycloakClientId?: string;
-  keycloakClientSecret?: string;
-  keycloakIssuer?: string;
-}
+// interface AuthConfig {
+//   keycloakClientId?: string;
+//   keycloakClientSecret?: string;
+//   keycloakIssuer?: string;
+// }
 
 export function Header() {
   const { activeMenu, setActiveMenu, setActiveSubMenu } = useSidebarStore();
   const router = useRouter();
   const pathname = usePathname();
   const { data: session } = useSession();
-  // const config = getRuntimeConfig();
+  const config = getRuntimeConfig();
   // console.log(config.KEYCLOAK_ISSUER)
   // const keycloakIssuer = config.KEYCLOAK_ISSUER
-  const [config, setConfig] = useState<AuthConfig>({});
+  // const [config, setConfig] = useState<AuthConfig>({});
 
-  useEffect(() => {
-    fetch('/api/config')
-      .then(res => res.json())
-      .then(data => setConfig(data));
-  }, []);
+  // useEffect(() => {
+  //   fetch('/api/config')
+  //     .then(res => res.json())
+  //     .then(data => setConfig(data));
+  // }, []);
 
   useEffect(() => {
     const systemPaths = [
@@ -111,7 +111,7 @@ export function Header() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    window.location.href = config.keycloakIssuer + '/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
+    window.location.href = config.KEYCLOAK_ISSUER + '/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
 
     // const response = await fetch('/api/auth/logout');
     // const data = await response.json();

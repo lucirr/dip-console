@@ -9,9 +9,6 @@ const nextConfig = {
   experimental: {
     serverActions: true,
   },
-  serverRuntimeConfig: {
-    keycloakIssuer: process.env.KEYCLOAK_ISSUER,
-  },
   async rewrites() {
     if (process.env.NODE_ENV === "production") {
       return [
