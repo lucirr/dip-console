@@ -6,12 +6,20 @@ const httpsAgent = new https.Agent({
     rejectUnauthorized: false
 });
 
+if (!process.env.NEXTAUTH_URL) {
+  throw new Error('NEXTAUTH_URL environment variable is not set');
+}
+
+if (!process.env.KEYCLOAK_CLIENT_ID || !process.env.KEYCLOAK_CLIENT_SECRET || !process.env.KEYCLOAK_ISSUER) {
+  throw new Error('Missing required Keycloak environment variables');
+}
+
 const handler = NextAuth({
     providers: [
         KeycloakProvider({
-            clientId: process.env.KEYCLOAK_CLIENT_ID ?? "",
-            clientSecret: process.env.KEYCLOAK_CLIENT_SECRET ?? "",
-            issuer: process.env.NEXT_PUBLIC_KEYCLOAK_URL + "/realms/" + process.env.NEXT_PUBLIC_KEYCLOAK_REALM,
+            clientId: process.env.KEYCLOAK_CLIENT_ID,
+            clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+            issuer: process.env.KEYCLOAK_ISSUER,
             httpOptions: { agent: httpsAgent }
         }),
     ],

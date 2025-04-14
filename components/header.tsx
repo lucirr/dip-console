@@ -94,8 +94,12 @@ export function Header() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    window.location.href = process.env.NEXT_PUBLIC_KEYCLOAK_URL + "/realms/" + process.env.NEXT_PUBLIC_KEYCLOAK_REALM +'/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
-    // router.replace('/login');
+    //window.location.href = process.env.NEXT_PUBLIC_KEYCLOAK_URL + "/realms/" + process.env.NEXT_PUBLIC_KEYCLOAK_REALM +'/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
+
+    const response = await fetch('/api/auth/logout');
+    const data = await response.json();
+    window.location.href = data.url;
+
   };
 
   const isMenuActive = (menu: string) => activeMenu === menu;
