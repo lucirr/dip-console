@@ -54,7 +54,7 @@ export function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const config = getRuntimeConfig();
-  // console.log(config.KEYCLOAK_ISSUER)
+  console.log(config.KEYCLOAK_ISSUER)
   // const keycloakIssuer = config.KEYCLOAK_ISSUER
   // const [config, setConfig] = useState<AuthConfig>({});
 

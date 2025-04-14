@@ -1,4 +1,5 @@
 export const getRuntimeConfig = () => {
+console.log(typeof windo)
   if (typeof window !== 'undefined') {
     return window.__RUNTIME_CONFIG__ || {};
   }
