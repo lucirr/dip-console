@@ -1,11 +1,13 @@
-export const runtime = "nodejs";
+import getConfig from 'next/config';
+const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 
 export async function GET() {
+
   return Response.json(
     {
       keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,
       keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-      keycloakIssuer: process.env.KEYCLOAK_ISSUER
+      keycloakIssuer: serverRuntimeConfig.keycloakIssuer || process.env.KEYCLOAK_ISSUER
     }
   );
 }
