@@ -4,6 +4,6 @@ export const getRuntimeConfig = () => {
   }
   
   return {
-    KEYCLOAK_ISSUER: process.env.NEXT_PUBLIC_KEYCLOAK_ISSUER,
+    KEYCLOAK_ISSUER: process.env.KEYCLOAK_ISSUER,
   };
 };

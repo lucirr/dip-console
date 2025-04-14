@@ -48,8 +48,8 @@ export function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const config = getRuntimeConfig();
-  console.log(config.NEXT_PUBLIC_KEYCLOAK_ISSUER)
-  const keycloakIssuer = config.NEXT_PUBLIC_KEYCLOAK_ISSUER
+  console.log(config.KEYCLOAK_ISSUER)
+  const keycloakIssuer = config.KEYCLOAK_ISSUER
 
   useEffect(() => {
     const systemPaths = [

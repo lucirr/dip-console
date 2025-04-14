@@ -28,7 +28,6 @@ ENV NODE_ENV=production
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY public/runtime-env.js ./public/runtime-env.js
 
 # Expose port
 EXPOSE 3000
