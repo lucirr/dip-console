@@ -19,7 +19,7 @@ export default function LoginPage() {
   }, [status, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-sm">
       <Card className="w-full max-w-md p-8">
         <div className="flex flex-col items-center space-y-6">
           <div className="bg-primary rounded-full p-3">
@@ -32,11 +32,17 @@ export default function LoginPage() {
           <Button
             className="w-full"
             size="lg"
-            onClick={() => signIn('keycloak')}
+            onClick={() => signIn('keycloak', { callbackUrl: "/catalog" })}
           >
-            Sign in with Keycloak
+            Sign in
           </Button>
         </div>
+        <div className="mt-4 text-center text-sm">
+              By{" "}
+              <a href="https://www.paasup.io" target="_blank" className="underline underline-offset-4">
+                PAASUP
+              </a>
+            </div>
       </Card>
     </div>
   );

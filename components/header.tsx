@@ -94,7 +94,8 @@ export function Header() {
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    router.replace('/login');
+    window.location.href = 'https://keycloak.inopt.paasup.io/auth/realms/paasup/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
+    // router.replace('/login');
   };
 
   const isMenuActive = (menu: string) => activeMenu === menu;
@@ -263,7 +264,7 @@ export function Header() {
                       </NavigationMenuLink>
                       <NavigationMenuLink asChild>
                         <Link
-                          href="/argocd"
+                          href="/argocd/cluster-registration"
                           className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
                         >
                           <GitBranch className="h-4 w-4" />
