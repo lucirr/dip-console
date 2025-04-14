@@ -98,7 +98,7 @@ export function Header() {
 
     const response = await fetch('/api/auth/logout');
     const data = await response.json();
-    window.location.href = data.url;
+    window.location.href = data.url + window.location.origin;
 
   };
 
