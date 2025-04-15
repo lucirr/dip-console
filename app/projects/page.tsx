@@ -743,7 +743,6 @@ export default function ProjectsPage() {
   };
 
   const catalogDeployNewSheetClick = (row: CatalogDeploy) => {
-    console.log('>>>>>>>>>>>', row)
     setNewCatalogDeploy({
       clusterId: row.clusterId,
       catalogTypeId: String(row.catalogTypeId),
