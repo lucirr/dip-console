@@ -31,11 +31,12 @@ const handler = NextAuth({
             if (account?.access_token) {
                 token.accessToken = account.access_token;
                 const username = (profile as KeycloakProfile).preferred_username;
-                console.log(username)
+                
                 if (username) {
-                    const roles = await getLoginUserRoles(username);
-                    if (roles && roles.roleName) {
-                        token.roles = [roles.roleName];
+                    const user = await getLoginUserRoles(username);
+                    if (user && user.roleName) {
+                        token.roles = [user.roleName];
+                        token.uid = user.uid;
                     }
                 }
             }
@@ -47,6 +48,9 @@ const handler = NextAuth({
             }
             if ('roles' in token) {
                 session.roles = token.roles;
+            }
+            if ('uid' in token) {
+                session.uid = token.uid;
             }
             return session;
         },
