@@ -32,7 +32,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
-import { getErrorMessage } from '@/lib/utils';
+import { getErrorMessage, codeMirrorStyles } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/badgestatus';
 import { Cluster } from '@/types/cluster';
 import { Project } from '@/types/project';
@@ -484,6 +484,7 @@ export default function ProjectCatalogPage() {
                               }));
                             }}
                           className="text-sm"
+                          style={codeMirrorStyles}
                         />
                       </div>
                       {formErrorsCatalogDeploy?.valuesYaml && <p className="text-red-500 text-sm">{formErrorsCatalogDeploy.valuesYaml}</p>}

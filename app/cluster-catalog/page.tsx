@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
-import { getErrorMessage } from '@/lib/utils';
+import { getErrorMessage, codeMirrorStyles } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CatalogType, CatalogVersion } from '@/types/catalogtype';
 import { Cluster } from '@/types/cluster';
@@ -89,6 +89,7 @@ export default function ClusterCatalogPage() {
   const [clusterOptions, setClusterOptions] = useState<Cluster[]>([]);
   const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
   const [catalogTypeCreate, setCatalogTypeCreate] = useState<CatalogType[]>([]);
+
 
 
   const fetchCatalogDeploy = async () => {
@@ -544,6 +545,7 @@ export default function ClusterCatalogPage() {
                               }));
                             }}
                           className="text-sm"
+                          style={codeMirrorStyles}
                         />
                       </div>
                       {formErrorsCatalogDeploy?.valuesYaml && <p className="text-red-500 text-sm">{formErrorsCatalogDeploy.valuesYaml}</p>}

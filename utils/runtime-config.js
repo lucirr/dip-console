@@ -1,5 +1,4 @@
 export const getRuntimeConfig = () => {
-console.log(typeof window)
   if (typeof window !== 'undefined') {
     return window.__ENV__ || {};
   }
