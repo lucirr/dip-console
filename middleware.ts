@@ -48,14 +48,14 @@ export default withAuth(
     
     // If no exact match, check if the path starts with any protected route
     // This handles nested routes that should inherit parent permissions
-    if (!requiredRoles) {
-      const matchingRoute = Object.keys(protectedRoutes).find(route =>
-        path.startsWith(route + '/'));
+    // if (!requiredRoles) {
+    //   const matchingRoute = Object.keys(protectedRoutes).find(route =>
+    //     path.startsWith(route + '/'));
       
-      if (matchingRoute) {
-        requiredRoles = protectedRoutes[matchingRoute];
-      }
-    }
+    //   if (matchingRoute) {
+    //     requiredRoles = protectedRoutes[matchingRoute];
+    //   }
+    // }
 
     if (requiredRoles) {
       const userRoles = token?.roles as string[] || [];
@@ -63,7 +63,7 @@ export default withAuth(
 
       if (!hasRequiredRole) {
         // Redirect to catalog if user doesn't have required role
-        return NextResponse.redirect(new URL('/catalog', req.url));
+        return NextResponse.redirect(new URL('/login', req.url));
       }
     }
 
