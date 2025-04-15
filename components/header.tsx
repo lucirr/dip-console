@@ -63,7 +63,7 @@ export function Header() {
   // const keycloakIssuer = config.KEYCLOAK_ISSUER
   // const [config, setConfig] = useState<AuthConfig>({});
 
-  console.log('User roles:', session?.roles);
+
 
   // useEffect(() => {
   //   fetch('/api/config')

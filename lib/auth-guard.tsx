@@ -49,3 +49,21 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
 
   return <>{children}</>;
 }
+
+
+
+// 'use client';
+
+// import { RouteGuard } from '@/lib/auth-guard';
+
+// export default function ClusterLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   return (
+//     <RouteGuard allowedRoles={['admin']}>
+//       {children}
+//     </RouteGuard>
+//   );
+// }
