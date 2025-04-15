@@ -14,9 +14,7 @@ export function Sidebar() {
   const { data: session } = useSession();
 
   const userRoles = session?.roles || [];
-  const isRoot = userRoles.includes('root');
-  const isAdmin = userRoles.includes('admin');
-  const isManager = userRoles.includes('manager');
+
 
   return (
     <div className="hidden md:flex w-56 flex-shrink-0 bg-white border-r overflow-y-auto">
