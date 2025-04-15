@@ -28,6 +28,7 @@ type MenuItem = {
   href: string;
   icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
   subItems?: MenuItem[];  // 서브 메뉴 아이템을 위한 옵셔널 속성
+  roles?: string[];
 };
 
 // menuItems 객체의 타입을 명시적으로 지정
@@ -35,34 +36,34 @@ type MenuKey = '데이터관리' | '시스템관리' | '시스템';
 
 const menuItems: Record<MenuKey, MenuItem[]> = {
   '데이터관리': [
-    { name: '카탈로그 조회', href: '/catalog', icon: Database },
-    { name: '프로젝트 관리', href: '/projects', icon: FolderKanban },
+    { name: '카탈로그 조회', href: '/catalog', icon: Database, roles:['root', 'admin', 'manager', 'member'] },
+    { name: '프로젝트 관리', href: '/projects', icon: FolderKanban, roles: ['root', 'admin', 'manager'] },
   ],
   '시스템관리': [
-    { name: '클러스터 카탈로그', href: '/cluster-catalog', icon: Server },
-    { name: '프로젝트 카탈로그', href: '/project-catalog', icon: Folder },
-    { name: '시스템 카탈로그', href: '/system-catalog', icon: HardDrive },
-    { name: '프로젝트관리', href: '/project-management', icon: FolderKanban },
-    { name: '사용자관리', href: '/user-management', icon: Users },
-    { name: 'DNS조회', href: '/dns-lookup', icon: Globe },
-    { name: '카탈로그 유형', href: '/catalog-types', icon: FileType },
-    { name: '라이센스 관리', href: '/license-management', icon: Key },
+    { name: '클러스터 카탈로그', href: '/cluster-catalog', icon: Server, roles: ['root', 'admin'] },
+    { name: '프로젝트 카탈로그', href: '/project-catalog', icon: Folder, roles: ['root', 'admin'] },
+    { name: '시스템 카탈로그', href: '/system-catalog', icon: HardDrive, roles: ['root', 'admin'] },
+    { name: '프로젝트관리', href: '/project-management', icon: FolderKanban, roles: ['root', 'admin'] },
+    { name: '사용자관리', href: '/user-management', icon: Users, roles: ['root', 'admin'] },
+    { name: 'DNS조회', href: '/dns-lookup', icon: Globe, roles: ['root', 'admin'] },
+    { name: '카탈로그 유형', href: '/catalog-types', icon: FileType, roles: ['root', 'admin'] },
+    { name: '라이센스 관리', href: '/license-management', icon: Key, roles: ['root', 'admin'] },
   ],
   '시스템': [
-    { name: '공통코드', href: '/common-code', icon: Code },
-    { name: '카탈로그 유형', href: '/sys-catalog-types', icon: FileType },
-    { name: '클러스터', href: '/cluster', icon: Server },
+    { name: '공통코드', href: '/common-code', icon: Code, roles: ['root'] },
+    { name: '카탈로그 유형', href: '/sys-catalog-types', icon: FileType, roles: ['root'] },
+    { name: '클러스터', href: '/cluster', icon: Server, roles: ['root'] },
     {
       name: 'ArgoCD',
       href: '/argocd/cluster-registration',
       icon: GitBranch,
       subItems: [
-        { name: '클러스터 등록', href: '/argocd/cluster-registration', icon: Plus },
-        { name: 'Repo 등록', href: '/argocd/repo-registration', icon: GitFork },
+        { name: '클러스터 등록', href: '/argocd/cluster-registration', icon: Plus, roles: ['root'] },
+        { name: 'Repo 등록', href: '/argocd/repo-registration', icon: GitFork, roles: ['root'] },
       ]
     },
-    { name: 'DNS 조회', href: '/sys-dns-lookup', icon: Globe },
-    { name: '시스템 카탈로그', href: '/system-link', icon: HardDrive },
+    { name: 'DNS 조회', href: '/sys-dns-lookup', icon: Globe, roles: ['root'] },
+    { name: '시스템 카탈로그', href: '/system-link', icon: HardDrive, roles: ['root'] },
   ],
 };
 
@@ -72,6 +73,11 @@ export function Sidebar() {
   const currentMenuItems = activeMenu ? menuItems[activeMenu as MenuKey] : [];
   const { data: session } = useSession();
 
+  const userRoles = session?.roles || [];
+  const isRoot = userRoles.includes('root');
+  const isAdmin = userRoles.includes('admin');
+  const isManager = userRoles.includes('manager');
+
   return (
     <div className="hidden md:flex w-56 flex-shrink-0 bg-white border-r overflow-y-auto">
       <nav className="flex-1 space-y-1 p-4">
@@ -80,7 +86,7 @@ export function Sidebar() {
           const isActive = pathname === item.href;
 
           if (item.subItems) {
-            return (
+            return ((item.roles?.some(role => userRoles.includes(role))) &&
               <div key={item.name} className="space-y-1">
                 <div className={cn(
                   'flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium',
@@ -112,7 +118,7 @@ export function Sidebar() {
             );
           }
 
-          return (
+          return ((item.roles?.some(role => userRoles.includes(role))) &&
             <Link
               key={item.name}
               href={item.href}
