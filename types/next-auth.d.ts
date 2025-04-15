@@ -6,6 +6,7 @@ declare module "next-auth" {
     refreshToken?: string
     idToken?: string
     error?: string
+    roles?: string[]
   }
 }
 
@@ -16,5 +17,6 @@ declare module "next-auth/jwt" {
     idToken?: string
     expiresAt?: number
     error?: string
+    roles?: string[]
   }
 }

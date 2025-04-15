@@ -54,8 +54,16 @@ export function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const config = getRuntimeConfig();
+
+  const userRoles = session?.roles || [];
+  const isRoot = userRoles.includes('root');
+  const isAdmin = userRoles.includes('admin');
+  const isManager = userRoles.includes('manager');
+
   // const keycloakIssuer = config.KEYCLOAK_ISSUER
   // const [config, setConfig] = useState<AuthConfig>({});
+
+  console.log('User roles:', session?.roles);
 
   // useEffect(() => {
   //   fetch('/api/config')
@@ -147,170 +155,176 @@ export function Header() {
                         <span>카탈로그 조회</span>
                       </Link>
                     </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/projects"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <FolderKanban className="h-4 w-4" />
-                        <span>프로젝트 관리</span>
-                      </Link>
-                    </NavigationMenuLink>
+                    {(isRoot || isAdmin || isManager) && (
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/projects"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <FolderKanban className="h-4 w-4" />
+                          <span>프로젝트 관리</span>
+                        </Link>
+                      </NavigationMenuLink>
+                    )}
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuTrigger
-                  onClick={() => handleMenuClick('시스템관리', '/cluster-catalog')}
-                  className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('시스템관리') ? 'bg-gray-800' : 'bg-black'}`}
-                >
-                  시스템관리
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
-                  <div className="w-[500px] p-4 grid grid-cols-2">
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/cluster-catalog"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Server className="h-4 w-4" />
-                        <span>클러스터 카탈로그</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/project-catalog"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Folder className="h-4 w-4" />
-                        <span>프로젝트 카탈로그</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/system-catalog"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <HardDrive className="h-4 w-4" />
-                        <span>시스템 카탈로그</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/project-management"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <FolderKanban className="h-4 w-4" />
-                        <span>프로젝트관리</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/user-management"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Users className="h-4 w-4" />
-                        <span>사용자관리</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/dns-lookup"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Globe className="h-4 w-4" />
-                        <span>DNS조회</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/catalog-types"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <FileType className="h-4 w-4" />
-                        <span>카탈로그 유형</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/license-management"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Key className="h-4 w-4" />
-                        <span>라이센스 관리</span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+              {(isRoot || isAdmin) && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger
+                    onClick={() => handleMenuClick('시스템관리', '/cluster-catalog')}
+                    className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('시스템관리') ? 'bg-gray-800' : 'bg-black'}`}
+                  >
+                    시스템관리
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
+                    <div className="w-[500px] p-4 grid grid-cols-2">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/cluster-catalog"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Server className="h-4 w-4" />
+                          <span>클러스터 카탈로그</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/project-catalog"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Folder className="h-4 w-4" />
+                          <span>프로젝트 카탈로그</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/system-catalog"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <HardDrive className="h-4 w-4" />
+                          <span>시스템 카탈로그</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/project-management"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <FolderKanban className="h-4 w-4" />
+                          <span>프로젝트관리</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/user-management"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>사용자관리</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/dns-lookup"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Globe className="h-4 w-4" />
+                          <span>DNS조회</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/catalog-types"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <FileType className="h-4 w-4" />
+                          <span>카탈로그 유형</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/license-management"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Key className="h-4 w-4" />
+                          <span>라이센스 관리</span>
+                        </Link>
+                      </NavigationMenuLink>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
 
-              <NavigationMenuItem>
-                <NavigationMenuTrigger
-                  onClick={() => handleMenuClick('시스템', '/common-code')}
-                  className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('시스템') ? 'bg-gray-800' : 'bg-black'}`}
-                >
-                  시스템
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
-                  <div className="w-[500px] p-4 grid grid-cols-2">
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/common-code"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Code className="h-4 w-4" />
-                        <span>공통코드</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/sys-catalog-types"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <FileType className="h-4 w-4" />
-                        <span>카탈로그 유형</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/cluster"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Server className="h-4 w-4" />
-                        <span>클러스터</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/argocd/cluster-registration"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <GitBranch className="h-4 w-4" />
-                        <span>ArgoCD</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/sys-dns-lookup"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <Globe className="h-4 w-4" />
-                        <span>DNS 조회</span>
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/system-link"
-                        className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
-                      >
-                        <HardDrive className="h-4 w-4" />
-                        <span>시스템 카탈로그</span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+              {isRoot && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger
+                    onClick={() => handleMenuClick('시스템', '/common-code')}
+                    className={`text-white hover:text-white hover:bg-gray-800 h-8 ${isMenuActive('시스템') ? 'bg-gray-800' : 'bg-black'}`}
+                  >
+                    시스템
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent className="data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 absolute left-0 top-0 w-full">
+                    <div className="w-[500px] p-4 grid grid-cols-2">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/common-code"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Code className="h-4 w-4" />
+                          <span>공통코드</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/sys-catalog-types"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <FileType className="h-4 w-4" />
+                          <span>카탈로그 유형</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/cluster"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Server className="h-4 w-4" />
+                          <span>클러스터</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/argocd/cluster-registration"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <GitBranch className="h-4 w-4" />
+                          <span>ArgoCD</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/sys-dns-lookup"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <Globe className="h-4 w-4" />
+                          <span>DNS 조회</span>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/system-link"
+                          className="flex items-center gap-2 rounded-md p-1 hover:bg-accent"
+                        >
+                          <HardDrive className="h-4 w-4" />
+                          <span>시스템 카탈로그</span>
+                        </Link>
+                      </NavigationMenuLink>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              )}
             </NavigationMenuList>
           </NavigationMenu>
         </div>

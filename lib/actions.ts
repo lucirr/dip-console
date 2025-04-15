@@ -48,11 +48,12 @@ async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promi
   }
 }
 
+// ------------------------------------------------------------------------------------------------------
+
 export async function getCommonCodeByGroupCode(groupCode: string): Promise<CommonCode[]> {
   return fetchApi<CommonCode[]>({ endpoint: `${apiAuth}/code/common?groupcode=${groupCode}` });
 }
 
-// ------------------------------------------------------------------------------------------------------
 
 export async function getGroupCode(): Promise<GroupCode[]> {
   return fetchApi<GroupCode[]>({ endpoint: `${apiAuth}/code/group` });
@@ -424,3 +425,5 @@ export async function insertTenantCatalog(data: CatalogDeploy) {
     body: data
   });
 }
+
+// --------------------------------------------------------------------------------
