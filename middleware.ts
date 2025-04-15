@@ -1,24 +1,39 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { menuItems, MenuItem } from "./lib/menu-items";
 
-const protectedRoutes = {
-  '/common-code': ['root'],
-  '/sys-catalog-types': ['root'],
-  '/cluster': ['root'],
-  '/argocd/cluster-registration': ['root'],
-  '/argocd/repo-registration': ['root'],
-  '/sys-dns-lookup': ['root'],
-  '/system-link': ['root'],
-  '/cluster-catalog': ['root', 'admin'],
-  '/project-catalog': ['root', 'admin'],
-  '/system-catalog': ['root', 'admin'],
-  '/project-management': ['root', 'admin'],
-  '/user-management': ['root', 'admin'],
-  '/dns-lookup': ['root', 'admin'],
-  '/catalog-types': ['root', 'admin'],
-  '/license-management': ['root', 'admin'],
-  '/projects': ['root', 'admin', 'manager'],
-} as const;
+/**
+ * Extracts route permissions from menuItems
+ * Creates a mapping of routes to their required roles
+ */
+const getProtectedRoutes = (): Record<string, string[]> => {
+  const routes: Record<string, string[]> = {};
+  
+  // Process all menu categories
+  Object.values(menuItems).forEach(categoryItems => {
+    // Process each menu item in the category
+    categoryItems.forEach(item => {
+      // Add the main item route
+      if (item.href && item.roles) {
+        routes[item.href] = [...item.roles];
+      }
+      
+      // Process any subitems
+      if (item.subItems) {
+        item.subItems.forEach(subItem => {
+          if (subItem.href && subItem.roles) {
+            routes[subItem.href] = [...subItem.roles];
+          }
+        });
+      }
+    });
+  });
+  
+  return routes;
+};
+
+// Generate protected routes from menu items
+const protectedRoutes = getProtectedRoutes();
 
 export default withAuth(
   function middleware(req) {
@@ -26,9 +41,21 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // Check if path requires role-based access
-    const requiredRoles = Object.entries(protectedRoutes).find(([route]) =>
+    // Use exact match first, then try to find a matching route pattern
+    let requiredRoles = Object.entries(protectedRoutes).find(([route]) =>
       path === route
     )?.[1];
+    
+    // If no exact match, check if the path starts with any protected route
+    // This handles nested routes that should inherit parent permissions
+    if (!requiredRoles) {
+      const matchingRoute = Object.keys(protectedRoutes).find(route =>
+        path.startsWith(route + '/'));
+      
+      if (matchingRoute) {
+        requiredRoles = protectedRoutes[matchingRoute];
+      }
+    }
 
     if (requiredRoles) {
       const userRoles = token?.roles as string[] || [];
