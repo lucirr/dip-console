@@ -28,6 +28,7 @@ import { useEffect, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { getRuntimeConfig } from '@/utils/runtime-config';
 import { MenuKey, MenuItem, menuItems, hasAccess, getAccessibleMenuItems } from '@/lib/menu-items';
+import { GET } from "@/app/api/config/route";
 
 export function Header() {
   const { activeMenu, setActiveMenu, setActiveSubMenu } = useSidebarStore();
@@ -71,14 +72,14 @@ export function Header() {
 
       if (mainMenuItem && checkAccess(mainMenuItem.roles)) {
         setActiveMenu(menuKey as MenuKey);
-        
+
         // If we matched a subItem, set that as the active submenu
         const matchedSubItem = mainMenuItem.subItems?.find(subItem =>
           (pathname === subItem.href ||
-          (subItem.href !== '/' && pathname == (subItem.href))) &&
+            (subItem.href !== '/' && pathname == (subItem.href))) &&
           checkAccess(subItem.roles)
         );
-        
+
         setActiveSubMenu(matchedSubItem?.href || pathname);
         break;
       }
@@ -91,6 +92,14 @@ export function Header() {
     router.push(defaultPath);
   };
 
+  useEffect(() => {
+    const fetchConfig = async () => {
+      const config = await GET();
+      console.log(config);
+    };
+    fetchConfig();
+  }, []);
+
   const handleLogout = async () => {
     await signOut({ redirect: false });
     window.location.href = config.KEYCLOAK_ISSUER + '/protocol/openid-connect/logout?redirect_uri=' + window.location.origin;
@@ -99,9 +108,9 @@ export function Header() {
   // Render menu items for a specific category
   const renderMenuItems = (categoryKey: MenuKey, defaultPath: string) => {
     const items = getAccessibleMenuItems(categoryKey, userRoles);
-    
+
     if (items.length === 0) return null;
-    
+
     return (
       <NavigationMenuItem key={categoryKey}>
         <NavigationMenuTrigger
@@ -143,13 +152,13 @@ export function Header() {
           </Link>
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
-              {accessibleMenuCategories.includes('데이터관리') && 
+              {accessibleMenuCategories.includes('데이터관리') &&
                 renderMenuItems('데이터관리', '/catalog')}
-              
-              {accessibleMenuCategories.includes('시스템관리') && 
+
+              {accessibleMenuCategories.includes('시스템관리') &&
                 renderMenuItems('시스템관리', '/cluster-catalog')}
-              
-              {accessibleMenuCategories.includes('시스템') && 
+
+              {accessibleMenuCategories.includes('시스템') &&
                 renderMenuItems('시스템', '/common-code')}
             </NavigationMenuList>
           </NavigationMenu>
@@ -166,7 +175,7 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                   {username}
+                {username}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
