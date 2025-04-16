@@ -89,7 +89,7 @@ export async function getGroupCode(): Promise<GroupCode[]> {
 }
 
 export async function insertGroupCode(data: GroupCode) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<GroupCode>({
       endpoint: '/code/group',
       method: 'POST',
@@ -99,7 +99,7 @@ export async function insertGroupCode(data: GroupCode) {
 }
 
 export async function updateGroupCode(data: GroupCode) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<GroupCode>({
       endpoint: `${apiAuth}/code/group/${data.uid}`,
       method: 'PUT',
@@ -109,13 +109,13 @@ export async function updateGroupCode(data: GroupCode) {
 }
 
 export async function getCommonCode(groupCodeId: string) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CommonCode[]>({ endpoint: `${apiAuth}/code/common/${groupCodeId}` })
   );
 }
 
 export async function insertCommonCode(data: CommonCode) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CommonCode>({
       endpoint: `${apiAuth}/code/common/${data.groupCodeId}`,
       method: 'POST',
@@ -125,7 +125,7 @@ export async function insertCommonCode(data: CommonCode) {
 }
 
 export async function updateCommonCode(data: CommonCode) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CommonCode>({
       endpoint: `${apiAuth}/code/common/${data.groupCodeId}`,
       method: 'PUT',
@@ -135,7 +135,7 @@ export async function updateCommonCode(data: CommonCode) {
 }
 
 export async function deleteCommonCode(data: CommonCode) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CommonCode>({
       endpoint: `${apiAuth}/code/common/${data.groupCodeId}/${data.uid}`,
       method: 'DELETE'
@@ -150,7 +150,7 @@ export async function getCatalogType(): Promise<CatalogType[]> {
 }
 
 export async function insertCatalogType(data: CatalogType) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogType>({
       endpoint: `${apiAuth}/catalogs`,
       method: 'POST',
@@ -160,7 +160,7 @@ export async function insertCatalogType(data: CatalogType) {
 }
 
 export async function updateCatalogType(data: CatalogType) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogType>({
       endpoint: `${apiAuth}/catalogs/${data.uid}`,
       method: 'PUT',
@@ -170,7 +170,7 @@ export async function updateCatalogType(data: CatalogType) {
 }
 
 export async function deleteCatalogType(data: CatalogType) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogType>({
       endpoint: `${apiAuth}/catalogs/${data.uid}`,
       method: 'DELETE',
@@ -183,7 +183,7 @@ export async function getCatalogVersion(catalogTypeId: string): Promise<CatalogV
 }
 
 export async function insertCatalogVersion(data: CatalogVersion) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogVersion>({
       endpoint: `${apiAuth}/catalogtype/version`,
       method: 'POST',
@@ -193,7 +193,7 @@ export async function insertCatalogVersion(data: CatalogVersion) {
 }
 
 export async function updateCatalogVersion(data: CatalogVersion) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogVersion>({
       endpoint: `${apiAuth}/catalogtype/version/${data.uid}`,
       method: 'PUT',
@@ -203,7 +203,7 @@ export async function updateCatalogVersion(data: CatalogVersion) {
 }
 
 export async function deleteCatalogVersion(data: CatalogVersion) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogVersion>({
       endpoint: `${apiAuth}/catalogtype/version/${data.catalogTypeId}/${data.uid}`,
       method: 'DELETE',
@@ -218,7 +218,7 @@ export async function getClusters(): Promise<Cluster[]> {
 }
 
 export async function insertCluster(data: Cluster) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<Cluster>({
       endpoint: `${apiNonAuth}/clusters`,
       method: 'POST',
@@ -228,7 +228,7 @@ export async function insertCluster(data: Cluster) {
 }
 
 export async function updateCluster(data: Cluster) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<Cluster>({
       endpoint: `${apiNonAuth}/clusters/${data.uid}`,
       method: 'PUT',
@@ -238,7 +238,7 @@ export async function updateCluster(data: Cluster) {
 }
 
 export async function deleteCluster(data: Cluster) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<Cluster>({
       endpoint: `${apiNonAuth}/clusters/${data.uid}`,
       method: 'DELETE',
@@ -249,7 +249,7 @@ export async function deleteCluster(data: Cluster) {
 // --------------------------------------------------------------------------------
 
 export async function insertClusterArgoCd(data: Cluster) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<Cluster>({
       endpoint: `${apiNonAuth}/system/clusters/${data.uid}`,
       method: 'POST',
@@ -258,13 +258,13 @@ export async function insertClusterArgoCd(data: Cluster) {
 }
 
 export async function getCatalogGits(): Promise<CatalogGit[]> {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogGit[]>({ endpoint: `${apiNonAuth}/catalogs/git` })
   );
 }
 
 export async function insertCatalogGit(data: CatalogGit) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogGit>({
       endpoint: `${apiNonAuth}/system/repositories`,
       method: 'POST',
@@ -274,7 +274,7 @@ export async function insertCatalogGit(data: CatalogGit) {
 }
 
 export async function deleteCatalogGit(data: CatalogGit) {
-  return withPermission(['root', 'admin'], () =>
+  return withPermission(['root'], () =>
     fetchApi<CatalogGit>({
       endpoint: `${apiNonAuth}/system/repositories/${data.uid}`,
       method: 'DELETE',
