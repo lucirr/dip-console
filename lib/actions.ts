@@ -336,7 +336,11 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProjectsByUser(uid: string): Promise<Project[]> {
-  return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects?uid=${uid}` });
+  return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects/user/id?uid=${uid}` });
+}
+
+export async function getProjectsByRole(uid: string): Promise<Project[]> {
+  return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects/user/role?uid=${uid}` });
 }
 
 export async function insertProject(data: ClusterProject) {

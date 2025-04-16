@@ -27,7 +27,7 @@ import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project"
 import {
-  getProjectsByUser,
+  getProjectsByRole,
   insertProject,
   deleteProject,
   getProjectUser,
@@ -268,7 +268,7 @@ export default function ProjectsPage() {
     setIsLoading(true);
     try {
       const uid = session?.uid || '0';
-      const response = await getProjectsByUser(uid);
+      const response = await getProjectsByRole(uid);
 
       const clustersMap = currentClusters.reduce((acc, cluster) => {
         if (cluster.uid !== undefined) {

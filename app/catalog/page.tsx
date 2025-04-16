@@ -31,6 +31,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Project } from '@/types/project';
 import { useSession } from 'next-auth/react';
 import { hasAccess } from '@/lib/menu-items';
+import { Exo_2 } from 'next/font/google';
 
 
 
@@ -43,7 +44,7 @@ export default function CatalogPage() {
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState("view");
+  // const [activeTab, setActiveTab] = useState("view");
   const [isCatalogNewSheetOpen, setIsCatalogNewSheetOpen] = useState(false);
   const [isCatalogDeployNewSheetOpen, setIsCatalogDeployNewSheetOpen] = useState(false);
   const [isCatalogDeployEditSheetOpen, setIsCatalogDeployEditSheetOpen] = useState(false);
@@ -116,7 +117,7 @@ export default function CatalogPage() {
   const fetchProject = async () => {
     setIsLoading(true);
     try {
-    const uid = session?.uid || '0';
+      const uid = session?.uid || '0';
       const response = await getProjectsByUser(uid);
       setProjectOptions(response);
       return response;
@@ -169,14 +170,14 @@ export default function CatalogPage() {
     fetchCatalogDeploy();
   }, []);
 
-  useEffect(() => {
-    if (activeTab == 'create') {
-      const filteredData = catalogTypeOptions.filter(item =>
-        item.enable && item.isAdmin
-      );
-      setCatalogTypeCreate(filteredData);
-    }
-  }, [activeTab]);
+  // useEffect(() => {
+  //   if (activeTab == 'create') {
+  //     const filteredData = catalogTypeOptions.filter(item =>
+  //       item.enable && item.isAdmin
+  //     );
+  //     setCatalogTypeCreate(filteredData);
+  //   }
+  // }, [activeTab]);
 
   useEffect(() => {
     setFormErrorsCatalog(null);
@@ -294,14 +295,20 @@ export default function CatalogPage() {
     setIsCatalogNewSheetOpen(true);
   };
 
+  useEffect(() => {
+    if (selectedProject == '' && selectedCatalogType == '') {
+      fetchCatalogDeploy();
+    }
+  }, [selectedProject, selectedCatalogType,]);
+
   const handleReset = () => {
     setSelectedProject('');
     setSelectedCatalogType('');
   };
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
+  // const handleTabChange = (tab: string) => {
+  //   setActiveTab(tab);
+  // };
 
   const extractImageUrl = (htmlString?: string) => {
     try {
@@ -514,81 +521,89 @@ export default function CatalogPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {(catalogDeployData || []).map((item, index) => (
-          <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="relative h-48 w-full flex items-center justify-center bg-gray-50">
-              <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
-                {extractImageUrl(item.catalogImage) && !(item.uid && imageErrors[item.uid]) ? (
-                  <Image
-                    src={extractImageUrl(item.catalogImage)}
-                    alt={item.catalogType}
-                    className="object-contain"
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    onError={() => handleImageError(item.uid)}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                    <Server className="h-12 w-12" />
-                  </div>
-                )}
-              </div>
+        {!catalogDeployData || catalogDeployData.length === 0 ? (
+          <div className="col-span-full w-full py-12 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Server className="h-12 w-12 text-muted-foreground" />
+              <p className="text-sm font-medium">데이터가 없습니다.</p>
             </div>
-            <CardHeader className="p-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{item.name}</CardTitle>
-              </div>
-              <CardDescription>{item.catalogDesc}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">카탈로그 유형</p>
-                    <p className="text-sm font-medium">{item.catalogType}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">카탈로그 버전</p>
-                    <p className="text-sm font-medium">{item.catalogVersion}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">프로젝트</p>
-                    <p className="text-sm font-medium">{item.clusterProjectName}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">카탈로그 이름</p>
-                    <p className="text-sm font-medium">{item.catalogName}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">배포 상태</p>
-                    <span className="text-sm font-medium"><StatusBadge status={item.status as Status} /></span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">서비스 상태</p>
-                    <span className="text-sm font-medium"><StatusBadge status={item.syncStatus as Status} /></span>
-                  </div>
+          </div>
+        ) : (
+          (catalogDeployData || []).map((item, index) => (
+            <Card key={item.uid} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative h-48 w-full flex items-center justify-center bg-gray-50">
+                <div className={`relative ${index === 0 ? 'w-1/2 h-24' : 'w-1/2 h-24'}`}>
+                  {extractImageUrl(item.catalogImage) && !(item.uid && imageErrors[item.uid]) ? (
+                    <Image
+                      src={extractImageUrl(item.catalogImage)}
+                      alt={item.catalogType}
+                      className="object-contain"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      onError={() => handleImageError(item.uid)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                      <Server className="h-12 w-12" />
+                    </div>
+                  )}
                 </div>
-
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2 p-4">
-              <Button variant="outline" size="sm" onClick={() => handleClick(item.catalogUrl)}>
-                <LinkIcon className="h-4 w-4 mr-2" />
-                링크
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => catalogDeployEditSheetClick(item)}>
-                <Info className="h-4 w-4 mr-2" />
-                보기
-              </Button>
-              {checkAccess(['admin', 'manager']) && (
-              <Button variant="outline" size="sm" onClick={() => catalogDeployDeleteClick(item)}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                삭제
-              </Button>
-              )}
-            </CardFooter>
-          </Card>
-        ))}
+              <CardHeader className="p-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl">{item.name}</CardTitle>
+                </div>
+                <CardDescription>{item.catalogDesc}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">카탈로그 유형</p>
+                      <p className="text-sm font-medium">{item.catalogType}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">카탈로그 버전</p>
+                      <p className="text-sm font-medium">{item.catalogVersion}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">프로젝트</p>
+                      <p className="text-sm font-medium">{item.clusterProjectName}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">카탈로그 이름</p>
+                      <p className="text-sm font-medium">{item.catalogName}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">배포 상태</p>
+                      <span className="text-sm font-medium"><StatusBadge status={item.status as Status} /></span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">서비스 상태</p>
+                      <span className="text-sm font-medium"><StatusBadge status={item.syncStatus as Status} /></span>
+                    </div>
+                  </div>
+
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2 p-4">
+                <Button variant="outline" size="sm" onClick={() => handleClick(item.catalogUrl)}>
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  링크
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => catalogDeployEditSheetClick(item)}>
+                  <Info className="h-4 w-4 mr-2" />
+                  보기
+                </Button>
+                {checkAccess(['admin', 'manager']) && (
+                  <Button variant="outline" size="sm" onClick={() => catalogDeployDeleteClick(item)}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    삭제
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          )))}
       </div>
       <ConfirmDialog
         isOpen={isConfirmOpen}
