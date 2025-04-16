@@ -13,7 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getProjectCatalogDeploy, getProjectsByUser, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
+import { getProjectCatalogDeployByUser, getProjectsByUser, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
@@ -31,7 +31,6 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Project } from '@/types/project';
 import { useSession } from 'next-auth/react';
 import { hasAccess } from '@/lib/menu-items';
-import { Exo_2 } from 'next/font/google';
 
 
 
@@ -98,7 +97,7 @@ export default function CatalogPage() {
     setIsLoading(true);
     try {
       const uid = session?.uid || '0';
-      const response = await getProjectCatalogDeploy(selectedProject, selectedCatalogType, uid);
+      const response = await getProjectCatalogDeployByUser(selectedProject, selectedCatalogType, uid);
       setCatalogDeployData(response);
     } catch (error) {
       console.log(error);

@@ -37,6 +37,7 @@ export function Header() {
   const config = getRuntimeConfig();
 
   const userRoles = session?.roles || [];
+  const username = session?.user?.name || '사용자';
 
   // Use the hasAccess function from the imported module
   const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
@@ -164,8 +165,13 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                   {username}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                Edit profile
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
                 Sign out
               </DropdownMenuItem>
