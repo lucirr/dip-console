@@ -37,6 +37,7 @@ async function withPermission<T>(
   const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
 
   if (!checkAccess(requiredRole)) {
+    console.log('eeeeeeeeeeeeee')
     throw new Error('Permission denied');
   }
 
@@ -499,6 +500,7 @@ export async function deleteProjectUser(data: ProjectUser) {
 // --------------------------------------------------------------------------------
 
 export async function getUsers(): Promise<User[]> {
+  console.log('11111111111')
   return withPermission(['root', 'admin', 'manager'], () =>
     fetchApi<User[]>({ endpoint: `${apiAuth}/users` })
   );
