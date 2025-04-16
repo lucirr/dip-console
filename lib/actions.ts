@@ -17,7 +17,7 @@ const apiUrl: string = process.env.NEXT_PUBLIC_API_URL ?? '/';
 const apiAuth: string = 'api/v1';
 const apiNonAuth: string = 'sapi/v1'
 const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '') + ':' + (process.env.NEXT_PUBLIC_DIP_API_TOKEN ?? ''));
-const hostname: string = process.env.NEXT_PUBLIC_X_HOSTNAME ?? '/';
+const hostname: string = process.env.NEXT_PUBLIC_X_HOSTNAME ?? '';
 const headers: any = {
   'Authorization': token,
   "Content-Type": "application/json",
@@ -29,12 +29,11 @@ async function withPermission<T>(
   action: () => Promise<T>
 ): Promise<T> {
   const session = await getSession();
-  const userRoles = session?.roles || [];
-  const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
-
   if (!session) {
     throw new Error('Authentication required');
   }
+  const userRoles = session?.roles || [];
+  const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
 
   if (!checkAccess(requiredRole)) {
     throw new Error('Permission denied');
@@ -54,6 +53,7 @@ async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promi
     if (process.env.NODE_ENV != "production") {
       headers['X-Hostname'] = hostname
     }
+
     const response = await fetch(`${apiUrl}${endpoint}`, {
       method,
       headers,
