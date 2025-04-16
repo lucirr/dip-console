@@ -34,8 +34,8 @@ const handler = NextAuth({
                 
                 if (username) {
                     const user = await getLoginUserRoles(username);
-                    if (user && user.roleName) {
-                        token.roles = [user.roleName];
+                    if (user && user.roles) {
+                        token.roles = user.roles;
                         token.uid = user.uid;
                     }
                 }

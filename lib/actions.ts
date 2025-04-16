@@ -17,7 +17,6 @@ const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '
 const hostname: string = process.env.NEXT_PUBLIC_X_HOSTNAME ?? '/';
 const headers: any = {
   'Authorization': token,
-  'X-Hostname': hostname,
   "Content-Type": "application/json",
 };
 
@@ -29,6 +28,9 @@ type ApiConfig = {
 
 async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promise<T> {
   try {
+    if (process.env.NODE_ENV != "production") {
+      headers['X-Hostname'] = hostname
+    }
     const response = await fetch(`${apiUrl}${endpoint}`, {
       method,
       headers,
@@ -300,8 +302,8 @@ export async function getProjectClusterCatalogDeploy(selectedCluster: string, se
   return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?cluster=${selectedCluster}&project=${selectedProject}&catalogtype=${selectedCatalogType}` });
 }
 
-export async function getProjectCatalogDeploy(selectedProject: string, selectedCatalogType: string): Promise<CatalogDeploy[]> {
-  return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?project=${selectedProject}&catalogtype=${selectedCatalogType}` });
+export async function getProjectCatalogDeploy(selectedProject: string, selectedCatalogType: string, uid: string): Promise<CatalogDeploy[]> {
+  return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?project=${selectedProject}&catalogtype=${selectedCatalogType}&uid=${uid}` });
 }
 
 export async function getClusterCatalogDeploy(selectedCluster: string, selectedCatalogType: string): Promise<CatalogDeploy[]> {
@@ -331,6 +333,10 @@ export async function deleteProjectCatalogDeploy(data: CatalogDeploy) {
 
 export async function getProjects(): Promise<Project[]> {
   return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects` });
+}
+
+export async function getProjectsByUser(uid: string): Promise<Project[]> {
+  return fetchApi<Project[]>({ endpoint: `${apiAuth}/projects?uid=${uid}` });
 }
 
 export async function insertProject(data: ClusterProject) {

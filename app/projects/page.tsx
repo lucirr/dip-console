@@ -27,7 +27,7 @@ import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project"
 import {
-  getProjects,
+  getProjectsByUser,
   insertProject,
   deleteProject,
   getProjectUser,
@@ -53,6 +53,7 @@ import { getErrorMessage } from '@/lib/utils';
 import { Cluster } from '@/types/cluster';
 import { CatalogType, CatalogVersion } from '@/types/catalogtype';
 import { CatalogDeploy } from '@/types/catalogdeploy';
+import { useSession } from 'next-auth/react';
 
 interface Column {
   key: string;
@@ -66,6 +67,8 @@ interface Column {
 
 export default function ProjectsPage() {
   const { toast } = useToast()
+  const { data: session } = useSession();
+
   const [projectData, setProjectData] = useState<Project[]>([]);
   const [projectUserData, setProjectUserData] = useState<ProjectUser[]>([]);
   const [isCatalogDeployNewSheetOpen, setIsCatalogDeployNewSheetOpen] = useState(false);
@@ -264,7 +267,8 @@ export default function ProjectsPage() {
   const fetchProjects = async (currentClusters: Cluster[]) => {
     setIsLoading(true);
     try {
-      const response = await getProjects();
+      const uid = session?.uid || '0';
+      const response = await getProjectsByUser(uid);
 
       const clustersMap = currentClusters.reduce((acc, cluster) => {
         if (cluster.uid !== undefined) {

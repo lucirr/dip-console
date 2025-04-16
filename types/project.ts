@@ -66,6 +66,7 @@ export interface User {
   phone?: string;
   password?: string;
   roleName?: string;
+  roles?: string[];
   createdAt?: string;
 }
 

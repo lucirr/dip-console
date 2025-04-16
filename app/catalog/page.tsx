@@ -29,12 +29,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Project } from '@/types/project';
-
+import { useSession } from 'next-auth/react';
 
 
 export default function CatalogPage() {
   const router = useRouter();
   const { toast } = useToast()
+  const { data: session } = useSession();
+
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,9 +91,11 @@ export default function CatalogPage() {
   const fetchCatalogDeploy = async () => {
     setIsLoading(true);
     try {
-      const response = await getProjectCatalogDeploy(selectedProject, selectedCatalogType);
+      const uid = session?.uid || '0';
+      const response = await getProjectCatalogDeploy(selectedProject, selectedCatalogType, uid);
       setCatalogDeployData(response);
     } catch (error) {
+      console.log(error);
       setCatalogDeployData([]);
     } finally {
       setIsLoading(false);
