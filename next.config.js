@@ -6,9 +6,9 @@ const nextConfig = {
   },
   images: { unoptimized: true },
   reactStrictMode: true,
-  experimental: {
-    serverActions: true,
-  },
+  // experimental: {
+  //   serverActions: true,
+  // },
   async rewrites() {
     if (process.env.NODE_ENV === "production") {
       return [

@@ -698,7 +698,7 @@ export default function ClusterCatalogPage() {
                         <SelectValue placeholder="클러스터 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {clusterOptions.map((option) => (
+                        {clusterOptions?.map((option) => (
                           <SelectItem key={option.uid || ''} value={option.uid || ''}>
                             {option.clusterName}
                           </SelectItem>
@@ -713,7 +713,7 @@ export default function ClusterCatalogPage() {
                         <SelectValue placeholder="카탈로그 유형 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {catalogTypeOptions.map((option) => (
+                        {catalogTypeOptions?.map((option) => (
                           <SelectItem key={option.uid || ''} value={option.uid || ''}>
                             {option.catalogType}
                           </SelectItem>

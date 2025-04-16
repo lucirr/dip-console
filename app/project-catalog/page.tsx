@@ -539,7 +539,7 @@ export default function ProjectCatalogPage() {
                     <SelectValue placeholder="클러스터 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clusterOptions.map((option) => (
+                    {clusterOptions?.map((option) => (
                       <SelectItem key={option.uid || ''} value={option.uid || ''}>
                         {option.clusterName}
                       </SelectItem>
@@ -554,7 +554,7 @@ export default function ProjectCatalogPage() {
                     <SelectValue placeholder="프로젝트 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {projectOptions.map((option) => (
+                    {projectOptions?.map((option) => (
                       <SelectItem key={option.uid || ''} value={option.uid || ''}>
                         {option.clusterProjectName}
                       </SelectItem>
@@ -569,7 +569,7 @@ export default function ProjectCatalogPage() {
                     <SelectValue placeholder="카탈로그 유형 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {catalogTypeOptions.map((option) => (
+                    {catalogTypeOptions?.map((option) => (
                       <SelectItem key={option.uid || ''} value={option.uid || ''}>
                         {option.catalogType}
                       </SelectItem>

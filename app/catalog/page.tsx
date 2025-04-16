@@ -13,7 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getProjectCatalogDeploy, getProjects, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
+import { getProjectCatalogDeploy, getProjectsByUser, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
@@ -30,6 +30,8 @@ import { useRouter } from 'next/navigation';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Project } from '@/types/project';
 import { useSession } from 'next-auth/react';
+import { hasAccess } from '@/lib/menu-items';
+
 
 
 export default function CatalogPage() {
@@ -87,6 +89,9 @@ export default function CatalogPage() {
   const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
   const [catalogTypeCreate, setCatalogTypeCreate] = useState<CatalogType[]>([]);
 
+  const userRoles = session?.roles || [];
+  const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
+
 
   const fetchCatalogDeploy = async () => {
     setIsLoading(true);
@@ -111,7 +116,8 @@ export default function CatalogPage() {
   const fetchProject = async () => {
     setIsLoading(true);
     try {
-      const response = await getProjects()
+    const uid = session?.uid || '0';
+      const response = await getProjectsByUser(uid);
       setProjectOptions(response);
       return response;
     } catch (error) {
@@ -127,7 +133,10 @@ export default function CatalogPage() {
     setIsLoading(true);
     try {
       const response = await getCatalogType()
-      setCatalogTypeOptions(response);
+      const filteredData = response.filter(item =>
+        item.enable
+      );
+      setCatalogTypeOptions(filteredData);
       return response;
     } catch (error) {
       setCatalogTypeOptions([]);
@@ -444,9 +453,11 @@ export default function CatalogPage() {
                     <Button variant="outline" size="sm" onClick={() => setIsCatalogDeployEditSheetOpen(false)}>
                       취소
                     </Button>
-                    <Button size="sm" onClick={catalogDeployEditClick} disabled={isSubmitting}>
-                      재배포
-                    </Button>
+                    {checkAccess(['admin', 'manager']) && (
+                      <Button size="sm" onClick={catalogDeployEditClick} disabled={isSubmitting}>
+                        재배포
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -462,10 +473,10 @@ export default function CatalogPage() {
               <Label>프로젝트</Label>
               <Select value={selectedProject} onValueChange={setSelectedProject}>
                 <SelectTrigger>
-                  <SelectValue placeholder="클러스터 선택" />
+                  <SelectValue placeholder="프로젝트 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {projectOptions.map((option) => (
+                  {projectOptions?.map((option) => (
                     <SelectItem key={option.uid || ''} value={option.uid || ''}>
                       {option.clusterProjectName}
                     </SelectItem>
@@ -480,7 +491,7 @@ export default function CatalogPage() {
                   <SelectValue placeholder="카탈로그 유형 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {catalogTypeOptions.map((option) => (
+                  {catalogTypeOptions?.map((option) => (
                     <SelectItem key={option.uid || ''} value={option.uid || ''}>
                       {option.catalogType}
                     </SelectItem>
@@ -569,10 +580,12 @@ export default function CatalogPage() {
                 <Info className="h-4 w-4 mr-2" />
                 보기
               </Button>
+              {checkAccess(['admin', 'manager']) && (
               <Button variant="outline" size="sm" onClick={() => catalogDeployDeleteClick(item)}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 삭제
               </Button>
+              )}
             </CardFooter>
           </Card>
         ))}
