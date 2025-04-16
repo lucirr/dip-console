@@ -92,11 +92,11 @@ export function Header() {
     router.push(defaultPath);
   };
 
-  useEffect(() => {
-    fetch('/api/config')
-      .then(res => res.json())
-      .then(data => console.log(data));
-  }, []);
+  // useEffect(() => {
+  //   fetch('/api/config')
+  //     .then(res => res.json())
+  //     .then(data => console.log(data));
+  // }, []);
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
