@@ -8,7 +8,7 @@ import { menuItems, MenuItem } from "./lib/menu-items";
  */
 const getProtectedRoutes = (): Record<string, string[]> => {
   const routes: Record<string, string[]> = {};
-  
+
   // Process all menu categories
   Object.values(menuItems).forEach(categoryItems => {
     // Process each menu item in the category
@@ -17,7 +17,7 @@ const getProtectedRoutes = (): Record<string, string[]> => {
       if (item.href && item.roles) {
         routes[item.href] = [...item.roles];
       }
-      
+
       // Process any subitems
       if (item.subItems) {
         item.subItems.forEach(subItem => {
@@ -28,7 +28,7 @@ const getProtectedRoutes = (): Record<string, string[]> => {
       }
     });
   });
-  
+
   return routes;
 };
 
@@ -45,7 +45,7 @@ export default withAuth(
     let requiredRoles = Object.entries(protectedRoutes).find(([route]) =>
       path === route
     )?.[1];
-    
+
     if (requiredRoles) {
       const userRoles = token?.roles as string[] || [];
       const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
