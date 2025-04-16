@@ -1,4 +1,4 @@
-export async function getConfig() {
+export async function GET() {
   return Response.json(
     {
       keycloakClientId: process.env.KEYCLOAK_CLIENT_ID,
