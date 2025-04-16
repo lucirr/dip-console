@@ -46,17 +46,6 @@ export default withAuth(
       path === route
     )?.[1];
     
-    // If no exact match, check if the path starts with any protected route
-    // This handles nested routes that should inherit parent permissions
-    // if (!requiredRoles) {
-    //   const matchingRoute = Object.keys(protectedRoutes).find(route =>
-    //     path.startsWith(route + '/'));
-      
-    //   if (matchingRoute) {
-    //     requiredRoles = protectedRoutes[matchingRoute];
-    //   }
-    // }
-
     if (requiredRoles) {
       const userRoles = token?.roles as string[] || [];
       const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
@@ -67,7 +56,7 @@ export default withAuth(
       }
     }
 
-    console.log(req.headers)
+    // console.log(req.headers)
 
     return NextResponse.next();
   },

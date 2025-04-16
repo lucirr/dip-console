@@ -93,11 +93,9 @@ export function Header() {
   };
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      const config = await GET();
-      console.log(config);
-    };
-    fetchConfig();
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => console.log(data));
   }, []);
 
   const handleLogout = async () => {

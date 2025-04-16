@@ -20,6 +20,7 @@ const token: string = 'Basic ' + btoa((process.env.NEXT_PUBLIC_DIP_API_USER ?? '
 const hostname: string = process.env.NEXT_PUBLIC_X_HOSTNAME ?? '';
 const headers: any = {
   'Authorization': token,
+  'X-Hostname': hostname,
   "Content-Type": "application/json",
 };
 
@@ -50,9 +51,9 @@ type ApiConfig = {
 
 async function fetchApi<T>({ endpoint, method = 'GET', body }: ApiConfig): Promise<T> {
   try {
-    if (process.env.NODE_ENV != "production") {
-      headers['X-Hostname'] = hostname
-    }
+    // if (process.env.NODE_ENV != "production") {
+    //   headers['X-Hostname'] = hostname
+    // }
 
     const response = await fetch(`${apiUrl}${endpoint}`, {
       method,
