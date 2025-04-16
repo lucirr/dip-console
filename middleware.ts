@@ -56,8 +56,6 @@ export default withAuth(
       }
     }
 
-    // console.log(req.headers)
-
     return NextResponse.next();
   },
   {

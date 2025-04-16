@@ -37,7 +37,6 @@ async function withPermission<T>(
   const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
 
   if (!checkAccess(requiredRole)) {
-    console.log('eeeeeeeeeeeeee')
     throw new Error('Permission denied');
   }
 
@@ -393,6 +392,7 @@ export async function getProjectClusterCatalogDeploy(selectedCluster: string, se
 }
 
 export async function getProjectCatalogDeployByUser(selectedProject: string, selectedCatalogType: string, uid: string): Promise<CatalogDeploy[]> {
+  console.log('1111111')
   return fetchApi<CatalogDeploy[]>({ endpoint: `${apiAuth}/catalogs/project?project=${selectedProject}&catalogtype=${selectedCatalogType}&uid=${uid}` })
 }
 
@@ -500,7 +500,6 @@ export async function deleteProjectUser(data: ProjectUser) {
 // --------------------------------------------------------------------------------
 
 export async function getUsers(): Promise<User[]> {
-  console.log('11111111111')
   return withPermission(['root', 'admin', 'manager'], () =>
     fetchApi<User[]>({ endpoint: `${apiAuth}/users` })
   );
