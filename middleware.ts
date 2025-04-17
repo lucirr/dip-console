@@ -39,17 +39,17 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
-    
+
     // Explicitly check for API routes that need authentication
-    if (path.startsWith('/api/v1/')) {
-      // If no token exists, reject the request
-      if (!token) {
-        return new NextResponse(
-          JSON.stringify({ success: false, message: 'Authentication required' }),
-          { status: 401, headers: { 'content-type': 'application/json' } }
-        );
-      }
-    }
+    // if (path.startsWith('/api/v1/')) {
+    //   // If no token exists, reject the request
+    //   if (!token) {
+    //     return new NextResponse(
+    //       JSON.stringify({ success: false, message: 'Authentication required' }),
+    //       { status: 401, headers: { 'content-type': 'application/json' } }
+    //     );
+    //   }
+    // }
 
     // Check if path requires role-based access
     // Use exact match first, then try to find a matching route pattern
@@ -66,7 +66,7 @@ export default withAuth(
         return NextResponse.redirect(new URL('/login', req.url));
       }
     }
-    
+
     return NextResponse.next();
   },
   {
@@ -84,6 +84,7 @@ export const config = {
     // Include all routes except static assets and images
     '/((?!_next/static|_next/image|favicon.ico).*)',
     // Explicitly include API routes that need protection
-    '/api/v1/:path*'
+    '/api/v1/:path*',
+    '/sapi/v1/:path*',
   ],
 };
