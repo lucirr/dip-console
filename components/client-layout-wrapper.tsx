@@ -37,7 +37,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
                 <Header />
                 <div className="flex flex-1 overflow-hidden pt-12">
                     <Sidebar />
-                    <main className="flex-1 overflow bg-background">
+                    <main className="flex-1 overflow-y-auto bg-background">
                         <div className="container mx-auto max-w-7xl px-4">
                             {children}
                         </div>
