@@ -82,7 +82,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
     serviceType: '',
     catalogServiceTypeId: '',
     argoDeployType: '',
-    catalogImage: '<p style="text-align:center"><img src=""   width="80px" height="80px"></p>',
+    catalogImage: '<img src=""   width="80px" height="80px">',
     enable: true,
     isClusterOnly: false,
     isTenant: false,
