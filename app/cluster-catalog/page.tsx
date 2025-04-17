@@ -68,7 +68,7 @@ export default function ClusterCatalogPage() {
     name: '',
     valuesYaml: '',
     catalogType: '',
-    currentUserId: '',
+    currentUserId: 0,
   });
 
   const [newCatalogDeploy, setNewCatalogDeploy] = useState<CatalogDeploy>({

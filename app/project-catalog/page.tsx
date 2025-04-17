@@ -73,7 +73,7 @@ export default function ProjectCatalogPage() {
     name: '',
     valuesYaml: '',
     catalogType: '',
-    currentUserId: '',
+    currentUserId: 0,
   });
 
   const [selectedCluster, setSelectedCluster] = useState<string>('');
