@@ -258,7 +258,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
       const response = await getCatalogType();
       if (isAdminView) {
         const filteredData = response.filter(item =>
-          item.createdById != '1'
+          item.createdById != 1
         );
         setCatalogTypeData(filteredData);
       } else {

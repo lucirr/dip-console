@@ -7,6 +7,7 @@ export interface ClusterProject {
   resourceQuota?: ResourceQuota;
   namespaceDefaultResourceQuota?: DefaultResourceQuota;
   s3?: S3Info;
+  createdById?: number;
 }
 
 export interface ResourceQuota {
@@ -44,6 +45,7 @@ export interface Project {
   secretKey?: string;
   path?: string;
   createdAt?: string;
+  createdById?: number;
 }
 
 export interface ProjectUser {
@@ -57,6 +59,7 @@ export interface ProjectUser {
   clusterId?: string;
   roleName?: string;
   createdAt?: string;
+  createdById?: number;
 }
 
 export interface User {
@@ -69,6 +72,7 @@ export interface User {
   roleName?: string;
   roles?: string[];
   createdAt?: string;
+  createdById?: number;
 }
 
 export interface UserRegData {
@@ -82,6 +86,7 @@ export interface UserReg {
   phone?: string;
   password?: string;
   roles?: Role;
+  createdById?: number;
 }
 
 export interface Role {
@@ -89,4 +94,5 @@ export interface Role {
   name?: string;
   title?: string;
   createdAt?: string;
+  createdById?: number;
 }

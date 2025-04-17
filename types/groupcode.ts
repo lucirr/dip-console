@@ -3,6 +3,7 @@ export interface GroupCode {
   groupCode: string;
   groupCodeDesc: string;
   createdAt?: string;
+  createdById?: number;
 }
 
 export interface CommonCode {
@@ -15,4 +16,5 @@ export interface CommonCode {
   groupCodeId: string;
   groupCode?: string;
   createdAt?: string;
+  createdById?: number;
 }

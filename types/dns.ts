@@ -5,4 +5,5 @@ export interface Dns {
   value: string;
   ttl: number;
   createdAt?: string;
+  createdById?: number;
 }

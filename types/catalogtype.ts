@@ -13,7 +13,7 @@ export interface CatalogType {
   valuesYaml: string;
   isAdmin: boolean;
   catalogDesc: string;
-  createdById?: string;
+  createdById?: number;
 }
 
 export interface CatalogVersion {
@@ -22,4 +22,5 @@ export interface CatalogVersion {
   catalogVersion: string;
   catalogTypeId: string;
   currentUserId?: string;
+  createdById?: number;
 }

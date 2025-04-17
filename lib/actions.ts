@@ -43,6 +43,15 @@ async function withPermission<T>(
   return action();
 }
 
+async function getCreatedById(): Promise<number> {
+  const session = await getSession();
+  if (!session) {
+    throw new Error('Authentication required');
+  }
+  const uid = Number(session?.uid) || 0;
+  return uid;
+}
+
 type ApiConfig = {
   endpoint: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -90,6 +99,7 @@ export async function getGroupCode(): Promise<GroupCode[]> {
 
 export async function insertGroupCode(data: GroupCode) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<GroupCode>({
     endpoint: '/code/group',
     method: 'POST',
@@ -100,6 +110,7 @@ export async function insertGroupCode(data: GroupCode) {
 
 export async function updateGroupCode(data: GroupCode) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<GroupCode>({
     endpoint: `${apiAuth}/code/group/${data.uid}`,
     method: 'PUT',
@@ -116,6 +127,7 @@ export async function getCommonCode(groupCodeId: string) {
 
 export async function insertCommonCode(data: CommonCode) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CommonCode>({
     endpoint: `${apiAuth}/code/common/${data.groupCodeId}`,
     method: 'POST',
@@ -126,6 +138,7 @@ export async function insertCommonCode(data: CommonCode) {
 
 export async function updateCommonCode(data: CommonCode) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CommonCode>({
     endpoint: `${apiAuth}/code/common/${data.groupCodeId}`,
     method: 'PUT',
@@ -151,6 +164,7 @@ export async function getCatalogType(): Promise<CatalogType[]> {
 
 export async function insertCatalogType(data: CatalogType) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogType>({
     endpoint: `${apiAuth}/catalogs`,
     method: 'POST',
@@ -161,6 +175,7 @@ export async function insertCatalogType(data: CatalogType) {
 
 export async function updateCatalogType(data: CatalogType) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogType>({
     endpoint: `${apiAuth}/catalogs/${data.uid}`,
     method: 'PUT',
@@ -184,6 +199,7 @@ export async function getCatalogVersion(catalogTypeId: string): Promise<CatalogV
 
 export async function insertCatalogVersion(data: CatalogVersion) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogVersion>({
     endpoint: `${apiAuth}/catalogtype/version`,
     method: 'POST',
@@ -194,6 +210,7 @@ export async function insertCatalogVersion(data: CatalogVersion) {
 
 export async function updateCatalogVersion(data: CatalogVersion) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogVersion>({
     endpoint: `${apiAuth}/catalogtype/version/${data.uid}`,
     method: 'PUT',
@@ -219,6 +236,7 @@ export async function getClusters(): Promise<Cluster[]> {
 
 export async function insertCluster(data: Cluster) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<Cluster>({
     endpoint: `${apiNonAuth}/clusters`,
     method: 'POST',
@@ -229,6 +247,7 @@ export async function insertCluster(data: Cluster) {
 
 export async function updateCluster(data: Cluster) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<Cluster>({
     endpoint: `${apiNonAuth}/clusters/${data.uid}`,
     method: 'PUT',
@@ -250,6 +269,7 @@ export async function deleteCluster(data: Cluster) {
 
 export async function insertClusterArgoCd(data: Cluster) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<Cluster>({
     endpoint: `${apiNonAuth}/system/clusters/${data.uid}`,
     method: 'POST',
@@ -265,6 +285,7 @@ export async function getCatalogGits(): Promise<CatalogGit[]> {
 
 export async function insertCatalogGit(data: CatalogGit) {
   //return withPermission(['root'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogGit>({
     endpoint: `${apiNonAuth}/system/repositories`,
     method: 'POST',
@@ -292,6 +313,7 @@ export async function getDns(): Promise<Dns[]> {
 
 export async function insertDns(data: Dns) {
   //return withPermission(['root', 'admin'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<Dns>({
     endpoint: `${apiAuth}/dns`,
     method: 'POST',
@@ -302,6 +324,7 @@ export async function insertDns(data: Dns) {
 
 export async function updateDns(data: Dns) {
   //return withPermission(['root', 'admin'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<Dns>({
     endpoint: `${apiAuth}/dns/${data.uid}`,
     method: 'PUT',
@@ -329,6 +352,7 @@ export async function getSystemLink(): Promise<SystemLink[]> {
 
 export async function insertSystemLink(data: SystemLink) {
   //return withPermission(['root', 'admin'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<SystemLink>({
     endpoint: `${apiNonAuth}/systemlink`,
     method: 'POST',
@@ -339,6 +363,7 @@ export async function insertSystemLink(data: SystemLink) {
 
 export async function updateSystemLink(data: SystemLink) {
   //return withPermission(['root', 'admin'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<SystemLink>({
     endpoint: `${apiNonAuth}/systemlink/${data.uid}`,
     method: 'PUT',
@@ -366,6 +391,7 @@ export async function getLicense(): Promise<License[]> {
 
 export async function insertLicense(data: License) {
   //return withPermission(['root', 'admin'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<License>({
     endpoint: `${apiNonAuth}/license`,
     method: 'POST',
@@ -409,6 +435,7 @@ export async function getClusterCatalogDeployAll(selectedCluster: string, select
 
 export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogDeploy>({
     endpoint: `${apiAuth}/tenant/${data.clusterId}/${data.uid}`,
     method: 'PUT',
@@ -419,6 +446,7 @@ export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
 
 export async function updateClusterCatalogDeploy(data: CatalogDeploy) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<CatalogDeploy>({
     endpoint: `${apiAuth}/catalog/${data.clusterId}/${data.uid}`,
     method: 'PUT',
@@ -456,6 +484,7 @@ export async function getProjectsByRole(uid: string): Promise<Project[]> {
 
 export async function insertProject(data: ClusterProject) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<ClusterProject>({
     endpoint: `${apiAuth}/projects/${data.clusterId}`,
     method: 'POST',
@@ -466,6 +495,7 @@ export async function insertProject(data: ClusterProject) {
 
 export async function updateProject(data: Project) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<Project>({
     endpoint: `${apiAuth}/projects/${data.uid}`,
     method: 'PUT',
@@ -491,6 +521,7 @@ export async function getProjectUser(projectId: string): Promise<ProjectUser[]> 
 
 export async function insertProjectUser(data: ProjectUser) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<ProjectUser>({
     endpoint: `${apiAuth}/users/${data.clusterId}`,
     method: 'POST',
@@ -524,6 +555,7 @@ export async function getRoles(): Promise<Role[]> {
 
 export async function insertUser(data: UserRegData) {
   //return withPermission(['root', 'admin'], () =>
+  data.data.createdById = await getCreatedById();
   return fetchApi<User>({
     endpoint: `${apiNonAuth}/kclusers`,
     method: 'POST',
@@ -534,6 +566,7 @@ export async function insertUser(data: UserRegData) {
 
 export async function updateUser(data: User) {
   //return withPermission(['root', 'admin'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<User>({
     endpoint: `${apiNonAuth}/kclusers/${data.uid}`,
     method: 'PUT',
@@ -555,6 +588,7 @@ export async function deleteUser(data: User) {
 
 export async function insertClusterCatalog(data: CatalogDeploy) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<User>({
     endpoint: `${apiAuth}/catalog/${data.clusterId}`,
     method: 'POST',
@@ -565,6 +599,7 @@ export async function insertClusterCatalog(data: CatalogDeploy) {
 
 export async function insertTenantCatalog(data: CatalogDeploy) {
   //return withPermission(['root', 'admin', 'manager'], () =>
+  data.createdById = await getCreatedById();
   return fetchApi<User>({
     endpoint: `${apiAuth}/tenant/${data.clusterId}`,
     method: 'POST',

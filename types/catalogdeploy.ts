@@ -28,5 +28,6 @@ export interface CatalogDeploy {
   catalogImage?: string;
   catalogDesc?: string;
   currentUserId?: string;
+  createdById?: number;
 }
 

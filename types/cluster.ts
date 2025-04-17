@@ -9,6 +9,7 @@ export interface Cluster {
   clusterDesc: string;
   domain: string;
   isArgo: boolean;
+  createdById?: number;
 }
 
 export interface CatalogGit {
@@ -19,4 +20,5 @@ export interface CatalogGit {
   gitType: string;
   gitTypeId: string;
   currentUserId?: string;
+  createdById?: number;
 }

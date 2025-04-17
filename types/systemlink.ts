@@ -5,4 +5,5 @@ export interface SystemLink {
   image: string;
   enable: boolean;
   createdAt?: string;
+  createdById?: number;
 }

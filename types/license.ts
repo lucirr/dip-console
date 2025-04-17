@@ -8,4 +8,5 @@ export interface License {
   createdDate?: string;
   enable: boolean;
   createdAt?: string;
+  createdById?: number;
 }
