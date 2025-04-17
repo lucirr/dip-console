@@ -50,21 +50,23 @@ export function Header() {
   const { activeMenu, setActiveMenu, setActiveSubMenu } = useSidebarStore();
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const config = getRuntimeConfig();
   const { toast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    nickname: session?.user?.name || '',
+    nickname: session?.nickname || '',
     password: '',
     confirmPassword: '',
   });
 
+  const [nickname, setNickname] = useState(session?.nickname);
+
+
   const userRoles = session?.roles || [];
   const username = session?.user?.name || '사용자';
-  const nickname = session?.nickname || username;
   const email = session?.user?.email || '';
 
   // Profile validation schema
@@ -144,6 +146,14 @@ export function Header() {
     router.push(defaultPath);
   };
 
+  useEffect(() => {
+    setProfileData({
+      nickname: session?.nickname || '',
+      password: '',
+      confirmPassword: '',
+    })
+  }, [isProfileOpen]);
+
   // useEffect(() => {
   //   fetch('/api/config')
   //     .then(res => res.json())
@@ -182,6 +192,12 @@ export function Header() {
       });
 
       setIsProfileOpen(false);
+      setNickname(profileData.nickname);
+
+      await update({
+        ...session,
+        nickname: profileData.nickname
+      });
     } catch (error) {
       toast({
         title: "Error",
