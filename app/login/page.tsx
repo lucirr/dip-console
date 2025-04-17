@@ -27,7 +27,7 @@ export default function LoginPage() {
           </div> */}
           <h1 className="text-2xl font-bold text-center">DIP</h1>
           <p className="text-muted-foreground text-center">
-            Please sign in to access DIP
+            Please sign in to access
           </p>
           <Button
             className="w-full"

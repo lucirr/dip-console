@@ -177,7 +177,7 @@ export function Header() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                Edit profile
+                Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
                 Sign out

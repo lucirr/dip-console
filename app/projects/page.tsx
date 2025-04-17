@@ -53,6 +53,11 @@ import { Cluster } from '@/types/cluster';
 import { CatalogType, CatalogVersion } from '@/types/catalogtype';
 import { CatalogDeploy } from '@/types/catalogdeploy';
 import { useSession } from 'next-auth/react';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface Column {
   key: string;
@@ -848,7 +853,19 @@ export default function ProjectsPage() {
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-xl">{item.catalogType}</CardTitle>
                           </div>
-                          <CardDescription>{item.catalogDesc}</CardDescription>
+                          {/* <CardDescription>{item.catalogDesc}</CardDescription> */}
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <CardDescription className="h-[20px] line-clamp-1 overflow-hidden">
+                                {item.catalogDesc}
+                              </CardDescription>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <p className="text-sm text-muted-foreground">
+                                {item.catalogDesc}
+                              </p>
+                            </HoverCardContent>
+                          </HoverCard>
                         </CardHeader>
                         <CardFooter className="flex justify-end gap-2 p-4">
                           <Button variant="outline" size="sm" onClick={() => catalogDeployNewSheetClick(item)}>
@@ -882,7 +899,19 @@ export default function ProjectsPage() {
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-xl">{item.catalogType}</CardTitle>
                           </div>
-                          <CardDescription>{item.catalogDesc}</CardDescription>
+                          {/* <CardDescription>{item.catalogDesc}</CardDescription> */}
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <CardDescription className="h-[20px] line-clamp-1 overflow-hidden">
+                                {item.catalogDesc}
+                              </CardDescription>
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <p className="text-sm text-muted-foreground">
+                                {item.catalogDesc}
+                              </p>
+                            </HoverCardContent>
+                          </HoverCard>
                         </CardHeader>
                         <CardFooter className="flex justify-end gap-2 p-4">
                           <Button variant="outline" size="sm" onClick={() => catalogNewSheetClick(item)}>

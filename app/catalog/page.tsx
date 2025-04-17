@@ -31,6 +31,11 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Project } from '@/types/project';
 import { useSession } from 'next-auth/react';
 import { hasAccess } from '@/lib/menu-items';
+import {
+  HoverCard,
+  HoverCardContent, 
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 
 
@@ -553,7 +558,19 @@ export default function CatalogPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">{item.name}</CardTitle>
                 </div>
-                <CardDescription>{item.catalogDesc}</CardDescription>
+                {/* <CardDescription>{item.catalogDesc}</CardDescription> */}
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <CardDescription className="h-[20px] line-clamp-1 overflow-hidden">
+                      {item.catalogDesc}
+                    </CardDescription>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <p className="text-sm text-muted-foreground">
+                      {item.catalogDesc}
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="space-y-3">

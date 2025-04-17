@@ -29,6 +29,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useSession } from 'next-auth/react';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 
 export default function ClusterCatalogPage() {
@@ -790,7 +795,19 @@ export default function ClusterCatalogPage() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl">{item.name}</CardTitle>
                     </div>
-                    <CardDescription>{item.catalogDesc}</CardDescription>
+                    {/* <CardDescription>{item.catalogDesc}</CardDescription> */}
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <CardDescription className="h-[20px] line-clamp-1 overflow-hidden">
+                          {item.catalogDesc}
+                        </CardDescription>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80">
+                        <p className="text-sm text-muted-foreground">
+                          {item.catalogDesc}
+                        </p>
+                      </HoverCardContent>
+                    </HoverCard>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <div className="space-y-3">
@@ -885,7 +902,19 @@ export default function ClusterCatalogPage() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl">{item.catalogType}</CardTitle>
                     </div>
-                    <CardDescription>{item.catalogDesc}</CardDescription>
+                    {/* <CardDescription>{item.catalogDesc}</CardDescription> */}
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <CardDescription className="h-[20px] line-clamp-1 overflow-hidden">
+                          {item.catalogDesc}
+                        </CardDescription>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80">
+                        <p className="text-sm text-muted-foreground">
+                          {item.catalogDesc}
+                        </p>
+                      </HoverCardContent>
+                    </HoverCard>
                   </CardHeader>
                   <CardFooter className="flex justify-end gap-2 p-4">
                     <Button variant="outline" size="sm" onClick={() => catalogNewSheetClick(item)}>
