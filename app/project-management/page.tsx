@@ -426,7 +426,7 @@ export default function ProjectManagementPage() {
       const clusterProject: ClusterProject = {
         name: newCode.clusterProjectName,
         clusterId: newCode.clusterId,
-        currentUserId: session?.uid || '0',
+        currentUserId: Number(session?.uid || 0),
       };
 
       await insertProject(clusterProject);

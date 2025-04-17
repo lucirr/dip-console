@@ -672,7 +672,7 @@ export default function ProjectsPage() {
         name: newCatalogDeploy.catalogType,
         valuesYaml: newCatalogDeploy.valuesYaml,
         catalogDeployId: newCatalogDeploy.catalogDeployId,
-        currentUserId: session?.uid || '0',
+        currentUserId: Number(session?.uid || 0),
       };
 
       console.log(catalogDeploy.catalogDeployId)

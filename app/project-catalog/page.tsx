@@ -308,7 +308,7 @@ export default function ProjectCatalogPage() {
       catalogVersion: row.catalogVersion,
       clusterName: row.clusterName,
       username: row.username,
-      currentUserId: session?.uid || '0',
+      currentUserId: Number(session?.uid || 0),
     });
     setFormErrorsCatalogDeploy(null);
     setIsCatalogDeployEditSheetOpen(true);
