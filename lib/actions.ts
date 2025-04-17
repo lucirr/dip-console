@@ -417,6 +417,16 @@ export async function updateProjectCatalogDeploy(data: CatalogDeploy) {
   //);
 }
 
+export async function updateClusterCatalogDeploy(data: CatalogDeploy) {
+  //return withPermission(['root', 'admin', 'manager'], () =>
+  return fetchApi<CatalogDeploy>({
+    endpoint: `${apiAuth}/catalog/${data.clusterId}/${data.uid}`,
+    method: 'PUT',
+    body: data
+  })
+  //);
+}
+
 export async function deleteProjectCatalogDeploy(data: CatalogDeploy) {
   //return withPermission(['root', 'admin', 'manager'], () =>
   return fetchApi<CatalogDeploy>({

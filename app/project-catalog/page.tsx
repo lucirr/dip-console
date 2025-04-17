@@ -37,6 +37,7 @@ import { StatusBadge } from '@/components/ui/badgestatus';
 import { Cluster } from '@/types/cluster';
 import { Project } from '@/types/project';
 import { CatalogType } from '@/types/catalogtype';
+import { useSession } from 'next-auth/react';
 
 interface Column {
   key: string;
@@ -50,6 +51,8 @@ interface Column {
 
 export default function ProjectCatalogPage() {
   const { toast } = useToast()
+  const { data: session } = useSession();
+  
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
   const [isCatalogDeployNewSheetOpen, setIsCatalogDeployNewSheetOpen] = useState(false);
   const [isCatalogDeployEditSheetOpen, setIsCatalogDeployEditSheetOpen] = useState(false);
@@ -70,6 +73,7 @@ export default function ProjectCatalogPage() {
     name: '',
     valuesYaml: '',
     catalogType: '',
+    currentUserId: '',
   });
 
   const [selectedCluster, setSelectedCluster] = useState<string>('');
@@ -303,7 +307,8 @@ export default function ProjectCatalogPage() {
       catalogType: row.catalogType,
       catalogVersion: row.catalogVersion,
       clusterName: row.clusterName,
-      username: row.username
+      username: row.username,
+      currentUserId: session?.uid || '0',
     });
     setFormErrorsCatalogDeploy(null);
     setIsCatalogDeployEditSheetOpen(true);

@@ -13,7 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
+import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateClusterCatalogDeploy, insertClusterCatalog, getCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
@@ -34,7 +34,7 @@ import { useSession } from 'next-auth/react';
 export default function ClusterCatalogPage() {
   const { toast } = useToast()
   const { data: session } = useSession();
-  
+
   const router = useRouter();
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
@@ -63,6 +63,7 @@ export default function ClusterCatalogPage() {
     name: '',
     valuesYaml: '',
     catalogType: '',
+    currentUserId: '',
   });
 
   const [newCatalogDeploy, setNewCatalogDeploy] = useState<CatalogDeploy>({
@@ -230,7 +231,8 @@ export default function ClusterCatalogPage() {
       catalogType: row.catalogType,
       catalogVersion: row.catalogVersion,
       clusterName: row.clusterName,
-      username: row.username
+      username: row.username,
+      currentUserId: session?.uid || '0',
     });
     setFormErrorsCatalogDeploy(null);
     setIsCatalogDeployEditSheetOpen(true);
@@ -298,7 +300,7 @@ export default function ClusterCatalogPage() {
     setIsSubmitting(true);
 
     try {
-      await updateProjectCatalogDeploy(editCatalogDeploy);
+      await updateClusterCatalogDeploy(editCatalogDeploy);
       toast({
         title: "Success",
         description: "재배포가 성공적으로 실행되었습니다.",

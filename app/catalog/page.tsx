@@ -210,7 +210,8 @@ export default function CatalogPage() {
       catalogType: row.catalogType,
       catalogVersion: row.catalogVersion,
       clusterName: row.clusterName,
-      username: row.username
+      username: row.username,
+      currentUserId: session?.uid || '0',
     });
     setFormErrorsCatalogDeploy(null);
     setIsCatalogDeployEditSheetOpen(true);

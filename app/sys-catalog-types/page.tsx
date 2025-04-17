@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage, codeMirrorStyles } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
 
 interface Column {
   key: string;
@@ -49,6 +50,8 @@ interface SysCatalogTypesPageProps {
 
 export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogTypesPageProps) {
   const { toast } = useToast()
+  const { data: session } = useSession();
+
   const [catalogTypeData, setCatalogTypeData] = useState<CatalogType[]>([]);
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
   const [isCatalogTypeNewSheetOpen, setIsCatalogTypeNewSheetOpen] = useState(false);
@@ -119,6 +122,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
     catalogType: '',
     catalogVersion: '',
     catalogTypeId: '',
+    currentUserId: '',
   });
 
   const formSchemaCatalogType = z.object({
@@ -426,6 +430,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
       if (selectedCatalogType?.uid) {
         newCatalogVersion.catalogType = selectedCatalogType.catalogType
         newCatalogVersion.catalogTypeId = selectedCatalogType.uid;
+        newCatalogVersion.currentUserId = session?.uid || '0';
         await insertCatalogVersion(newCatalogVersion);
         toast({
           title: "Success",
@@ -608,6 +613,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
       catalogType: row.catalogType,
       catalogVersion: row.catalogVersion,
       catalogTypeId: row.catalogTypeId,
+      currentUserId: session?.uid || '0',
     });
     setIsCatalogVersionEditSheetOpen(true);
     setFormErrorsCatalogVersion(null);

@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { GroupCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
+import { useSession } from 'next-auth/react';
 
 interface Column {
   key: string;
@@ -45,6 +46,8 @@ interface Column {
 
 export default function ArgoRepoRegistrationPage() {
   const { toast } = useToast()
+  const { data: session } = useSession();
+  
   const [catalogGitData, setCatalogGitData] = useState<CatalogGit[]>([]);
   const [isCatalogGitNewSheetOpen, setIsCatalogGitNewSheetOpen] = useState(false);
   const [isCatalogGitEditSheetOpen, setIsCatalogGitEditSheetOpen] = useState(false);
@@ -71,6 +74,7 @@ export default function ArgoRepoRegistrationPage() {
     gitToken: '',
     gitType: '',
     gitTypeId: '',
+    currentUserId: '',
   });
 
   const [editCatalogGit, setEditCatalogGit] = useState<CatalogGit>({
@@ -228,6 +232,7 @@ export default function ArgoRepoRegistrationPage() {
     setIsSubmitting(true);
 
     try {
+      newCode.currentUserId = session?.uid || '0';
       await insertCatalogGit(newCode);
       toast({
         title: "Success",
