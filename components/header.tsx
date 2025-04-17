@@ -73,10 +73,12 @@ export function Header() {
   const profileSchema = z.object({
     nickname: z.string().min(1, "닉네임은 필수 입력 항목입니다."),
     password: z.string()
-      .min(8, "비밀번호는 최소 8자 이상이어야 합니다.")
-      .max(50, "비밀번호는 50자를 초과할 수 없습니다.")
       .refine((value) => {
-        if (value === '') return true; // Allow empty password (no change)
+        if (value === '') return true; // Empty password is valid
+        return value.length >= 8 && value.length <= 50;
+      }, "비밀번호는 8-50자 사이여야 합니다.")
+      .refine((value) => {
+        if (value === '') return true; // Empty password is valid
         const hasUpperCase = /[A-Z]/.test(value);
         const hasLowerCase = /[a-z]/.test(value);
         const hasNumber = /[0-9]/.test(value);
