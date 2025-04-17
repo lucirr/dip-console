@@ -28,7 +28,6 @@ import type { ReactNode } from 'react';
 import type { ClusterProject, Project, ProjectUser, Role, User } from "@/types/project"
 import {
   getProjectsByRole,
-  insertProject,
   deleteProject,
   getProjectUser,
   deleteProjectUser,
@@ -668,6 +667,7 @@ export default function ProjectsPage() {
         name: newCatalogDeploy.catalogType,
         valuesYaml: newCatalogDeploy.valuesYaml,
         catalogDeployId: newCatalogDeploy.catalogDeployId,
+        currentUserId: session?.uid || '0',
       };
 
       console.log(catalogDeploy.catalogDeployId)

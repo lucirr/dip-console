@@ -13,7 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getProjectCatalogDeployByUser, getProjectsByUser, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
+import { getProjectCatalogDeployByUser, getProjectsByUser, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, getCatalogVersion } from "@/lib/actions"
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';

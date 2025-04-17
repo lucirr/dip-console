@@ -45,6 +45,7 @@ import { ko } from 'date-fns/locale';
 import { CommonCode } from '@/types/groupcode';
 import { getErrorMessage } from '@/lib/utils';
 import { Cluster } from '@/types/cluster';
+import { useSession } from 'next-auth/react';
 
 interface Column {
   key: string;
@@ -58,6 +59,8 @@ interface Column {
 
 export default function ProjectManagementPage() {
   const { toast } = useToast()
+  const { data: session } = useSession();
+
   const [projectData, setProjectData] = useState<Project[]>([]);
   const [projectUserData, setProjectUserData] = useState<ProjectUser[]>([]);
   const [isProjectNewSheetOpen, setIsProjectNewSheetOpen] = useState(false);
@@ -256,7 +259,7 @@ export default function ProjectManagementPage() {
     try {
       if (selectedProject?.uid) {
         const response = await getProjectUser(selectedProject.uid);
-        
+
         setProjectUserData(response);
       } else {
         setProjectUserData([]);
@@ -423,6 +426,7 @@ export default function ProjectManagementPage() {
       const clusterProject: ClusterProject = {
         name: newCode.clusterProjectName,
         clusterId: newCode.clusterId,
+        currentUserId: session?.uid || '0',
       };
 
       await insertProject(clusterProject);
@@ -622,7 +626,7 @@ export default function ProjectManagementPage() {
     try {
       if (selectedProject?.clusterId) {
         row.clusterId = selectedProject?.clusterId
-        
+
         await deleteProjectUser(row);
         toast({
           title: "Success",

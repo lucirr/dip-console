@@ -13,7 +13,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import { CatalogDeploy } from '@/types/catalogdeploy';
-import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion } from "@/lib/actions"
+import { getClusterCatalogDeploy, getClusters, getCatalogType, deleteProjectCatalogDeploy, updateProjectCatalogDeploy, insertClusterCatalog, getCatalogVersion, getCommonCodeByGroupCode } from "@/lib/actions"
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
@@ -28,11 +28,13 @@ import { StatusBadge, Status } from '@/components/ui/badgestatus';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-
+import { useSession } from 'next-auth/react';
 
 
 export default function ClusterCatalogPage() {
   const { toast } = useToast()
+  const { data: session } = useSession();
+  
   const router = useRouter();
   const [catalogDeployData, setCatalogDeployData] = useState<CatalogDeploy[]>([]);
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
@@ -90,7 +92,7 @@ export default function ClusterCatalogPage() {
   const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
   const [catalogTypeCreate, setCatalogTypeCreate] = useState<CatalogType[]>([]);
 
-
+  const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
   const fetchCatalogDeploy = async () => {
     setIsLoading(true);
@@ -113,8 +115,19 @@ export default function ClusterCatalogPage() {
   const fetchClusters = async () => {
     setIsLoading(true);
     try {
+      const codeTypeData = await fetchCommonCode('cluster_type');
+      const codeTypeMap = codeTypeData.reduce((acc, code) => {
+        if (code.uid !== undefined && code.code == 'common') {
+          acc[code.uid] = code.uid;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
       const response = await getClusters()
-      setClusterOptions(response);
+      const filteredData = response.filter(item =>
+        item.clusterTypeId != codeTypeMap[item.clusterTypeId ?? '']
+      );
+      setClusterOptions(filteredData);
       return response;
     } catch (error) {
       setClusterOptions([]);
@@ -151,6 +164,20 @@ export default function ClusterCatalogPage() {
     } catch (error) {
       console.error('Error fetching common codes:', error);
       setCatalogVersionData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCommonCode = async (groupCode: string) => {
+    setIsLoading(true);
+    try {
+      const response = await getCommonCodeByGroupCode(groupCode)
+      setCodeType(response);
+      return response;
+    } catch (error) {
+      setCodeType([]);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -340,6 +367,7 @@ export default function ClusterCatalogPage() {
         catalogVersionId: newCatalogDeploy.catalogVersionId,
         name: newCatalogDeploy.catalogType,
         valuesYaml: newCatalogDeploy.valuesYaml,
+        currentUserId: session?.uid || '0',
       };
 
       await insertClusterCatalog(catalogDeploy);

@@ -43,7 +43,11 @@ interface Column {
 
 
 
-export default function SysCatalogTypesPage() {
+interface SysCatalogTypesPageProps {
+  isAdminView?: boolean;
+}
+
+export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogTypesPageProps) {
   const { toast } = useToast()
   const [catalogTypeData, setCatalogTypeData] = useState<CatalogType[]>([]);
   const [catalogVersionData, setCatalogVersionData] = useState<CatalogVersion[]>([]);
@@ -247,8 +251,15 @@ export default function SysCatalogTypesPage() {
   const fetchCatalogTypes = async () => {
     setIsLoading(true);
     try {
-      const response = await getCatalogType()
-      setCatalogTypeData(response);
+      const response = await getCatalogType();
+      if (isAdminView) {
+        const filteredData = response.filter(item =>
+          item.createdById != '1'
+        );
+        setCatalogTypeData(filteredData);
+      } else {
+        setCatalogTypeData(response);
+      }
     } catch (error) {
       setCatalogTypeData([]);
     } finally {
@@ -294,7 +305,9 @@ export default function SysCatalogTypesPage() {
   useEffect(() => {
     fetchCatalogTypes();
     fetchCommonCode('service_type');
-  }, []);
+
+    console.log('Is Admin View:', isAdminView);
+  }, [isAdminView]);
 
 
   useEffect(() => {

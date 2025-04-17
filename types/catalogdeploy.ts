@@ -27,5 +27,6 @@ export interface CatalogDeploy {
   isTenant?: boolean;
   catalogImage?: string;
   catalogDesc?: string;
+  currentUserId?: string;
 }
 

@@ -26,7 +26,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
 import type { ReactNode } from 'react';
 import type { CatalogDeploy } from "@/types/catalogdeploy"
-import { getProjectClusterCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy, getClusters, getCatalogType, getProjects } from "@/lib/actions"
+import { getProjectClusterCatalogDeploy, updateProjectCatalogDeploy, deleteProjectCatalogDeploy, getClusters, getCatalogType, getProjects, getCommonCodeByGroupCode } from "@/lib/actions"
 import { useToast } from "@/hooks/use-toast"
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -79,6 +79,8 @@ export default function ProjectCatalogPage() {
   const [clusterOptions, setClusterOptions] = useState<Cluster[]>([]);
   const [projectOptions, setProjectOptions] = useState<Project[]>([]);
   const [catalogTypeOptions, setCatalogTypeOptions] = useState<CatalogType[]>([]);
+
+  const [codeType, setCodeType] = useState<CommonCode[]>([]);
 
   const formSchemaCatalogDeploy = z.object({
     valuesYaml: z.string().min(1, { message: "설정값은 필수 입력 항목입니다." }),
@@ -179,8 +181,19 @@ export default function ProjectCatalogPage() {
   const fetchClusters = async () => {
     setIsLoading(true);
     try {
+      const codeTypeData = await fetchCommonCode('cluster_type');
+      const codeTypeMap = codeTypeData.reduce((acc, code) => {
+        if (code.uid !== undefined && code.code == 'common') {
+          acc[code.uid] = code.uid;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
       const response = await getClusters()
-      setClusterOptions(response);
+      const filteredData = response.filter(item =>
+        item.clusterTypeId != codeTypeMap[item.clusterTypeId ?? '']
+      );
+      setClusterOptions(filteredData);
       return response;
     } catch (error) {
       setClusterOptions([]);
@@ -212,6 +225,20 @@ export default function ProjectCatalogPage() {
       return response;
     } catch (error) {
       setCatalogTypeOptions([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCommonCode = async (groupCode: string) => {
+    setIsLoading(true);
+    try {
+      const response = await getCommonCodeByGroupCode(groupCode)
+      setCodeType(response);
+      return response;
+    } catch (error) {
+      setCodeType([]);
       return [];
     } finally {
       setIsLoading(false);
