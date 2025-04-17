@@ -567,12 +567,23 @@ export async function insertUser(data: UserRegData) {
 export async function updateUser(data: User) {
   //return withPermission(['root', 'admin'], () =>
   data.createdById = await getCreatedById();
+  const user = {data: data};
   return fetchApi<User>({
     endpoint: `${apiNonAuth}/kclusers/${data.uid}`,
     method: 'PUT',
-    body: data
+    body: user
   })
   //);
+}
+
+export async function updateSessionUser(data: User) {
+  data.createdById = await getCreatedById();
+  const user = {data: data};
+  return fetchApi<User>({
+    endpoint: `${apiAuth}/kclusers/${data.uid}`,
+    method: 'PUT',
+    body: user
+  })
 }
 
 export async function deleteUser(data: User) {

@@ -10,6 +10,7 @@ const httpsAgent = new https.Agent({
 
 interface KeycloakProfile extends Profile {
     preferred_username?: string;
+    given_name?: string;
 }
 
 // if (!process.env.KEYCLOAK_CLIENT_ID || !process.env.KEYCLOAK_CLIENT_SECRET || !process.env.KEYCLOAK_ISSUER) {
@@ -27,17 +28,25 @@ const handler = NextAuth({
     ],
     callbacks: {
         async jwt({ token, account, profile }) {
+            console.log(token, '|', account, '|', profile)
             // Include access_token in the token right after signin
             if (account?.access_token) {
                 token.accessToken = account.access_token;
+                
                 const username = (profile as KeycloakProfile).preferred_username;
+                const nickname = (profile as KeycloakProfile).given_name;
                 
                 if (username) {
+                    token.username = username;
                     const user = await getLoginUserRoles(username);
                     if (user && user.roles) {
                         token.roles = user.roles;
                         token.uid = user.uid || '0';
                     }
+                }
+
+                if (nickname) {
+                    token.nickname = nickname;
                 }
             }
             return token;
@@ -51,6 +60,12 @@ const handler = NextAuth({
             }
             if ('uid' in token) {
                 session.uid = token.uid;
+            }
+            if ('username' in token && session.user) {
+                session.user.name = token.username;
+            }
+            if ('nickname' in token) {
+                session.nickname = token.nickname;
             }
             return session;
         },

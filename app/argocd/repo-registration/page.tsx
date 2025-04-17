@@ -74,7 +74,7 @@ export default function ArgoRepoRegistrationPage() {
     gitToken: '',
     gitType: '',
     gitTypeId: '',
-    currentUserId: '',
+    currentUserId: 0,
   });
 
   const [editCatalogGit, setEditCatalogGit] = useState<CatalogGit>({
@@ -232,7 +232,7 @@ export default function ArgoRepoRegistrationPage() {
     setIsSubmitting(true);
 
     try {
-      newCode.currentUserId = session?.uid || '0';
+      newCode.currentUserId = Number(session?.uid || 0);
       await insertCatalogGit(newCode);
       toast({
         title: "Success",

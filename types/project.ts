@@ -3,7 +3,7 @@ export interface ClusterProject {
   name: string;
   clusterId: string;
   type?: string;
-  currentUserId?: string;
+  currentUserId?: number;
   resourceQuota?: ResourceQuota;
   namespaceDefaultResourceQuota?: DefaultResourceQuota;
   s3?: S3Info;

@@ -19,7 +19,7 @@ const headers: any = {
 export async function getLoginUserRoles(username: string): Promise<User> {
   return await axios.get<User>(`${apiUrl}${apiAuth}/users/${username}/roles`, { headers: headers, httpsAgent })
     .then(function (response) {
-      console.log(response.data);
+      //console.log(response.data);
       return response.data as User;
     })
     .catch(function (error) {

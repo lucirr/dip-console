@@ -19,6 +19,6 @@ export interface CatalogGit {
   gitToken?: string;
   gitType: string;
   gitTypeId: string;
-  currentUserId?: string;
+  currentUserId?: number;
   createdById?: number;
 }

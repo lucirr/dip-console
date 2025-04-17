@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  CircleHelp,
   User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,13 +23,28 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { getRuntimeConfig } from '@/utils/runtime-config';
 import { MenuKey, MenuItem, menuItems, hasAccess, getAccessibleMenuItems } from '@/lib/menu-items';
-import { GET } from "@/app/api/config/route";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { updateSessionUser } from "@/lib/actions";
 
 export function Header() {
   const { activeMenu, setActiveMenu, setActiveSubMenu } = useSidebarStore();
@@ -36,9 +52,45 @@ export function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const config = getRuntimeConfig();
+  const { toast } = useToast();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [profileData, setProfileData] = useState({
+    nickname: session?.user?.name || '',
+    password: '',
+    confirmPassword: '',
+  });
 
   const userRoles = session?.roles || [];
   const username = session?.user?.name || '사용자';
+  const nickname = session?.nickname || username;
+  const email = session?.user?.email || '';
+
+  // Profile validation schema
+  const profileSchema = z.object({
+    nickname: z.string().min(1, "닉네임은 필수 입력 항목입니다."),
+    password: z.string()
+      .min(8, "비밀번호는 최소 8자 이상이어야 합니다.")
+      .max(50, "비밀번호는 50자를 초과할 수 없습니다.")
+      .refine((value) => {
+        if (value === '') return true; // Allow empty password (no change)
+        const hasUpperCase = /[A-Z]/.test(value);
+        const hasLowerCase = /[a-z]/.test(value);
+        const hasNumber = /[0-9]/.test(value);
+        const hasSpecialChar = /[@$!%*?&]/.test(value);
+        return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+      }, {
+        message: "비밀번호는 대소문자, 숫자, 특수문자(@$!%*?&)를 각각 하나 이상 포함해야 합니다."
+      }),
+    confirmPassword: z.string(),
+  }).refine((data) => {
+    if (data.password === '') return true; // Skip validation if password is empty
+    return data.password === data.confirmPassword;
+  }, {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["confirmPassword"],
+  });
 
   // Use the hasAccess function from the imported module
   const checkAccess = (roles?: string[]) => hasAccess(userRoles, roles);
@@ -97,6 +149,49 @@ export function Header() {
   //     .then(res => res.json())
   //     .then(data => console.log(data));
   // }, []);
+
+  const handleProfileSubmit = async () => {
+    try {
+      const validationResult = profileSchema.safeParse(profileData);
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors;
+        toast({
+          title: "Validation Error",
+          description: errors[0].message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      // Only include password if it was changed
+      const updateData = {
+        uid: session?.uid,
+        username: username,
+        nickname: profileData.nickname,
+        ...(profileData.password && { password: profileData.password })
+      };
+
+      await updateSessionUser(updateData);
+
+      toast({
+        title: "Success",
+        description: "프로필이 성공적으로 업데이트되었습니다.",
+      });
+
+      setIsProfileOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "프로필 업데이트에 실패했습니다.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
@@ -162,9 +257,29 @@ export function Header() {
           </NavigationMenu>
         </div>
         <div className="flex items-center gap-2 md:gap-4 px-6">
-          <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-gray-800 h-8 w-8">
-            <Bell className="h-4 w-4" />
-          </Button>
+          {/* <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-gray-800 h-8 w-8">
+            <CircleHelp className="h-4 w-4" />
+          </Button> */}
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-gray-800 h-8 w-8">
+                <CircleHelp className="h-4 w-4" />
+              </Button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-70">
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold">DIP (Data Intelligence Platform)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Version: 1.0.0
+                </p>
+                <div className="flex items-center pt-2">
+                  <span className="text-xs text-muted-foreground">
+                    Latest Release: April 2025
+                  </span>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-gray-800 h-8 w-8">
@@ -173,10 +288,12 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
-                {username}
+                {/* {username} */}
+                <p className="text-sm font-medium leading-none">{nickname}</p>
+                <p className="text-xs leading-none text-muted-foreground pt-2">{username}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setIsProfileOpen(true)}>
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout}>
@@ -186,6 +303,67 @@ export function Header() {
           </DropdownMenu>
         </div>
       </header>
+
+      <Sheet open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+        <div className="flex flex-col h-full">
+          <SheetContent className="sm:max-w-[425px] overflow-y-auto">
+            <SheetHeader className='pb-4'>
+              <SheetTitle>Edit Profile</SheetTitle>
+            </SheetHeader>
+            <div className="grid gap-4 py-4 border-t">
+              <div className="space-y-2">
+                <Label>이름</Label>
+                <div className="p-2 bg-muted rounded-md">
+                  <span className="text-sm">{username}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <div className="p-2 bg-muted rounded-md">
+                  <span className="text-sm">{email}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nickname">닉네임 <span className="text-red-500 ml-1">*</span></Label>
+                <Input
+                  id="nickname"
+                  value={profileData.nickname}
+                  onChange={(e) => setProfileData({ ...profileData, nickname: e.target.value })}
+                  placeholder="Enter nickname"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">새 비밀번호</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={profileData.password}
+                  onChange={(e) => setProfileData({ ...profileData, password: e.target.value })}
+                  placeholder="Enter new password (optional)"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={profileData.confirmPassword}
+                  onChange={(e) => setProfileData({ ...profileData, confirmPassword: e.target.value })}
+                  placeholder="Confirm new password"
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsProfileOpen(false)}>
+                취소
+              </Button>
+              <Button onClick={handleProfileSubmit} disabled={isSubmitting}>
+                저장
+              </Button>
+            </div>
+          </SheetContent>
+        </div>
+      </Sheet>
     </div>
   );
 }

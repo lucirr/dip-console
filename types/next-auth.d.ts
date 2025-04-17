@@ -8,6 +8,7 @@ declare module "next-auth" {
     error?: string
     roles?: string[]
     uid?: string
+    nickname?: string
   }
 }
 
@@ -20,5 +21,7 @@ declare module "next-auth/jwt" {
     error?: string
     roles?: string[]
     uid?: string
+    username?: string
+    nickname?: string
   }
 }

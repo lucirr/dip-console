@@ -92,7 +92,7 @@ export default function UserManagementPage() {
       .regex(/^[a-zA-Z0-9]+$/, { message: "이름은 영문자와 숫자만 입력 가능합니다." })
       .max(20, { message: "이름은 20자를 초과할 수 없습니다." }),
     nickname: z.string().min(1, { message: "닉네임은 필수 입력 항목입니다." }),
-    email: z.string().min(1, { message: "이메일은 필수 입력 항목입니다." }),
+    email: z.string().min(1, { message: "Email은 필수 입력 항목입니다." }),
     roleName: z.string().min(1, { message: "역할은 필수 입력 항목입니다." }),
     password: z
       .string()
@@ -471,11 +471,11 @@ export default function UserManagementPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="user-name" className="flex items-center">
-                      이메일 <span className="text-red-500 ml-1">*</span>
+                      Email <span className="text-red-500 ml-1">*</span>
                     </Label>
                     <Input
                       id="user-name"
-                      placeholder="이메일 입력"
+                      placeholder="Email 입력"
                       value={newCode.email}
                       onChange={(e) => {
                         setNewCode({ ...newCode, email: e.target.value });
@@ -570,7 +570,7 @@ export default function UserManagementPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-catalog-type" className="flex items-center">
-                      이메일
+                      Email
                     </Label>
                     <div className="p-2 bg-muted rounded-md">
                       <span className="text-sm">{editUser.email}</span>

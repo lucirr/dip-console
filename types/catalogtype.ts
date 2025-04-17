@@ -21,6 +21,6 @@ export interface CatalogVersion {
   catalogType: string;
   catalogVersion: string;
   catalogTypeId: string;
-  currentUserId?: string;
+  currentUserId?: number;
   createdById?: number;
 }

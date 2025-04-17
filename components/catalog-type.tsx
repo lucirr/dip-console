@@ -122,7 +122,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
     catalogType: '',
     catalogVersion: '',
     catalogTypeId: '',
-    currentUserId: '',
+    currentUserId: 0,
   });
 
   const formSchemaCatalogType = z.object({
@@ -430,7 +430,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
       if (selectedCatalogType?.uid) {
         newCatalogVersion.catalogType = selectedCatalogType.catalogType
         newCatalogVersion.catalogTypeId = selectedCatalogType.uid;
-        newCatalogVersion.currentUserId = session?.uid || '0';
+        newCatalogVersion.currentUserId = Number(session?.uid || 0);
         await insertCatalogVersion(newCatalogVersion);
         toast({
           title: "Success",
@@ -613,7 +613,7 @@ export default function SysCatalogTypesPage({ isAdminView = false }: SysCatalogT
       catalogType: row.catalogType,
       catalogVersion: row.catalogVersion,
       catalogTypeId: row.catalogTypeId,
-      currentUserId: session?.uid || '0',
+      currentUserId: Number(session?.uid || 0),
     });
     setIsCatalogVersionEditSheetOpen(true);
     setFormErrorsCatalogVersion(null);
