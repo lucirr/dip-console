@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import { Profile } from 'next-auth';
 import KeycloakProvider from "next-auth/providers/keycloak";
 import https from 'https';
-import { getLoginUserRoles } from "@/app/api/user/route";
+import { getLoginUserRoles } from "@/lib/userService";
 
 const httpsAgent = new https.Agent({
     rejectUnauthorized: false
