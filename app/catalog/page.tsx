@@ -33,7 +33,7 @@ import { useSession } from 'next-auth/react';
 import { hasAccess } from '@/lib/menu-items';
 import {
   HoverCard,
-  HoverCardContent, 
+  HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
@@ -311,28 +311,30 @@ export default function CatalogPage() {
     setSelectedCatalogType('');
   };
 
-  // const handleTabChange = (tab: string) => {
-  //   setActiveTab(tab);
-  // };
+
 
   const extractImageUrl = (htmlString?: string) => {
-    try {
-      if (htmlString) {
-        // 이스케이프된 문자열 디코딩
-        const decodedString = htmlString.replace(/\\u003c/g, '<')
-          .replace(/\\u003e/g, '>')
-          .replace(/\\"/g, '"');
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(decodedString, 'text/html');
-        const imgElement = doc.querySelector('img');
-        return imgElement?.getAttribute('src') || '';
-      }
-      return '';
-    } catch (error) {
-      console.error('Error parsing HTML:', error);
-      return '';
+    if (htmlString) {
+      return htmlString;
     }
+    return '';
+    // try {
+    //   if (htmlString) {
+    //     // 이스케이프된 문자열 디코딩
+    //     const decodedString = htmlString.replace(/\\u003c/g, '<')
+    //       .replace(/\\u003e/g, '>')
+    //       .replace(/\\"/g, '"');
+
+    //     const parser = new DOMParser();
+    //     const doc = parser.parseFromString(decodedString, 'text/html');
+    //     const imgElement = doc.querySelector('img');
+    //     return imgElement?.getAttribute('src') || '';
+    //   }
+    //   return '';
+    // } catch (error) {
+    //   console.error('Error parsing HTML:', error);
+    //   return '';
+    // }
   };
 
   const handleImageError = (itemId: string | undefined) => {

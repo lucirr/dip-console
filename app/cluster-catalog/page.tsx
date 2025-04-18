@@ -424,23 +424,27 @@ export default function ClusterCatalogPage() {
   };
 
   const extractImageUrl = (htmlString?: string) => {
-    try {
-      if (htmlString) {
-        // 이스케이프된 문자열 디코딩
-        const decodedString = htmlString.replace(/\\u003c/g, '<')
-          .replace(/\\u003e/g, '>')
-          .replace(/\\"/g, '"');
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(decodedString, 'text/html');
-        const imgElement = doc.querySelector('img');
-        return imgElement?.getAttribute('src') || '';
-      }
-      return '';
-    } catch (error) {
-      console.error('Error parsing HTML:', error);
-      return '';
+    if (htmlString) {
+      return htmlString;
     }
+    return '';
+    // try {
+    //   if (htmlString) {
+    //     // 이스케이프된 문자열 디코딩
+    //     const decodedString = htmlString.replace(/\\u003c/g, '<')
+    //       .replace(/\\u003e/g, '>')
+    //       .replace(/\\"/g, '"');
+
+    //     const parser = new DOMParser();
+    //     const doc = parser.parseFromString(decodedString, 'text/html');
+    //     const imgElement = doc.querySelector('img');
+    //     return imgElement?.getAttribute('src') || '';
+    //   }
+    //   return '';
+    // } catch (error) {
+    //   console.error('Error parsing HTML:', error);
+    //   return '';
+    // }
   };
 
   const handleImageError = (itemId: string | undefined) => {
@@ -452,19 +456,7 @@ export default function ClusterCatalogPage() {
     fetchCatalogDeploy();
   };
 
-  const getStatusColor = (status?: string) => {
-    const statusColors = {
-      '정상': 'bg-green-100 text-green-800',
-      '점검중': 'bg-yellow-100 text-yellow-800',
-      '중단': 'bg-red-100 text-red-800',
-      '배포완료': 'bg-blue-100 text-blue-800',
-      '배포중': 'bg-purple-100 text-purple-800',
-      '배포실패': 'bg-red-100 text-red-800',
-      '배포대기': 'bg-gray-100 text-gray-800'
-    };
-    // return statusColors[status] || 'bg-gray-100 text-gray-800';
-    return 'bg-gray-100 text-gray-800';
-  };
+
 
   return (
     <div className="flex-1 space-y-4 py-4">
