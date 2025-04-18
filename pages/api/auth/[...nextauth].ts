@@ -28,14 +28,14 @@ const handler = NextAuth({
     ],
     callbacks: {
         async jwt({ token, account, profile }) {
-            console.log(token, '|', account, '|', profile)
+
             // Include access_token in the token right after signin
             if (account?.access_token) {
                 token.accessToken = account.access_token;
-                
+
                 const username = (profile as KeycloakProfile).preferred_username;
                 const nickname = (profile as KeycloakProfile).given_name;
-                
+
                 if (username) {
                     token.username = username;
                     const user = await getLoginUserRoles(username);
@@ -75,4 +75,5 @@ const handler = NextAuth({
     },
 });
 
-export { handler as GET, handler as POST };
+// export { handler as GET, handler as POST };
+export default handler;
