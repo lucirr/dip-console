@@ -23,11 +23,19 @@ WORKDIR /app
 
 # Set environment variables
 ENV NODE_ENV=production
+# ENV KEYCLOAK_ISSUER=${KEYCLOAK_ISSUER}
 
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# Create script to generate runtime environment
+# RUN echo "window.__ENV__ = { \
+#     KEYCLOAK_ISSUER: '$KEYCLOAK_ISSUER', \
+#     KEYCLOAK_CLIENT_ID: '$KEYCLOAK_CLIENT_ID', \
+#     KEYCLOAK_CLIENT_SECRET: '$KEYCLOAK_CLIENT_SECRET' \
+# };" > ./public/runtime-env.js
 
 # Expose port
 EXPOSE 3000
